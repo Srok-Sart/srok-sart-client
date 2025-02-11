@@ -40,7 +40,7 @@ const Navigation = () => {
         <Link href="/stats" className="text-gray-500 hover:text-black flex flex-col items-center">
           <FaChartBar size={22} />
         </Link>
-        <Link href="/upload" className="text-gray-500 hover:text-black flex flex-col items-center">
+        <Link href="/UploadForm" className="text-gray-500 hover:text-black flex flex-col items-center">
           <FaPlus size={28} className="bg-[var(--primary-color)] text-white p-2 rounded-full" />
         </Link>
         <Link href="/saved" className="text-gray-500 hover:text-black flex flex-col items-center">
