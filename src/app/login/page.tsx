@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { loginUser } from "../../api/login";
 
 const Login = () => {
   const router = useRouter();
@@ -14,9 +14,30 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Logging in with:", formData);
+
+    try {
+      const data = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      console.log("Login successful:", data);
+
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+
+      router.push("/");
+    } catch (error) {
+      console.error("Login error:", error);
+
+      if (error instanceof Error) {
+        alert(error.message || "An error occurred during login.");
+      } else {
+        alert("Failed to connect to the server. Please try again later.");
+      }
+    }
   };
 
   return (
@@ -77,19 +98,25 @@ const Login = () => {
           <hr className="flex-grow border-gray-300" />
         </div>
 
-        {/* Google Login Button with Favicon */}
+        {/* Google Login Button */}
         <button className="flex w-full items-center justify-center space-x-3 border py-3 rounded-lg hover:bg-gray-100 transition">
-          <img src="https://www.google.com/favicon.ico" alt="Google Logo" className="h-5 w-5" />
+          <img
+            src="https://www.google.com/favicon.ico"
+            alt="Google Logo"
+            className="h-5 w-5"
+          />
           <span className="text-gray-700">Log in with Google</span>
         </button>
 
         {/* Signup Link */}
         <p className="text-center text-sm text-gray-600 mt-4">
           Don’t have an account?{" "}
-          <button onClick={() => router.push("/register")} className="text-[#6437A0] hover:underline">
+          <button
+            onClick={() => router.push("/register")}
+            className="text-[#6437A0] hover:underline"
+          >
             Create Account
-        </button>
-
+          </button>
         </p>
       </div>
     </div>
