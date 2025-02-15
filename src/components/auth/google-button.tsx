@@ -5,9 +5,14 @@ interface GoogleProps {
 }
 
 export function GoogleButton({ isLoading }: GoogleProps) {
+  const handleGoogleLogin = () => {
+    const GOOGLE_LOGIN_URL = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login`;
+    window.location.href = GOOGLE_LOGIN_URL; 
+  };
   return (
     <button
       type='button'
+      onClick={handleGoogleLogin}
       className='flex w-full items-center justify-center space-x-3 border py-3 rounded-lg hover:bg-gray-100 transition disabled:opacity-50'
       disabled={isLoading}
     >
