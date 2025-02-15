@@ -1,11 +1,11 @@
 "use client";
 import React, { useState } from "react";
 import Navigation from "../components/navigation";
-import FormHeader from "./FormHeader";
-import TitleDescription from "./TitleDescription";
-import TagsMaterials from "./TagsMaterials";
-import MediaUpload from "./MediaUpload";
-import FormActions from "./FormActions";
+import FormHeader from "./form-header";
+import TitleDescription from "./title-description";
+import TagsMaterials from "./tag-materials";
+import MediaUpload from "./media-upload";
+import FormActions from "./form-action";
 
 const UploadRequest: React.FC = () => {
   // Overall state
@@ -61,13 +61,15 @@ const UploadRequest: React.FC = () => {
       <Navigation />
       <div className="pt-16 max-w-3xl mx-auto p-8 bg-white shadow-xl rounded-2xl mt-6 border border-gray-200">      <FormHeader />
       <TitleDescription />
-      <TagsMaterials
-        selectedTags={selectedTags}
-        toggleTag={toggleTag}
-        materials={materials}
-        addMaterial={addMaterial}
-        removeMaterial={removeMaterial}
+      <TagsMaterials 
+        selectedTags={selectedTags} 
+        toggleTag={toggleTag} 
+        materials={materials} 
+        setMaterials={setMaterials}  
+        addMaterial={addMaterial} 
+        removeMaterial={removeMaterial} 
       />
+
       <MediaUpload
         uploadType={uploadType}
         setUploadType={setUploadType}

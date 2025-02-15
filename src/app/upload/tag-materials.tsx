@@ -1,10 +1,17 @@
 import React from "react";
 import { FaTrash } from "react-icons/fa";
 
+interface Material {
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
 interface TagsMaterialsProps {
   selectedTags: string[];
   toggleTag: (tag: string) => void;
-  materials: { name: string; quantity: number; unit: string }[];
+  materials: Material[];
+  setMaterials: React.Dispatch<React.SetStateAction<Material[]>>;
   addMaterial: () => void;
   removeMaterial: (index: number) => void;
 }
@@ -13,10 +20,11 @@ const TagsMaterials: React.FC<TagsMaterialsProps> = ({
   selectedTags,
   toggleTag,
   materials,
+  setMaterials,
   addMaterial,
   removeMaterial,
 }) => {
-  const tags = ["Kids & Families", "All Age", "DIY Lover", "Trending"];
+  const tags: string[] = ["Kids & Families", "All Age", "DIY Lover", "Trending"];
 
   return (
     <>
@@ -51,20 +59,38 @@ const TagsMaterials: React.FC<TagsMaterialsProps> = ({
           Add Material +
         </button>
       </div>
-      {materials.map((material, index) => (
+      {materials.map(({ name, quantity, unit }, index) => (
         <div key={index} className="flex items-center gap-3 mb-2">
           <input
             className="border p-2 w-1/5 rounded-lg bg-gray-100"
             type="text"
-            value={material.name}
+            value={name}
             placeholder="Material"
+            onChange={(e) => {
+              const updatedMaterials = [...materials];
+              updatedMaterials[index].name = e.target.value;
+              setMaterials(updatedMaterials);
+            }}
           />
           <input
             className="border p-2 w-1/6 rounded-lg bg-gray-100"
             type="number"
-            value={material.quantity}
+            value={quantity}
+            onChange={(e) => {
+              const updatedMaterials = [...materials];
+              updatedMaterials[index].quantity = Number(e.target.value);
+              setMaterials(updatedMaterials);
+            }}
           />
-          <select className="border p-2 w-1/6 rounded-lg bg-gray-100">
+          <select
+            className="border p-2 w-1/6 rounded-lg bg-gray-100"
+            value={unit}
+            onChange={(e) => {
+              const updatedMaterials = [...materials];
+              updatedMaterials[index].unit = e.target.value;
+              setMaterials(updatedMaterials);
+            }}
+          >
             <option>Unit</option>
             <option>Pair</option>
           </select>
