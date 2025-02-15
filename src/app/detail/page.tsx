@@ -4,6 +4,8 @@ import React from "react";
 import Image from "next/image";
 import { FaHeart, FaBookmark, FaShareAlt } from "react-icons/fa";
 import Navigation from "../components/navigation";
+
+
 import "../globals.css";
 
 const DetailPage = () => {
@@ -14,7 +16,7 @@ const DetailPage = () => {
         {/* Left: Image Section */}
         <div className="flex-1">
           <Image
-            src="/grid/img1.png"
+            src="/grid/img4.png"
             alt="DIY Art"
             width={600}
             height={800}
@@ -27,10 +29,10 @@ const DetailPage = () => {
           {/* Creator Info */}
           <div className="flex items-center gap-3">
             <Image
-              src="/img1.png" 
+              src="/grid/img1.png" 
               alt="Creator"
-              width={40}
-              height={40}
+              width={30}
+              height={30}
               className="w-10 h-10 rounded-full object-cover"
             />
             <p className="text-lg font-semibold">Mr. Cat</p>
