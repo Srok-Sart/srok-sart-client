@@ -1,26 +1,14 @@
-const API_URL = "http://localhost:8000";
+import {
+  type RegisterRequest,
+  type RegisterResponse,
+} from "@/interfaces/register";
+import { fetcher } from "./base";
 
-export const registerUser = async (userData: {
-  username: string;
-  email: string;
-  password: string;
-}) => {
-  try {
-    const response = await fetch(`${API_URL}/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Registration failed");
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+export const registerUser = async (
+  userData: RegisterRequest
+): Promise<RegisterResponse> => {
+  return fetcher<RegisterResponse>("/users", {
+    method: "POST",
+    body: JSON.stringify(userData),
+  });
 };
