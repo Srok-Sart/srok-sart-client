@@ -1,4 +1,4 @@
-import { fetcher } from "@/api/base";
+import { fetcher } from "@/api/fetcher";
 import { Post } from "@/interfaces/post";
 
 interface PageProps {

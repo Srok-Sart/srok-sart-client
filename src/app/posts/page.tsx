@@ -1,5 +1,5 @@
-import { fetcher } from "@/api/base";
-import { Post } from "../interfaces/post";
+import { fetcher } from "@/api/fetcher";
+import { Post } from "../../interfaces/post";
 
 export default async function Page() {
   const posts: Post[] = await fetcher("/posts");

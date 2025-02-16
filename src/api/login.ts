@@ -1,5 +1,5 @@
-import { type LoginRequest, type LoginResponse } from "@/interfaces/login";
-import { fetcher } from "./base";
+import { LoginRequest, LoginResponse } from "@/interfaces/login";
+import { fetcher } from "./fetcher";
 
 export const loginUser = async (
   userData: LoginRequest
