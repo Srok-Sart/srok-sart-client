@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { FaSlidersH } from "react-icons/fa"; // Updated to match the icon in the image
 
 interface FilterProps {
   onSelect: (category: string) => void;
