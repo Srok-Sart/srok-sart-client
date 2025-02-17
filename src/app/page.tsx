@@ -34,8 +34,8 @@ const Home = () => {
 
       <div className="pt-16 max-w-7xl mx-auto px-4">
         {/* Filter Section with Icon */}
-        <div className="flex items-center gap-2">
-          <IoFilterOutline className="text-gray-600 cursor-pointer text-xl" />
+        <div className="flex items-center gap-2 ">
+
           <Filter onSelect={setSelectedCategory} />
         </div>
 
