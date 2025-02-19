@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Post } from "../../../interfaces/post";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa"; // Navigation icons
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import Image from "next/image";
 
 interface ViewPostProps {
@@ -12,12 +12,12 @@ interface ViewPostProps {
 const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
   const [post, setPost] = useState<Post | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0); // Start at 0 to show the thumbnail first
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/posts/${id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`);
         if (!res.ok) throw new Error(`Failed to fetch post: ${res.statusText}`);
         const data = await res.json();
         setPost(data);
@@ -30,14 +30,12 @@ const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
   }, [id]);
 
   const handlePrevImage = () => {
-    // Prevent going back past the first image
     if (currentImageIndex > 0) {
       setCurrentImageIndex((prevIndex) => prevIndex - 1);
     }
   };
 
   const handleNextImage = () => {
-    // Prevent going past the last image
     if (currentImageIndex < post!.imageUrls.length) {
       setCurrentImageIndex((prevIndex) => prevIndex + 1);
     }
@@ -68,7 +66,7 @@ const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
         {/* Show the thumbnail first */}
         {post.thumbnailUrl && currentImageIndex === 0 && (
           <Image
-            src={`http://localhost:8000${post.thumbnailUrl}`}
+            src={`${process.env.NEXT_PUBLIC_API_URL}${post.thumbnailUrl}`}
             alt="Thumbnail"
             layout="fill"
             objectFit="contain"
@@ -79,7 +77,7 @@ const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
         {/* Show the images after the thumbnail */}
         {post.imageUrls && currentImageIndex > 0 && currentImageIndex <= post.imageUrls.length && (
           <Image
-            src={`http://localhost:8000${post.imageUrls[currentImageIndex - 1]}`} // Adjust for 0-indexed imageUrls array
+            src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[currentImageIndex - 1]}`}
             alt="Post Image"
             layout="fill"
             objectFit="contain"
@@ -90,7 +88,7 @@ const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
         <button
           className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
           onClick={handlePrevImage}
-          disabled={currentImageIndex === 0} // Disable when on the thumbnail
+          disabled={currentImageIndex === 0}
         >
           <FaArrowLeft />
         </button>
@@ -99,7 +97,7 @@ const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
         <button
           className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
           onClick={handleNextImage}
-          disabled={currentImageIndex === post.imageUrls.length} // Disable when on the last image
+          disabled={currentImageIndex === post.imageUrls.length}
         >
           <FaArrowRight />
         </button>
