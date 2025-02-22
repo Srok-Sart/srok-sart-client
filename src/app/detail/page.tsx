@@ -4,11 +4,21 @@ import React from "react";
 import Image from "next/image";
 import { FaHeart, FaBookmark, FaShareAlt } from "react-icons/fa";
 import Navigation from "../components/navigation";
-
-
 import "../globals.css";
 
-const DetailPage = () => {
+interface Post {
+  title: string;
+  postType?: string;
+  description?: string;
+  imageUrls: string[];
+  thumbnailUrl: string;
+}
+
+interface DetailPageProps {
+  post: Post;
+}
+
+const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
   return (
     <>
       <Navigation />
@@ -16,8 +26,8 @@ const DetailPage = () => {
         {/* Left: Image Section */}
         <div className="flex-1">
           <Image
-            src="/grid/img4.png"
-            alt="DIY Art"
+            src={process.env.NEXT_PUBLIC_API_URL + post.thumbnailUrl} 
+            alt={post.title}
             width={600}
             height={800}
             className="w-full rounded-lg object-cover"
@@ -29,7 +39,7 @@ const DetailPage = () => {
           {/* Creator Info */}
           <div className="flex items-center gap-3">
             <Image
-              src="/grid/img1.png" 
+              src="/grid/img1.png" // Replace with actual creator image URL if available
               alt="Creator"
               width={30}
               height={30}
@@ -38,12 +48,10 @@ const DetailPage = () => {
             <p className="text-lg font-semibold">Mr. Cat</p>
           </div>
 
+          <h5 className="text-gray-900">{post.title}</h5>
+
           {/* Post Description */}
-          <p className="text-gray-700">
-            This DIY art piece is made using recycled materials. It showcases the
-            perfect blend of creativity and sustainability, making it a great
-            project for art enthusiasts.
-          </p>
+          <p className="text-gray-700">{post.description}</p>
 
           {/* Buttons */}
           <div className="flex items-center gap-4">

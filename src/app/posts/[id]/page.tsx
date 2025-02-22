@@ -1,5 +1,6 @@
 import { fetcher } from "@/api/base";
-import { Post } from "@/interfaces/post";
+import { Post } from "../../interfaces/post";
+import DetailPage from "@/app/detail/page";
 
 interface PageProps {
   params: {
@@ -10,7 +11,7 @@ interface PageProps {
 const Page = async ({ params }: PageProps) => {
   const post: Post = await fetcher(`/posts/${params.id}`);
 
-  return <div>{post.title}</div>;
+  return <DetailPage post={post} />;
 };
 
 export default Page;
