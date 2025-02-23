@@ -1,7 +1,4 @@
-import {
-  type RegisterRequest,
-  type RegisterResponse,
-} from "@/interfaces/register";
+import { type RegisterRequest, type RegisterResponse } from "@/app/interfaces/register";
 import { fetcher } from "./base";
 
 export const registerUser = async (

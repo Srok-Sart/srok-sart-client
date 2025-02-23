@@ -1,6 +1,6 @@
 import { fetcher } from "@/api/base";
-import { Post } from "../../interfaces/post";
 import DetailPage from "@/app/detail/page";
+import { type Post } from "@/app/interfaces/post";
 
 interface PageProps {
   params: {

@@ -1,12 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { fetcher } from "@/api/base";
+import React, { useEffect, useState } from "react";
+import { Post } from "../../../interfaces/post";
+import AddNewPost from "./add-new-post";
+import EditPost from "./edit-post";
 import { HeaderSection } from "./subcomponents/header-section";
 import { PostsTable } from "./subcomponents/posts-table";
-import EditPost from "./edit-post";
 import ViewPost from "./view-post";
-import AddNewPost from "./add-new-post";
-import { Post } from "../../../interfaces/post";
-import { fetcher } from "@/api/base";
 
 const Posts = ({ activeTab }: { activeTab: string }) => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -44,11 +44,14 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
 
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
       if (!res.ok) throw new Error(`Failed to delete post: ${res.statusText}`);
-      setPosts(posts.filter(post => post.id !== id));
+      setPosts(posts.filter((post) => post.id !== id));
     } catch (error) {
       console.error("Error deleting post:", error);
     }
@@ -70,22 +73,27 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
 
   const handleUpdatePost = (updatedPost: Post) => {
     setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === updatedPost.id ? updatedPost : post
-      )
+      prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post))
     );
   };
 
-  const handleApproveOrReject = async (id: number, status: "PUBLISH" | "REJECTED") => {
+  const handleApproveOrReject = async (
+    id: number,
+    status: "PUBLISH" | "REJECTED"
+  ) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ postStatus: status }),
-      });
-      if (!res.ok) throw new Error(`Failed to update post status: ${res.statusText}`);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ postStatus: status }),
+        }
+      );
+      if (!res.ok)
+        throw new Error(`Failed to update post status: ${res.statusText}`);
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post.id === id ? { ...post, postStatus: status } : post
@@ -96,23 +104,36 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
     }
   };
 
-  const filteredPosts = posts.filter((post) => {
-    if (activeTab === "posts") {
-      return post.postStatus === "PUBLISH";
-    } else if (activeTab === "postsRequest") {
-      return post.postStatus === "PENDING";
-    }
-    return false;
-  }).filter((post) =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPosts = posts
+    .filter((post) => {
+      if (activeTab === "posts") {
+        return post.postStatus === "PUBLISH";
+      } else if (activeTab === "postsRequest") {
+        return post.postStatus === "PENDING";
+      }
+      return false;
+    })
+    .filter((post) =>
+      post.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   if (showAddNewPost) {
-    return <AddNewPost setShowAddNewPost={setShowAddNewPost} onAddNewPost={handleAddNewPost} />;
+    return (
+      <AddNewPost
+        setShowAddNewPost={setShowAddNewPost}
+        onAddNewPost={handleAddNewPost}
+      />
+    );
   }
 
   if (showEditPost && editPostId !== null) {
-    return <EditPost setShowEditPost={setShowEditPost} onUpdatePost={handleUpdatePost} id={editPostId} />;
+    return (
+      <EditPost
+        setShowEditPost={setShowEditPost}
+        onUpdatePost={handleUpdatePost}
+        id={editPostId}
+      />
+    );
   }
 
   if (showViewPost && viewPostId !== null) {
@@ -120,7 +141,7 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
   }
 
   return (
-    <div className="p-4">
+    <div className='p-4'>
       <HeaderSection
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -136,7 +157,9 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onView={handleView}
-          onApproveOrReject={activeTab === "postsRequest" ? handleApproveOrReject : undefined}
+          onApproveOrReject={
+            activeTab === "postsRequest" ? handleApproveOrReject : undefined
+          }
           isPostsRequestTab={activeTab === "postsRequest"}
         />
       )}
