@@ -5,7 +5,6 @@ import { SubmitButton } from "@/app/register/components/register-button";
 import { GoogleButton } from "@/components/auth/google-button";
 import { Divider } from "@/components/common/divider";
 import { ErrorMessage } from "@/components/common/error-message";
-import { type LoginResponse } from "@/interfaces/login";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { CreateAccount, ForgotPassword } from "./login-button";
@@ -37,19 +36,13 @@ export default function LoginForm() {
 
     try {
       const response = await loginUser(formData);
-      handleLoginSuccess(response);
+      console.log("Login success", response);
+      router.push("/");
     } catch (error) {
       handleLoginError(error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleLoginSuccess = (data: LoginResponse) => {
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
-    localStorage.setItem("userId", data.id.toString());
-    router.push("/");
   };
 
   const handleLoginError = (error: unknown) => {
