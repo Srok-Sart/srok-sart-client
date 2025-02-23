@@ -9,6 +9,7 @@ export interface Post {
   postType?: PostType;
   imageUrls: string[];
   thumbnailUrl: string;
+  postStatus: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -8,7 +8,7 @@ import AddNewPost from "./add-new-post";
 import { Post } from "../../../interfaces/post";
 import { fetcher } from "@/api/base";
 
-const Posts = () => {
+const Posts = ({ activeTab }: { activeTab: string }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("ID Ascending");
@@ -76,7 +76,34 @@ const Posts = () => {
     );
   };
 
-  const filteredPosts = posts.filter((post) =>
+  const handleApproveOrReject = async (id: number, status: "PUBLISH" | "REJECTED") => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ postStatus: status }),
+      });
+      if (!res.ok) throw new Error(`Failed to update post status: ${res.statusText}`);
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === id ? { ...post, postStatus: status } : post
+        )
+      );
+    } catch (error) {
+      console.error("Error updating post status:", error);
+    }
+  };
+
+  const filteredPosts = posts.filter((post) => {
+    if (activeTab === "posts") {
+      return post.postStatus === "PUBLISH";
+    } else if (activeTab === "postsRequest") {
+      return post.postStatus === "PENDING";
+    }
+    return false;
+  }).filter((post) =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -101,7 +128,7 @@ const Posts = () => {
         handleSortChange={handleSortChange}
         setShowAddNewPost={setShowAddNewPost}
       />
-      {posts.length === 0 ? (
+      {filteredPosts.length === 0 ? (
         <p>No posts available.</p>
       ) : (
         <PostsTable
@@ -109,6 +136,8 @@ const Posts = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onView={handleView}
+          onApproveOrReject={activeTab === "postsRequest" ? handleApproveOrReject : undefined}
+          isPostsRequestTab={activeTab === "postsRequest"}
         />
       )}
     </div>
