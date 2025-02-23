@@ -5,7 +5,7 @@ export async function fetcher<T>(
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const defaultOptions: RequestInit = {
     headers: {
-      "Content-Type": "application/json",
+      // "Content-Type": "application/json",
       ...options.headers,
     },
     cache: "no-store",

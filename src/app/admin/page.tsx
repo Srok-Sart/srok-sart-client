@@ -50,8 +50,8 @@ const AdminPage = () => {
           <h1 className="text-2xl font-bold capitalize">{activeTab.replace(/([A-Z])/g, ' $1')}</h1>
         </header>
         <section className="mt-4">
-          {activeTab === "posts" && <Posts />}
-          {activeTab === "postsRequest" && <h1>Posts Request</h1>}
+          {activeTab === "posts" && <Posts activeTab={activeTab} />}
+          {activeTab === "postsRequest" && <Posts activeTab={activeTab} />}
         </section>
       </main>
     </div>
