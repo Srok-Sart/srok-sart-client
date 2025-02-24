@@ -1,20 +1,21 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
 
-export async function fetcher<T>(
+// Client-side fetcher
+export async function clientFetcher<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  const cookieStore = cookies();
-  const token = (await cookieStore).get("accessToken")?.value;
+
+  // Don't set Content-Type for FormData
+  const isFormData = options.body instanceof FormData;
 
   const defaultOptions: RequestInit = {
     headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...options.headers,
     },
+    credentials: "include", // This will include cookies in the request
     cache: "no-store",
     ...options,
   };
@@ -22,7 +23,8 @@ export async function fetcher<T>(
   const response = await fetch(`${baseUrl}${endpoint}`, defaultOptions);
 
   if (response.status === 401 || response.status === 403) {
-    redirect("/login");
+    window.location.href = "/login";
+    throw new Error("Authentication required");
   }
 
   if (!response.ok) {
