@@ -12,15 +12,15 @@ const Navigation = () => {
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Home", href: "/home" },
-    { name: "Earth", href: "/earth" },
+    { name: "Home", href: "/" },
+    { name: "Data", href: "/data" },
     { name: "Upload", href: "/upload" },
     { name: "Bookmark", href: "/bookmark" },
   ];
 
   const mobileNavItems = [
     { icon: <FaHome size={22} />, href: "/home" },
-    { icon: <FaChartBar size={22} />, href: "/stats" },
+    { icon: <FaChartBar size={22} />, href: "/data" },
     { icon: <FaPlus size={22} />, href: "/upload" },
     { icon: <FaBookmark size={22} />, href: "/bookmark" },
     { icon: <FaUser size={22} />, href: "/profile" }, // Profile icon now navigates to profile page
