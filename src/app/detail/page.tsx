@@ -26,7 +26,7 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
         {/* Left: Image Section */}
         <div className="flex-1">
           <Image
-            src={process.env.NEXT_PUBLIC_API_URL + post.thumbnailUrl} 
+            src={process.env.NEXT_PUBLIC_API_URL + post.imageUrls} 
             alt={post.title}
             width={600}
             height={800}
