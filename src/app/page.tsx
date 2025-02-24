@@ -8,6 +8,8 @@ const Home = async () => {
 
   const posts: Post[] = await fetcher("/posts");
 
+  const publishedPosts = posts.filter((post) => post.postStatus === "PUBLISH");
+
   // Filtered images based on selected category
   // const filteredImages =
   //   selectedCategory === "All"
@@ -26,7 +28,7 @@ const Home = async () => {
 
         {/* Masonry Grid Layout */}
         <div className='columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4'>
-          {posts.map((post, index) => (
+          {publishedPosts.map((post, index) => (
             <CardDisplay key={index} post={post} />
           ))}
         </div>

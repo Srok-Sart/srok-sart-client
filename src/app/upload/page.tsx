@@ -6,8 +6,15 @@ import TitleDescription from "./title-description";
 import TagsMaterials from "./tag-materials";
 import MediaUpload from "./media-upload";
 import FormActions from "./form-action";
+import PostDifficulty from "./post-difficulty";
+import { fetcher } from "@/api/base";
+import { Post } from "../interfaces/post";
+import { useRouter } from "next/navigation";
 
 const UploadRequest: React.FC = () => {
+
+  const router = useRouter();
+
   // Overall state
   const [uploadType, setUploadType] = useState<"video" | "photo">("video");
   const [materials, setMaterials] = useState<{ name: string; quantity: number; unit: string }[]>([
@@ -17,6 +24,9 @@ const UploadRequest: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">("EASY");
+  const [title, setTitle] = useState<string>(""); 
+  const [description, setDescription] = useState<string>("");
 
   // Handlers
   const toggleTag = (tag: string) => {
@@ -52,23 +62,55 @@ const UploadRequest: React.FC = () => {
     console.log("Cancelled");
   };
 
-  const handleConfirm = () => {
-    console.log("Confirmed");
+  const handleConfirm = async () => {
+    const formData = new FormData();
+    
+    // Append form data
+    formData.append("title", title);
+    formData.append("postType", uploadType === "photo" ? "IMAGE" : "VIDEO");
+    formData.append("postDifficulty", difficulty);
+    formData.append("description", description);
+    
+    // Append uploaded files
+    if (uploadedFiles.length > 0) {
+      uploadedFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+    }
+    
+    if (thumbnail) {
+      formData.append("thumbnail", thumbnail);
+    }
+
+    try {
+      // Send the form data to the API
+      const response = await fetcher("/posts", {
+        method: "POST",
+        body: formData,
+      });
+
+      console.log("Success:", response);
+      router.push("/");
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
 
   return (
     <>
       <Navigation />
       <div className="pt-16 max-w-3xl mx-auto p-8 bg-white shadow-xl rounded-2xl mt-6 border border-gray-200">      <FormHeader />
-      <TitleDescription />
-      <TagsMaterials 
+      <TitleDescription setTitle={setTitle} setDescription={setDescription} />
+      {/* <TagsMaterials 
         selectedTags={selectedTags} 
         toggleTag={toggleTag} 
         materials={materials} 
         setMaterials={setMaterials}  
         addMaterial={addMaterial} 
         removeMaterial={removeMaterial} 
-      />
+      /> */}
+
+      <PostDifficulty difficulty={difficulty} setDifficulty={setDifficulty} />
 
       <MediaUpload
         uploadType={uploadType}
