@@ -1,10 +1,10 @@
-import { PostType } from "@/enums/post-type.enum";
-import { useFileUpload } from "@/hooks/use-file-upload";
-import { usePostSubmission } from "@/hooks/use-post-submission";
-import { Post } from "../../../interfaces/post";
-import { FileUploadSection } from "./subcomponents/file-upload-section";
-import { ImagePreview } from "./subcomponents/image-preview";
-import { PostFormFields } from "./subcomponents/post-form";
+import { Post } from '@/app/interfaces/post';
+import { PostType } from '@/enums/post-type.enum';
+import { PostFormFields } from './subcomponents/post-form';
+import { FileUploadSection } from './subcomponents/file-upload-section';
+import { ImagePreview } from './subcomponents/image-preview';
+import { useFileUpload } from '@/hooks/use-file-upload';	
+import { usePostSubmission } from '@/hooks/use-post-submission';
 
 type AddNewPostProps = {
   setShowAddNewPost: (show: boolean) => void;

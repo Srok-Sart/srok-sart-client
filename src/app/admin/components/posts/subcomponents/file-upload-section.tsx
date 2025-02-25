@@ -1,4 +1,4 @@
-import { FileOrUrl } from "@/interfaces/post";
+import { FileOrUrl } from "@/app/interfaces/post";
 import { FilePreview } from "./file-upload-preview";
 
 interface FileUploadSectionProps {

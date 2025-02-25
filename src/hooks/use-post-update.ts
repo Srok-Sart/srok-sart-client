@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Post } from '../app/interfaces/post';
+import { Post } from "@/app/interfaces/post";
 
 interface UsePostUpdateProps {
   onUpdatePost: (post: Post) => void;
@@ -21,6 +21,10 @@ export const usePostUpdate = ({ onUpdatePost, setShowEditPost }: UsePostUpdatePr
 
     try {
       const formData = new FormData();
+      formData.append("title", post.title);
+      formData.append("description", post.description || "");
+      formData.append("postDifficulty", post.postDifficulty);
+      formData.append("postType", post.postType);
       
       if (newThumbnail) {
         formData.append("thumbnail", newThumbnail);
@@ -28,44 +32,17 @@ export const usePostUpdate = ({ onUpdatePost, setShowEditPost }: UsePostUpdatePr
       
       newImages.forEach((image) => formData.append("images", image));
 
-      let uploadData: { thumbnailUrl?: string; imageUrls?: string[] } = {};
-
-      if (newThumbnail || newImages.length > 0) {
-        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/uploads`, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!uploadRes.ok) throw new Error("Failed to upload files");
-        uploadData = await uploadRes.json();
-      }
-
-      const thumbnailUrl = uploadData.thumbnailUrl || post.thumbnailUrl;
-      const imageUrls = [...post.imageUrls, ...(uploadData.imageUrls || [])];
-
-      const updatedPost = {
-        title: post.title,
-        description: post.description || "",
-        postDifficulty: post.postDifficulty,
-        postType: post.postType,
-        thumbnailUrl,
-        imageUrls
-      };
-
-      // console.log("Updated post data:", updatedPost);
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedPost),
+        body: formData,
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
+      if (!response.ok) {
+        const errorText = await response.text();
         throw new Error(`Failed to update post: ${errorText}`);
       }
 
-      const updatedPostData = await res.json();
+      const updatedPostData = await response.json();
       onUpdatePost(updatedPostData);
       setShowEditPost(false);
     } catch (error) {
