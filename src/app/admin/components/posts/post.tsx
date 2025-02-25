@@ -1,5 +1,5 @@
 "use client";
-import { fetcher } from "@/api/base";
+import { clientFetcher } from "@/api/client-fetcher";
 import React, { useEffect, useState } from "react";
 import { Post } from "../../../interfaces/post";
 import AddNewPost from "./add-new-post";
@@ -21,7 +21,7 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await fetcher<Post[]>("/posts");
+        const data = await clientFetcher("/posts");
         if (Array.isArray(data)) {
           const sortedPosts = data.sort((a: Post, b: Post) => a.id - b.id);
           setPosts(sortedPosts);
