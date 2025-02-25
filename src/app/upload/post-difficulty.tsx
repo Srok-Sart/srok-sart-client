@@ -1,28 +1,65 @@
 import React from "react";
 
-interface PostDifficultyProps {
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  setDifficulty: React.Dispatch<React.SetStateAction<"EASY" | "MEDIUM" | "HARD">>;
+// Import the enum we defined earlier
+enum PostDifficulty {
+  EASY = "EASY",
+  MEDIUM = "MEDIUM",
+  HARD = "HARD",
 }
 
-const PostDifficulty: React.FC<PostDifficultyProps> = ({ difficulty, setDifficulty }) => {
+interface PostDifficultyProps {
+  difficulty: PostDifficulty;
+  setDifficulty: React.Dispatch<React.SetStateAction<PostDifficulty>>;
+}
+
+const PostDifficultySelector: React.FC<PostDifficultyProps> = ({
+  difficulty,
+  setDifficulty,
+}) => {
+  // Use ES6 object to map difficulties to display names
+  const difficultyLabels = {
+    [PostDifficulty.EASY]: "Easy",
+    [PostDifficulty.MEDIUM]: "Medium",
+    [PostDifficulty.HARD]: "Hard",
+  };
+
+  // Use ES6 Object.entries to create options
+  const difficultyOptions = Object.entries(difficultyLabels).map(
+    ([value, label]) => (
+      <option key={value} value={value}>
+        {label}
+      </option>
+    )
+  );
+
+  // Use arrow function for handler
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setDifficulty(e.target.value as PostDifficulty);
+  };
+
   return (
-    <div className="mb-4">
-      <label htmlFor="difficulty" className="block text-gray-800 font-medium">
-        Post Difficulty
+    <div className='mb-4'>
+      <label
+        htmlFor='difficulty'
+        className='block text-gray-800 font-medium mb-2'
+      >
+        Difficulty Level
       </label>
       <select
-        id="difficulty"
+        id='difficulty'
         value={difficulty}
-        onChange={(e) => setDifficulty(e.target.value as "EASY" | "MEDIUM" | "HARD")}
-        className="p-3 mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500 focus:border-blue-500"
+        onChange={handleChange}
+        className='p-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-primary focus:border-primary'
       >
-        <option value="EASY">EASY</option>
-        <option value="MEDIUM">MEDIUM</option>
-        <option value="HARD">HARD</option>
+        {difficultyOptions}
       </select>
+      <p className='mt-1 text-sm text-gray-500'>
+        {difficulty === PostDifficulty.EASY && "Perfect for beginners"}
+        {difficulty === PostDifficulty.MEDIUM && "Some experience required"}
+        {difficulty === PostDifficulty.HARD && "Advanced techniques needed"}
+      </p>
     </div>
   );
 };
 
-export default PostDifficulty;
+export default PostDifficultySelector;
