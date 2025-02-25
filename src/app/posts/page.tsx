@@ -1,8 +1,8 @@
-import { fetcher } from "@/api/base";
+import { clientFetcher } from "@/api/client-fetcher";
 import { Post } from "../interfaces/post";
 
 export default async function Page() {
-  const posts: Post[] = await fetcher("/posts");
+  const posts: Post[] = await clientFetcher("/posts");
 
   return (
     <ul>

@@ -7,45 +7,40 @@ import Navigation from "../components/navigation";
 import FormActions from "./form-action";
 import FormHeader from "./form-header";
 import MediaUpload from "./media-upload";
-import PostDifficulty from "./post-difficulty";
+import PostDifficultySelector from "./post-difficulty";
 import TitleDescription from "./title-description";
 
-const UploadRequest: React.FC = () => {
+// Define enums to match backend
+enum PostType {
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+}
+
+enum PostDifficulty {
+  EASY = "EASY",
+  MEDIUM = "MEDIUM",
+  HARD = "HARD",
+}
+
+const UploadRequest = () => {
   const router = useRouter();
 
   // Overall state
-  const [uploadType, setUploadType] = useState<"video" | "photo">("video");
-  const [materials, setMaterials] = useState<
-    { name: string; quantity: number; unit: string }[]
-  >([
-    { name: "Bottle", quantity: 1, unit: "Unit" },
-    { name: "Chopstick", quantity: 2, unit: "Pair" },
-  ]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [uploadType, setUploadType] = useState<"video" | "photo">("photo");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
-  const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">(
-    "EASY"
+  const [difficulty, setDifficulty] = useState<PostDifficulty>(
+    PostDifficulty.EASY
   );
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
+  const [estimatedTime, setEstimatedTime] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   // Handlers
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const addMaterial = () => {
-    setMaterials([...materials, { name: "", quantity: 1, unit: "Unit" }]);
-  };
-
-  const removeMaterial = (index: number) => {
-    setMaterials(materials.filter((_, i) => i !== index));
-  };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
@@ -66,39 +61,65 @@ const UploadRequest: React.FC = () => {
   };
 
   const handleCancel = () => {
-    console.log("Cancelled");
     router.back();
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!title.trim()) {
+      errors.title = "Title is required";
+    }
+
+    if (!thumbnail) {
+      errors.thumbnail = "Thumbnail is required";
+    }
+
+    if (uploadedFiles.length === 0) {
+      errors.contents = "At least one content file is required";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleConfirm = async () => {
     if (isSubmitting) return;
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
 
     const formData = new FormData();
 
-    // Append form data
+    // Append form data according to DTO
     formData.append("title", title);
-    formData.append("postType", uploadType === "photo" ? "IMAGE" : "VIDEO");
+    formData.append(
+      "postType",
+      uploadType === "photo" ? PostType.IMAGE : PostType.VIDEO
+    );
     formData.append("postDifficulty", difficulty);
-    formData.append("description", description);
 
-    // Append uploaded files
-    if (uploadedFiles.length > 0) {
-      uploadedFiles.forEach((file) => {
-        formData.append("images", file);
-      });
+    if (description) {
+      formData.append("description", description);
     }
+
+    if (estimatedTime) {
+      formData.append("estimatedTime", estimatedTime);
+    }
+
+    // Append files with correct field names
+    uploadedFiles.forEach((file) => {
+      formData.append("contents", file);
+    });
 
     if (thumbnail) {
       formData.append("thumbnail", thumbnail);
     }
 
     try {
-      // Send the form data to the API - using clientFetcher instead of fetcher
       const response = await clientFetcher("/posts", {
         method: "POST",
         body: formData,
-        headers: {}, // Remove Content-Type to let browser set it with boundary for FormData
       });
 
       console.log("Success:", response);
@@ -114,18 +135,34 @@ const UploadRequest: React.FC = () => {
     <>
       <Navigation />
       <div className='pt-16 max-w-3xl mx-auto p-8 bg-white shadow-xl rounded-2xl mt-6 border border-gray-200'>
-        {" "}
         <FormHeader />
-        <TitleDescription setTitle={setTitle} setDescription={setDescription} />
-        {/* <TagsMaterials
-        selectedTags={selectedTags}
-        toggleTag={toggleTag}
-        materials={materials}
-        setMaterials={setMaterials}
-        addMaterial={addMaterial}
-        removeMaterial={removeMaterial}
-      /> */}
-        <PostDifficulty difficulty={difficulty} setDifficulty={setDifficulty} />
+
+        <TitleDescription
+          title={title}
+          description={description}
+          setTitle={setTitle}
+          setDescription={setDescription}
+          error={validationErrors.title}
+        />
+
+        <div className='mb-4'>
+          <label className='block text-gray-700 font-semibold mb-2'>
+            Estimated Time (optional)
+          </label>
+          <input
+            type='text'
+            className='w-full p-2 border border-gray-300 rounded'
+            value={estimatedTime}
+            onChange={(e) => setEstimatedTime(e.target.value)}
+            placeholder='e.g., 15 minutes'
+          />
+        </div>
+
+        <PostDifficultySelector
+          difficulty={difficulty}
+          setDifficulty={setDifficulty}
+        />
+
         <MediaUpload
           uploadType={uploadType}
           setUploadType={setUploadType}
@@ -135,7 +172,12 @@ const UploadRequest: React.FC = () => {
           thumbnail={thumbnail}
           setUploadedFiles={setUploadedFiles}
           setThumbnail={setThumbnail}
+          errors={{
+            thumbnail: validationErrors.thumbnail,
+            contents: validationErrors.contents,
+          }}
         />
+
         <FormActions
           handleCancel={handleCancel}
           handleConfirm={handleConfirm}

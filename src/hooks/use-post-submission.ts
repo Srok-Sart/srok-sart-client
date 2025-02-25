@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { PostDifficulty } from '@/enums/post-difficulty.enum';
 import { PostType } from '@/enums/post-type.enum';
-import { Post } from '../app/interfaces/post';
-import { FileOrUrl } from '../app/interfaces/post';
+import { FileOrUrl, Post } from '@/app/interfaces/post';
 
 interface PostFormState {
   title: string;
@@ -21,7 +20,7 @@ interface UsePostSubmissionProps {
 
 interface PostPayload {
   title: string;
-  description: string;
+  description?: string;
   postDifficulty: PostDifficulty;
   postType: PostType;
   imageUrls: string[];
@@ -52,10 +51,10 @@ export const usePostSubmission = ({
   };
 
   const validateForm = () => {
-    const { title, description, difficultyLevel, type } = formState;
+    const { title, difficultyLevel, type } = formState;
     
-    if (!title || !description || !difficultyLevel || !type) {
-      setError('All fields are required.');
+    if (!title || !difficultyLevel || !type) {
+      setError('Title, difficulty level, and type are required.');
       return false;
     }
 
@@ -73,32 +72,20 @@ export const usePostSubmission = ({
     return true;
   };
 
-  const uploadFiles = async () => {
+  const createPost = async (payload: PostPayload, images: FileOrUrl[], thumbnail: FileOrUrl | null) => {
     const formData = new FormData();
+    formData.append('title', payload.title);
+    formData.append('description', payload.description || '');
+    formData.append('postDifficulty', payload.postDifficulty);
+    formData.append('postType', payload.postType);
     images.forEach(image => formData.append('images', image));
     if (thumbnail) {
       formData.append('thumbnail', thumbnail);
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/uploads`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload files');
-    }
-
-    return response.json();
-  };
-
-  const createPost = async (payload: PostPayload) => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -129,25 +116,16 @@ export const usePostSubmission = ({
     setError(null);
 
     try {
-      let imageUrls: string[] = [];
-      let thumbnailUrl = '';
-
-      if (formState.type === PostType.IMAGE) {
-        const uploadData = await uploadFiles();
-        imageUrls = uploadData.imageUrls;
-        thumbnailUrl = uploadData.thumbnailUrl;
-      }
-
-      const postPayload = {
+      const postPayload: PostPayload = {
         title: formState.title,
-        description: formState.description,
+        description: formState.description || '',
         postDifficulty: formState.difficultyLevel as PostDifficulty,
         postType: formState.type as PostType,
-        imageUrls,
-        thumbnailUrl,
+        imageUrls: [], // This will be populated by the server
+        thumbnailUrl: '', // This will be populated by the server
       };
 
-      const postData = await createPost(postPayload);
+      const postData = await createPost(postPayload, images, thumbnail);
       onAddNewPost(postData);
       resetForm();
     } catch (error) {
@@ -163,6 +141,6 @@ export const usePostSubmission = ({
     handleSubmit,
     isLoading,
     error,
-    isFormValid: Object.values(formState).every(Boolean),
+    isFormValid: formState.title && formState.difficultyLevel && formState.type,
   };
 };
