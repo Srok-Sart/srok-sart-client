@@ -1,5 +1,6 @@
-import { FaCheck, FaEdit, FaEye, FaTimes, FaTrashAlt } from "react-icons/fa";
-import { Post } from "../../../../interfaces/post";
+import { Post } from '@/app/interfaces/post';
+import React from 'react';
+import { FaEdit, FaTrashAlt, FaEye, FaCheck, FaTimes } from "react-icons/fa";
 
 interface PostsTableProps {
   posts: Post[];

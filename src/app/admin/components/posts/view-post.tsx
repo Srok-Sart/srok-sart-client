@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Post } from "../../../interfaces/post";
+import { Post } from "@/app/interfaces/post";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import Image from "next/image";
 

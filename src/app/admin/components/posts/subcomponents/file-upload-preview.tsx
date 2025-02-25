@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { FaFileImage, FaTrashAlt } from "react-icons/fa";
-import { FileOrUrl } from "../../../../interfaces/post";
+import { FaFileImage, FaTrashAlt } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { FileOrUrl } from '@/app/interfaces/post';
 
 interface FilePreviewProps {
   file: FileOrUrl;

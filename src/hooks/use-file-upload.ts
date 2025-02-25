@@ -1,5 +1,5 @@
+import { FileOrUrl } from '@/app/interfaces/post';
 import { useState, useEffect } from 'react';
-import { FileOrUrl } from '../app/interfaces/post';
 
 export const useFileUpload = () => {
   const [images, setImages] = useState<FileOrUrl[]>([]);
