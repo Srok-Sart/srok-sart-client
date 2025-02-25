@@ -82,17 +82,59 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
             <button className="save-btn">
               <FaBookmark className="save-icon" size={22} />
             </button>
-            <button className="text-gray-600 hover:text-gray-900 transition">
+            <div className="relative"> 
+            <button 
+              className="text-gray-600 hover:text-gray-900 transition"
+              onClick={() => setShowShareMenu(!showShareMenu)}
+            >
               <FaShareAlt size={22} />
             </button>
-            <FacebookShareButton
-              url={'https://sroksart.com/post/45'}
-              quote={post.title}
-              hashtag="#SrokSart"
-            >
-              <FacebookIcon size={32} round />
-            </FacebookShareButton>
-          </div>
+
+          {/* Share Menu */}
+          {showShareMenu && (
+            <div className="absolute bottom-full left-0 mb-2 bg-white shadow-lg rounded-lg p-3 flex gap-2 z-50">
+              <FacebookShareButton
+                url={shareUrl}
+                quote={post.title}
+                hashtag="#SrokSart"
+              >
+                <FacebookIcon size={32} round />
+              </FacebookShareButton>
+
+              <TwitterShareButton
+                url={shareUrl}
+                title={post.title}
+              >
+                <TwitterIcon size={32} round />
+              </TwitterShareButton>
+
+              <LinkedinShareButton
+                url={shareUrl}
+                title={post.title}
+                summary={post.description}
+              >
+                <LinkedinIcon size={32} round />
+              </LinkedinShareButton>
+
+              <WhatsappShareButton
+                url={shareUrl}
+                title={post.title}
+                separator=" - "
+              >
+                <WhatsappIcon size={32} round />
+              </WhatsappShareButton>
+
+              <EmailShareButton
+                url={shareUrl}
+                subject={post.title}
+                body={post.description}
+              >
+                <EmailIcon size={32} round />
+              </EmailShareButton>
+            </div>
+          )}
+        </div>
+        </div>
 
           {/* Comments Section */}
           <div>
