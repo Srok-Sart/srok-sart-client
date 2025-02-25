@@ -1,10 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaHeart, FaBookmark, FaShareAlt } from "react-icons/fa";
 import Navigation from "../components/navigation";
 import "../globals.css";
+import {
+  FacebookShareButton,
+  TwitterShareButton,
+  LinkedinShareButton,
+  WhatsappShareButton,
+  EmailShareButton,
+  FacebookIcon,
+  TwitterIcon,
+  LinkedinIcon,
+  WhatsappIcon,
+  EmailIcon,
+} from 'next-share';
 
 interface Post {
   title: string;
@@ -19,6 +31,15 @@ interface DetailPageProps {
 }
 
 const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
+  const [shareUrl, setShareUrl] = useState('');
+  const [showShareMenu, setShowShareMenu] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setShareUrl(window.location.href);
+    }
+  }, []);
+
   return (
     <>
       <Navigation />
@@ -64,6 +85,13 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
             <button className="text-gray-600 hover:text-gray-900 transition">
               <FaShareAlt size={22} />
             </button>
+            <FacebookShareButton
+              url={'https://sroksart.com/post/45'}
+              quote={post.title}
+              hashtag="#SrokSart"
+            >
+              <FacebookIcon size={32} round />
+            </FacebookShareButton>
           </div>
 
           {/* Comments Section */}
