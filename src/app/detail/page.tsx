@@ -99,7 +99,7 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
             {showShareMenu && (
               <div className="absolute bottom-full left-0 mb-2 bg-white shadow-lg rounded-lg p-3 flex gap-2 z-50">
                 <FacebookShareButton
-                  url={'sroksart.com/post/45'}
+                  url={shareUrl}
                   quote={post.title}
                   hashtag="#SrokSart"
                   className="hover:opacity-80 transition"
