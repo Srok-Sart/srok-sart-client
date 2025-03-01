@@ -1,4 +1,4 @@
-import { fetcher } from "@/api/base";
+import { fetcher } from "@/api/use-fetcher";
 import CardDisplay from "./components/card-display";
 import Navigation from "./components/navigation";
 import { Post } from "./interfaces/post";
@@ -9,6 +9,7 @@ const Home = async () => {
   const posts: Post[] = await fetcher("/posts");
 
   const publishedPosts = posts.filter((post) => post.postStatus === "PUBLISH");
+  console.log(publishedPosts);
 
   // Filtered images based on selected category
   // const filteredImages =
