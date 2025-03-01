@@ -14,7 +14,8 @@ export const usePostUpdate = ({ onUpdatePost, setShowEditPost }: UsePostUpdatePr
     post: Post, 
     id: number,
     newThumbnail: File | null,
-    newImages: File[]
+    newImages: File[],
+    materialIds: number[]
   ) => {
     setIsLoading(true);
     setError(null);
@@ -25,7 +26,14 @@ export const usePostUpdate = ({ onUpdatePost, setShowEditPost }: UsePostUpdatePr
       formData.append("description", post.description || "");
       formData.append("postDifficulty", post.postDifficulty);
       formData.append("postType", post.postType);
-      
+      formData.append("estimatedTime", post.estimatedTime || "");
+
+      if (materialIds.length === 1) {
+        formData.append('materialIds[]', materialIds[0].toString());
+      } else {
+        materialIds.forEach(id => formData.append('materialIds[]', id.toString()));
+      }
+
       if (newThumbnail) {
         formData.append("thumbnail", newThumbnail);
       }

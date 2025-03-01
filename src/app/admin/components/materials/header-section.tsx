@@ -43,7 +43,7 @@ export const HeaderSection = ({
           </div>
           <button
             onClick={() => setShowAddNewMaterial(true)}
-            className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary"
           >
             <FaPlus className="mr-2" />
             Add New Material
