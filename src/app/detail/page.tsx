@@ -11,6 +11,7 @@ import {
   FacebookIcon,
   TelegramIcon,
 } from 'next-share';
+import { useEffect, useState } from "react";
 
 interface Post {
   title: string;
@@ -140,7 +141,6 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
             </div>
           </div>
         </div>
-      </div>
     </>
   );
 };
