@@ -1,34 +1,37 @@
 "use client";
 
-import React from "react";
+import { useState } from "react";
 
 interface ProfileTabsProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  initialActiveTab?: string;
 }
 
-const ProfileTabs: React.FC<ProfileTabsProps> = ({ activeTab, setActiveTab }) => {
+export default function ProfileTabs({
+  initialActiveTab = "created",
+}: ProfileTabsProps) {
+  const [activeTab, setActiveTab] = useState(initialActiveTab);
+
+  const tabs = [
+    { id: "created", label: "Created" },
+    { id: "saved", label: "Saved" },
+    { id: "liked", label: "Liked" },
+  ];
+
   return (
-    <div className="mt-8 border-b">
-      <div className="flex justify-center space-x-6">
-        {["created", "bookmark"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`pb-4 px-4 font-semibold ${
-              activeTab === tab ? "border-b-2" : "text-gray-500"
-            }`}
-            style={{
-              borderColor: activeTab === tab ? "var(--primary-color)" : "transparent",
-              color: activeTab === tab ? "var(--primary-color)" : "#6b7280",
-            }}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
+    <div className='flex justify-center mt-8 border-b'>
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={`px-6 py-3 font-medium ${
+            activeTab === tab.id
+              ? "text-[var(--primary-color)] border-b-2 border-[var(--primary-color)]"
+              : "text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   );
-};
-
-export default ProfileTabs;
+}

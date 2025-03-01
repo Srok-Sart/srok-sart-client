@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation"; 
-import CardDisplay from "../components/card-display";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
+import CardDisplay from "../components/card-display";
 
 interface DIYItem {
   src: string;
@@ -25,9 +25,9 @@ const COLLECTIONS = [
 
 export default function SaveListPage() {
   const router = useRouter();
-  const searchParams = useSearchParams(); 
+  const searchParams = useSearchParams();
   const collectionId = searchParams.get("collectionId"); // this is the title of the bookmark name(please change)
-  const [diyList, setDiyList] = useState<DIYItem[]>(PLACEHOLDER_DIY);
+  const [diyList] = useState<DIYItem[]>(PLACEHOLDER_DIY);
   const [collectionName, setCollectionName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,18 +38,25 @@ export default function SaveListPage() {
   }, [collectionId]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto mt-8">
-      <button 
-        onClick={() => router.push("/bookmark")} 
-        className="flex items-center text-gray-750 font-semibold mb-4"
+    <div className='p-6 max-w-7xl mx-auto mt-8'>
+      <button
+        onClick={() => router.push("/bookmark")}
+        className='flex items-center text-gray-750 font-semibold mb-4'
       >
-        <FaArrowLeft size={15} className="mr-6" /> 
-        <h2 className="text-xl text-gray-700">{collectionName ? `Back to ${collectionName}` : "Back to collection"}</h2>
+        <FaArrowLeft size={15} className='mr-6' />
+        <h2 className='text-xl text-gray-700'>
+          {collectionName ? `Back to ${collectionName}` : "Back to collection"}
+        </h2>
       </button>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-11">
+      <div className='grid grid-cols-2 md:grid-cols-4 gap-6 mt-11'>
         {diyList.map((diy, index) => (
-          <CardDisplay key={index} src={diy.src} title={diy.title} creator={diy.creator} />
+          <CardDisplay
+            key={index}
+            src={diy.src}
+            title={diy.title}
+            creator={diy.creator}
+          />
         ))}
       </div>
     </div>
