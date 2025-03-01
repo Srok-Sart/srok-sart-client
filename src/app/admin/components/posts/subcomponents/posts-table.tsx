@@ -1,5 +1,5 @@
 import { Post } from '@/app/interfaces/post';
-import React from 'react';
+import React, { useState } from 'react';
 import { FaEdit, FaTrashAlt, FaEye, FaCheck, FaTimes } from "react-icons/fa";
 
 interface PostsTableProps {
@@ -19,11 +19,22 @@ export const PostsTable = ({
   onApproveOrReject,
   isPostsRequestTab = false,
 }: PostsTableProps) => {
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
   const truncateText = (text: string, maxLength: number) => {
     if (!text) return "";
     return text.length > maxLength
       ? `${text.substring(0, maxLength)}...`
       : text;
+  };
+
+  const truncateMaterials = (materials: string[], maxLength: number) => {
+    if (materials.length <= maxLength) return materials.join(", ");
+    return `${materials.slice(0, maxLength).join(", ")}...`;
+  };
+
+  const handleViewMaterials = (post: Post) => {
+    setSelectedPost(post);
   };
 
   if (!posts || posts.length === 0) {
@@ -44,6 +55,8 @@ export const PostsTable = ({
             <th className='p-2 border'>Description</th>
             <th className='p-2 border'>Difficulty Level</th>
             <th className='p-2 border'>Type</th>
+            <th className='p-2 border'>Estimated Time</th>
+            <th className='p-2 border'>Materials</th>
             <th className='p-2 border'>Actions</th>
           </tr>
         </thead>
@@ -60,6 +73,18 @@ export const PostsTable = ({
                 </td>
                 <td className='p-2 border'>{post.postDifficulty || "N/A"}</td>
                 <td className='p-2 border'>{post.postType || "N/A"}</td>
+                <td className='p-2 border'>{post.estimatedTime || "N/A"}</td>
+                <td className='p-2 border'>
+                  <span
+                    className="cursor-pointer text-primary"
+                    onClick={() => handleViewMaterials(post)}
+                  >
+                    {truncateMaterials(
+                      post.materials.map((material) => material.name),
+                      3
+                    )}
+                  </span>
+                </td>
                 <td className='p-2 border'>
                   <div className='flex justify-center space-x-2'>
                     {/* View Button (Always Visible) */}
@@ -124,6 +149,25 @@ export const PostsTable = ({
           })}
         </tbody>
       </table>
+
+      {selectedPost && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-4 rounded-md shadow-md w-1/2">
+            <h2 className="text-2xl font-bold mb-4">Materials for {selectedPost.title}</h2>
+            <ul className="list-disc list-inside">
+              {selectedPost.materials.map((material) => (
+                <li key={material.id}>{material.name}</li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setSelectedPost(null)}
+              className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

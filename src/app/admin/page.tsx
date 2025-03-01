@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Posts from "./components/posts/post";
+import PostsRequest from "./components/posts/posts-request";
 import Image from "next/image";
 import Materials from "./components/materials/materials";
 
@@ -19,7 +20,13 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   return (
     <div className="min-h-screen w-60 bg-white shadow-lg flex flex-col fixed">
       <div className="p-4 flex items-center">
-        <Image src="/logo.png" alt="Logo" width={48} height={48} className="mr-2" />
+        <Image 
+          src="/logo.svg" 
+          alt="Logo" 
+          width={36} 
+          height={36} 
+          className="mr-2" 
+        />
         <h1 className="text-lg text-black font-bold">Srok Sart</h1>
       </div>
       <nav className="flex-grow p-4">
@@ -50,7 +57,7 @@ const AdminPage = () => {
       <main className="flex-grow bg-white p-4 ml-60 min-h-screen">
         <section className="mt-4">
           {activeTab === "posts" && <Posts activeTab={activeTab} />}
-          {activeTab === "postsRequest" && <Posts activeTab={activeTab} />}
+          {activeTab === "postsRequest" && <PostsRequest activeTab={activeTab} />}
           {activeTab === "materials" && <Materials activeTab={activeTab} />}
         </section>
       </main>

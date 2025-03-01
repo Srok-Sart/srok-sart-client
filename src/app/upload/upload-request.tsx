@@ -1,14 +1,15 @@
 "use client";
 
-import { clientFetcher } from "@/api/client-fetcher";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navigation from "../components/navigation";
 import FormActions from "./form-action";
 import FormHeader from "./form-header";
 import MediaUpload from "./media-upload";
 import PostDifficultySelector from "./post-difficulty";
 import TitleDescription from "./title-description";
+import Select from 'react-select';
+import { Material } from '@/app/interfaces/material';
 
 // Define enums to match backend
 enum PostType {
@@ -35,10 +36,32 @@ const UploadRequest = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [estimatedTime, setEstimatedTime] = useState<string>("");
+  const [selectedMaterials, setSelectedMaterials] = useState<Material[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
+  const [isClient, setIsClient] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Fetch materials from the API
+    const fetchMaterials = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch materials: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setMaterials(data);
+      } catch (error) {
+        console.error("Error fetching materials:", error);
+      }
+    };
+
+    fetchMaterials();
+    setIsClient(true); // Set isClient to true after the component mounts
+  }, []);
 
   // Handlers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,6 +102,10 @@ const UploadRequest = () => {
       errors.contents = "At least one content file is required";
     }
 
+    if (selectedMaterials.length === 0) {
+      errors.materials = "At least one material is required";
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -116,13 +143,23 @@ const UploadRequest = () => {
       formData.append("thumbnail", thumbnail);
     }
 
+    // Append selected materials
+    selectedMaterials.forEach((material) => {
+      formData.append("materialIds[]", material.id.toString());
+    });
+
     try {
-      const response = await clientFetcher("/posts", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
         method: "POST",
         body: formData,
       });
 
-      console.log("Success:", response);
+      if (!response.ok) {
+        throw new Error(`Failed to submit post: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Success:", data);
       router.push("/");
     } catch (error) {
       console.error("Error:", error);
@@ -131,10 +168,26 @@ const UploadRequest = () => {
     }
   };
 
+  const handleMaterialsChange = (selectedOptions: any) => {
+    const selectedMaterialObjects = selectedOptions.map((option: any) =>
+      materials.find((material) => material.id.toString() === option.value)
+    );
+    setSelectedMaterials(selectedMaterialObjects);
+  };
+
+  const materialOptions = materials.map((material) => ({
+    value: material.id.toString(),
+    label: material.name,
+  }));
+
+  const selectedMaterialOptions = selectedMaterials.map((material) => ({
+    value: material.id.toString(),
+    label: material.name,
+  }));
+
   return (
     <>
-      <Navigation />
-      <div className='pt-16 max-w-3xl mx-auto p-8 bg-white shadow-xl rounded-2xl mt-6 border border-gray-200'>
+      <div className='pt-16 max-w-3xl mx-auto p-8 bg-white shadow-xl rounded-2xl mt-6'>
         <FormHeader />
 
         <TitleDescription
@@ -162,6 +215,26 @@ const UploadRequest = () => {
           difficulty={difficulty}
           setDifficulty={setDifficulty}
         />
+
+        {isClient && (
+          <div className='mb-4'>
+            <label className='block text-gray-700 font-semibold mb-2'>
+              Materials <span className="text-red-500">*</span>
+            </label>
+            <Select
+              isMulti
+              value={selectedMaterialOptions}
+              onChange={handleMaterialsChange}
+              options={materialOptions}
+              className="w-full"
+              classNamePrefix="react-select"
+              placeholder="Select the materials required for the post"
+            />
+            {validationErrors.materials && (
+              <p className="text-red-500 text-sm mt-1">{validationErrors.materials}</p>
+            )}
+          </div>
+        )}
 
         <MediaUpload
           uploadType={uploadType}

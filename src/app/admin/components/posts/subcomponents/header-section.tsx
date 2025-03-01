@@ -1,11 +1,12 @@
-import { HiSearch } from "react-icons/hi";
+import React from "react";
 
 interface HeaderSectionProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   sortOption: string;
   handleSortChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  setShowAddNewPost: (show: boolean) => void;
+  setShowAddNewPost?: (show: boolean) => void;
+  hideAddButton?: boolean;
 }
 
 export const HeaderSection = ({
@@ -14,40 +15,35 @@ export const HeaderSection = ({
   sortOption,
   handleSortChange,
   setShowAddNewPost,
+  hideAddButton = false
 }: HeaderSectionProps) => {
   return (
-    <div className='mb-6'>
-      <h1 className='text-3xl font-bold mb-2'>Post Management</h1>
-      <div className='flex justify-between items-center'>
-        <h2 className='text-xl font-semibold text-black'>All Posts</h2>
-        <div className='flex items-center space-x-4'>
-          <div className='relative'>
-            <HiSearch className='absolute left-3 top-2.5 text-gray-400' />
-            <input
-              type='text'
-              placeholder='Search'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className='pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary'
-            />
-          </div>
-          <div>
-            <select
-              value={sortOption}
-              onChange={handleSortChange}
-              className='border rounded-md px-3 py-2'
-            >
-              <option value='ID Ascending'>Sort by: ID Ascending</option>
-              <option value='ID Descending'>Sort by: ID Descending</option>
-            </select>
-          </div>
+    <div className="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-2 sm:space-y-0">
+      <h1 className="text-2xl font-bold">Posts Management</h1>
+      <div className="flex items-center space-x-2">
+        <input
+          type="text"
+          placeholder="Search by title..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+        <select
+          value={sortOption}
+          onChange={handleSortChange}
+          className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+          <option value="ID Ascending">ID Ascending</option>
+          <option value="ID Descending">ID Descending</option>
+        </select>
+        {!hideAddButton && setShowAddNewPost && (
           <button
             onClick={() => setShowAddNewPost(true)}
-            className='px-4 py-2 bg-primary text-white rounded-md hover:bg-primary'
+            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors"
           >
             Add New Post
           </button>
-        </div>
+        )}
       </div>
     </div>
   );

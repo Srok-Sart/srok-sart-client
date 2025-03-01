@@ -1,5 +1,4 @@
 "use client";
-import { clientFetcher } from "@/api/client-fetcher";
 import React, { useEffect, useState } from "react";
 import { Post } from "../../../interfaces/post";
 import AddNewPost from "./add-new-post";
@@ -21,9 +20,12 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await clientFetcher("/posts");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`);
+        if (!res.ok) throw new Error(`Failed to fetch posts: ${res.statusText}`);
+        
+        const data: Post[] = await res.json();
         if (Array.isArray(data)) {
-          const sortedPosts = data.sort((a: Post, b: Post) => a.id - b.id);
+          const sortedPosts = data.sort((a, b) => a.id - b.id);
           setPosts(sortedPosts);
         }
       } catch (error) {
@@ -36,7 +38,7 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const option = e.target.value;
     setSortOption(option);
-    const sortedPosts = [...posts].sort((a: Post, b: Post) => {
+    const sortedPosts = [...posts].sort((a, b) => {
       return option === "ID Ascending" ? a.id - b.id : b.id - a.id;
     });
     setPosts(sortedPosts);
