@@ -1,3 +1,5 @@
+"use server";
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -6,8 +8,9 @@ export async function fetcher<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  const cookieStore = cookies();
-  const token = (await cookieStore).get("accessToken")?.value;
+  
+  const cookieStore = await cookies();
+  const token = cookieStore.get("accessToken")?.value;
 
   const defaultOptions: RequestInit = {
     headers: {

@@ -11,13 +11,17 @@ import {
   FacebookIcon,
   TelegramIcon,
 } from 'next-share';
+import { useLikeContext } from "../context/like-context";
+
 
 interface Post {
+  id: number;
   title: string;
   postType?: string;
   description?: string;
   imageUrls: string[];
   thumbnailUrl: string;
+  likeCount?: number;
 }
 
 interface DetailPageProps {
@@ -25,14 +29,41 @@ interface DetailPageProps {
 }
 
 const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
+  const { isPostLiked, toggleLike, getLikeCount, isAuthenticated } = useLikeContext();
   const [shareUrl, setShareUrl] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setShareUrl(window.location.href);
     }
-  }, []);
+
+    setIsLiked(isPostLiked(post.id));
+    setLikeCount(getLikeCount(post.id, post.likeCount || 0));
+  }, [post.id, isPostLiked, getLikeCount, post.likeCount]);
+
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      setShowLoginPrompt(true);
+      // Don't proceed further - we'll need to implement a login modal
+      return;
+    }
+  
+    try {
+      const result = await toggleLike(post.id, likeCount);
+      
+      if (result.success) {
+        setIsLiked(!isLiked);
+        setLikeCount(result.newCount);
+      }
+    } catch (error) {
+      console.error("Error liking post:", error);
+      // Handle error - maybe show a toast notification
+    }
+  };
 
   // Instagram doesn't have a direct share API, so we use copy to clipboard
   const copyToClipboard = () => {
@@ -52,7 +83,7 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
         {/* Left: Image Section */}
         <div className="flex-1">
           <Image
-            src={process.env.NEXT_PUBLIC_API_URL + post.imageUrls} 
+            src={(process.env.NEXT_PUBLIC_API_URL || 'localhost:8000') + post.imageUrls} 
             alt={post.title}
             width={600}
             height={800}
@@ -81,11 +112,15 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
 
           {/* Buttons */}
           <div className="flex items-center gap-4">
-            <button className="text-gray-600 hover:text-red-500 transition">
-              <FaHeart size={22} />
-            </button>
-            <button className="save-btn">
-              <FaBookmark className="save-icon" size={22} />
+            <button 
+              className="flex items-center gap-1.5 transition"
+              onClick={handleLike}
+            >
+              <FaHeart 
+                size={22} 
+                className={isLiked ? "text-red-500" : "text-gray-600 hover:text-red-500"} 
+              />
+              <span className="text-sm">{likeCount}</span>
             </button>
             <div className="relative"> 
             <button 
