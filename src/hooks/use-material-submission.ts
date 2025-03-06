@@ -20,7 +20,7 @@ export const useMaterialSubmission = ({ onAddNewMaterial, setShowAddNewMaterial 
   const [formState, setFormState] = useState<FormState>({
     name: "",
     weightPerUnit: "",
-    environmentalImpact: 0,
+    environmentalImpact: 1,
     category: "",
     unit: "",
   });

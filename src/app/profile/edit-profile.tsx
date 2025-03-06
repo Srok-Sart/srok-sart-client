@@ -1,66 +1,112 @@
 "use client";
 
-import React, { useState } from "react";
+import Image from "next/image";
+import { useState } from "react";
+import { UserProfile } from "../interfaces/user-profile";
 
 interface EditProfileModalProps {
-  profile: { name: string; username: string; avatar: string };
+  profile: UserProfile;
   onClose: () => void;
-  onSave: (profile: { name: string; username: string; avatar: string }) => void;
+  onSave: (updatedProfile: UserProfile) => void;
 }
 
-const EditProfileModal: React.FC<EditProfileModalProps> = ({ profile, onClose, onSave }) => {
-  const [formData, setFormData] = useState(profile);
+export default function EditProfileModal({
+  profile,
+  onClose,
+  onSave,
+}: EditProfileModalProps) {
+  const [formData, setFormData] = useState({
+    name: (profile.firstName || "") + (profile.lastName || "") || "",
+    username: profile.username || "",
+    bio: profile.bio || "",
+    profileImageUrl: profile.profileImageUrl || "",
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      ...profile,
+      ...formData,
+    });
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Edit Profile</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
-        </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSave(formData);
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="block text-sm font-medium mb-1">Profile Picture</label>
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[var(--primary-color)]">
-                <img src={formData.avatar} alt="Profile" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <button type="button" className="px-4 py-2 border rounded-full hover:bg-gray-50">
-                Change
-              </button>
+    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+      <div className='bg-white rounded-lg p-6 w-full max-w-md'>
+        <h2 className='text-2xl font-bold mb-4'>Edit Profile</h2>
+
+        <form onSubmit={handleSubmit} className='space-y-4'>
+          <div className='flex items-center justify-center mb-4'>
+            <div className='w-20 h-20 rounded-full overflow-hidden border-2 border-gray-300'>
+              <Image
+                src={formData.profileImageUrl || "/placeholder-avatar.png"}
+                alt='Profile'
+                width={80}
+                height={80}
+                className='w-full h-full object-cover'
+              />
             </div>
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className='block text-sm font-medium text-gray-700'>
+              Name
+            </label>
             <input
-              type="text"
+              type='text'
+              name='name'
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full p-2 border rounded-lg"
+              onChange={handleChange}
+              className='mt-1 w-full rounded-md border border-gray-300 px-3 py-2'
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
+            <label className='block text-sm font-medium text-gray-700'>
+              Username
+            </label>
             <input
-              type="text"
+              type='text'
+              name='username'
               value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              className="w-full p-2 border rounded-lg"
+              onChange={handleChange}
+              className='mt-1 w-full rounded-md border border-gray-300 px-3 py-2'
             />
           </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-full">
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>
+              Bio
+            </label>
+            <textarea
+              name='bio'
+              value={formData.bio}
+              onChange={handleChange}
+              rows={3}
+              className='mt-1 w-full rounded-md border border-gray-300 px-3 py-2'
+            />
+          </div>
+
+          <div className='flex justify-end space-x-3 mt-6'>
+            <button
+              type='button'
+              onClick={onClose}
+              className='px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200'
+            >
               Cancel
             </button>
             <button
-              type="submit"
-              className="px-4 py-2 text-white rounded-full bg-[var(--primary-color)] hover:opacity-90"
+              type='submit'
+              className='px-4 py-2 rounded-md bg-[var(--primary-color)] text-white hover:opacity-90'
             >
               Save
             </button>
@@ -69,6 +115,4 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ profile, onClose, o
       </div>
     </div>
   );
-};
-
-export default EditProfileModal;
+}

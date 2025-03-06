@@ -84,6 +84,7 @@ export const MaterialFormFields = ({
         onChange={(e) => onEnvironmentalImpactChange(Number(e.target.value))}
         className="w-full px-3 py-2 border rounded-md"
         required
+        min={1}
       />
     </div>
   </>

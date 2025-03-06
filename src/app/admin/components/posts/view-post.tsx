@@ -9,7 +9,7 @@ interface ViewPostProps {
   id: number;
 }
 
-const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
+const ViewPost = ({ setShowViewPost, id }: ViewPostProps) => {
   const [post, setPost] = useState<Post | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -112,7 +112,22 @@ const ViewPost: React.FC<ViewPostProps> = ({ setShowViewPost, id }) => {
         <div className="flex justify-between text-lg text-gray-700 mb-6">
           <p><strong>Difficulty:</strong> {post.postDifficulty}</p>
           <p><strong>Type:</strong> {post.postType}</p>
+          <p><strong>Estimated Time:</strong> {post.estimatedTime}</p>
         </div>
+
+        {/* Post Materials */}
+        {post.materials && post.materials.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-2xl font-bold mb-4">Materials</h3>
+            <ul className="list-disc list-inside">
+              {post.materials.map((material) => (
+                <li key={material.id} className="text-lg text-gray-700">
+                  {material.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

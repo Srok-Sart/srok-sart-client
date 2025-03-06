@@ -1,13 +1,12 @@
 "use client";
 
 import { loginUser } from "@/api/login";
-import { SubmitButton } from "@/app/register/components/register-button";
 import { GoogleButton } from "@/components/auth/google-button";
 import { Divider } from "@/components/common/divider";
 import { ErrorMessage } from "@/components/common/error-message";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
-import { CreateAccount, ForgotPassword } from "./login-button";
+import { useState } from "react";
+import { CreateAccount, ForgotPassword, SubmitButton } from "./login-button";
 import { EmailInput, PasswordInput } from "./login-input-field";
 
 interface FormData {
@@ -35,21 +34,17 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const response = await loginUser(formData);
-      console.log("Login success", response);
+      await loginUser(formData);
       router.push("/");
+      router.refresh(); // Important to refresh the router cache
     } catch (error) {
-      handleLoginError(error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Login failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleLoginError = (error: unknown) => {
-    if (error instanceof Error) {
-      setError(error.message);
-    } else {
-      setError("Failed to connect to the server. Please try again later.");
     }
   };
 

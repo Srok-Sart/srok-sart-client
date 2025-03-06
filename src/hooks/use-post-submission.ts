@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { PostDifficulty } from '@/enums/post-difficulty.enum';
 import { PostType } from '@/enums/post-type.enum';
 import { FileOrUrl, Post } from '@/app/interfaces/post';
+import { Material } from '@/app/interfaces/material';
 
 interface PostFormState {
   title: string;
   description: string;
   difficultyLevel: PostDifficulty | '';
   type: PostType | '';
+  estimatedTime: string;
 }
 
 interface UsePostSubmissionProps {
@@ -16,6 +18,8 @@ interface UsePostSubmissionProps {
   onAddNewPost: (post: Post) => void;
   setShowAddNewPost: (show: boolean) => void;
   resetFileUploads: () => void;
+  selectedMaterials: Material[];
+  defaultStatus?: string;
 }
 
 interface PostPayload {
@@ -23,8 +27,11 @@ interface PostPayload {
   description?: string;
   postDifficulty: PostDifficulty;
   postType: PostType;
+  estimatedTime: string;
   imageUrls: string[];
-  thumbnailUrl: string;
+  thumbnailUrl?: string;
+  materialIds: number[];
+  postStatus?: string;
 }
 
 export const usePostSubmission = ({
@@ -33,12 +40,15 @@ export const usePostSubmission = ({
   onAddNewPost,
   setShowAddNewPost,
   resetFileUploads,
+  selectedMaterials,
+  defaultStatus = "PENDING",
 }: UsePostSubmissionProps) => {
   const [formState, setFormState] = useState<PostFormState>({
     title: '',
     description: '',
     difficultyLevel: '',
     type: '',
+    estimatedTime: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,21 +88,40 @@ export const usePostSubmission = ({
     formData.append('description', payload.description || '');
     formData.append('postDifficulty', payload.postDifficulty);
     formData.append('postType', payload.postType);
-    images.forEach(image => formData.append('images', image));
+    formData.append('estimatedTime', payload.estimatedTime);
+    formData.append('postStatus', payload.postStatus || '');
+    
+    payload.materialIds.forEach(id => formData.append('materialIds', id.toString()));
+    
+    // Add images with the correct field name: 'contents' instead of 'imageUrls'
+    images.forEach(image => {
+      if (image instanceof File) {
+        formData.append('contents', image);
+      } else {
+        formData.append('contents', new Blob([image], { type: 'image/jpeg' }));
+      }
+    });
+  
+    // Add thumbnail with the correct field name: 'thumbnail' instead of 'thumbnailUrl'
     if (thumbnail) {
-      formData.append('thumbnail', thumbnail);
+      if (thumbnail instanceof File) {
+        formData.append('thumbnail', thumbnail);
+      } else {
+        formData.append('thumbnail', new Blob([thumbnail], { type: 'image/jpeg' }));
+      }
     }
-
+  
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
       method: 'POST',
       body: formData,
     });
-
+  
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to add post: ${errorText}`);
+      const errorData = await response.json().catch(() => null);
+      const errorMessage = errorData ? JSON.stringify(errorData) : await response.text();
+      throw new Error(`Failed to add post: ${errorMessage}`);
     }
-
+  
     return response.json();
   };
 
@@ -102,6 +131,7 @@ export const usePostSubmission = ({
       description: '',
       difficultyLevel: '',
       type: '',
+      estimatedTime: '',
     });
     resetFileUploads();
     setShowAddNewPost(false);
@@ -121,8 +151,11 @@ export const usePostSubmission = ({
         description: formState.description || '',
         postDifficulty: formState.difficultyLevel as PostDifficulty,
         postType: formState.type as PostType,
-        imageUrls: [], // This will be populated by the server
-        thumbnailUrl: '', // This will be populated by the server
+        estimatedTime: formState.estimatedTime,
+        imageUrls: [],
+        thumbnailUrl: '',
+        materialIds: selectedMaterials.map(material => material.id),
+        postStatus: defaultStatus
       };
 
       const postData = await createPost(postPayload, images, thumbnail);
