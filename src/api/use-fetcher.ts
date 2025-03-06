@@ -1,17 +1,17 @@
-import { cookies } from "next/headers";
+// import { cookies } from "next/headers";
 
 export async function fetcher<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  const token = (await cookies()).get("accessToken")?.value;
+  // const token = (await cookies()).get("accessToken")?.value;
 
-  console.log("Fetching", token, endpoint);
+  // console.log("Fetching", token, endpoint);
 
   const headers = {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
+    // ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
 
