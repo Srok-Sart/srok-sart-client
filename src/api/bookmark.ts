@@ -18,6 +18,15 @@ export const fetchCollections = async () => {
   return Array.isArray(data) ? data : [];
 };
 
+export const fetchACollections = async (id: string) => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch collections");
+  }
+  const data = await response.json();
+  return data;
+};
+
 export const updateCollection = async (id: string, collection: { name: string; isPrivate: boolean }) => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`, {
     method: "PUT",
