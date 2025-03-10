@@ -1,36 +1,33 @@
-import { UserProfile } from "@/app/interfaces/user-profile";
-import { getAuthToken } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetcher } from "./use-fetcher";
-
-export const isAuthenticated = () => {
-  return !!getAuthToken();
-};
+import { UserProfile } from "@/app/interfaces/user-profile";
 
 export const getUserProfile = async (): Promise<UserProfile> => {
-  // Get the token directly
-  const token = getAuthToken();
+  // Await cookies() to get the actual cookie store
+  const cookieStore = await cookies();
+  const token = cookieStore.get("accessToken")?.value;
 
-  // If no token, redirect to login
   if (!token) {
     redirect("/login");
   }
 
   try {
-    return await fetcher<UserProfile>("/auth/profile");
+    return await fetcher<UserProfile>("/auth/profile", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error) {
     console.error("Failed to fetch user profile:", error);
 
-    // Check if the error is due to auth issues
     if (
       error instanceof Error &&
-      (error.message.includes("Unauthorized") ||
-        error.message.includes("Forbidden"))
+      (error.message.includes("Unauthorized") || error.message.includes("Forbidden"))
     ) {
       redirect("/login");
     }
 
-    // For other errors, throw to allow error boundary to catch
     throw error;
   }
 };
