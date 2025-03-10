@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Post } from "@/app/interfaces/post";
-import { fetchPostsInCollection, unsavePostFromCollection } from "@/api/bookmark";
+import { fetchACollections, fetchCollections, fetchPostsInCollection, unsavePostFromCollection } from "@/api/bookmark";
 import CardDisplay from "@/app/components/card-display";
 import Navigation from "@/app/components/navigation";
 
@@ -11,6 +11,7 @@ const BookmarkPage = () => {
   const params = useParams();
   const collectionId = params.id as string; // Get collectionId from route params
   const [posts, setPosts] = useState<Post[]>([]);
+  const [collectionName, setCollectionName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch posts for the collection
@@ -18,6 +19,8 @@ const BookmarkPage = () => {
     if (collectionId) {
       const loadPosts = async () => {
         try {
+          const collection = await fetchACollections(collectionId);
+          setCollectionName(collection.name);
           const posts = await fetchPostsInCollection(collectionId);
           setPosts(posts);
         } catch (error) {
@@ -50,7 +53,7 @@ const BookmarkPage = () => {
       <Navigation />
 
       <div className="pt-16 max-w-7xl mx-auto px-4">
-        <h1 className="text-2xl font-semibold mb-6">Collection Posts</h1>
+        <h1 className="text-2xl font-semibold mb-6">{collectionName} Collection</h1>
         <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4">
           {posts.map((post) => (
             <CardDisplay
