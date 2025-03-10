@@ -11,18 +11,14 @@ import {
   FacebookIcon,
   TelegramIcon,
 } from 'next-share';
-import { useLikeContext } from "../context/like-context";
-
 import { useEffect, useState } from "react";
 
 interface Post {
-  id: number;
   title: string;
   postType?: string;
   description?: string;
   imageUrls: string[];
   thumbnailUrl: string;
-  likeCount?: number;
 }
 
 interface DetailPageProps {
@@ -30,41 +26,14 @@ interface DetailPageProps {
 }
 
 const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
-  const { isPostLiked, toggleLike, getLikeCount, isAuthenticated } = useLikeContext();
   const [shareUrl, setShareUrl] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setShareUrl(window.location.href);
     }
-
-    setIsLiked(isPostLiked(post.id));
-    setLikeCount(getLikeCount(post.id, post.likeCount || 0));
-  }, [post.id, isPostLiked, getLikeCount, post.likeCount]);
-
-  const handleLike = async () => {
-    if (!isAuthenticated) {
-      setShowLoginPrompt(true);
-      // Don't proceed further - we'll need to implement a login modal
-      return;
-    }
-  
-    try {
-      const result = await toggleLike(post.id, likeCount);
-      
-      if (result.success) {
-        setIsLiked(!isLiked);
-        setLikeCount(result.newCount);
-      }
-    } catch (error) {
-      console.error("Error liking post:", error);
-      // Handle error - maybe show a toast notification
-    }
-  };
+  }, []);
 
   // Instagram doesn't have a direct share API, so we use copy to clipboard
   const copyToClipboard = () => {
@@ -114,20 +83,14 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
           {/* Post Description */}
           <p className='text-gray-700'>{post.description}</p>
 
-          {/* Buttons */}
-          <div className="flex items-center gap-4">
-            <button 
-              className="flex items-center gap-1.5 transition"
-              onClick={handleLike}
-            >
-              <FaHeart 
-                size={22} 
-                className={isLiked ? "text-red-500" : "text-gray-600 hover:text-red-500"} 
-              />
-              <span className="text-sm">{likeCount}</span>
+          <div className='flex items-center gap-4'>
+            <button className='text-gray-600 hover:text-red-500 transition'>
+              <FaHeart size={22} />
             </button>
-            {/* For some reason if its aligned with the Like Button it doesnt work.  */}
-            <div className="relative">   
+            <button className='save-btn'>
+              <FaBookmark className='save-icon' size={22} />
+            </button>
+            <div className="relative">
               <button 
                 className='text-gray-600 hover:text-gray-900 transition'
                 onClick={() => setShowShareMenu(!showShareMenu)}
@@ -137,7 +100,7 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
 
               {/* Share Menu */}
               {showShareMenu && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white shadow-lg rounded-lg p-3 flex gap-2 z-50">
+                <div className="absolute bottom-full right-[-100px] mb-2 bg-white shadow-lg rounded-lg p-3 flex gap-2 z-50">
                   <FacebookShareButton
                     url={shareUrl}
                     quote={post.title}
@@ -146,7 +109,7 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
                   >
                     <FacebookIcon size={32} round />
                   </FacebookShareButton>
-                  
+
                   <TelegramShareButton
                     url={shareUrl}
                     title={post.title}
@@ -187,3 +150,4 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
 };
 
 export default DetailPage;
+
