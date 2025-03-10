@@ -1,414 +1,206 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getUserProfile } from "@/api/get-user-profile";
-import { clientFetcher } from "@/api/client-fetcher";
-
-// Define types to match backend DTOs
-interface PostLikeResponseDto {
-  success: boolean;
-  likeCount: number;
-}
-
-interface UserAuth {
-  isAuthenticated: boolean;
-  user?: any;
-}
-
-interface LikeState {
-  likedPosts: Record<number, boolean>;
-  likeCounts: Record<number, number>;
-  likedPostIds: number[];
-}
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getClientAuthToken, isClientAuthenticated } from '@/lib/client-auth';
 
 interface LikeContextType {
-  likedPosts: Record<number, boolean>;
-  likedPostIds: number[];
+  likedPosts: number[];
   isPostLiked: (postId: number) => boolean;
-  toggleLike: (postId: number, currentCount: number) => Promise<{
-    success: boolean;
-    newCount: number;
-  }>;
-  getLikeCount: (postId: number, defaultCount: number) => number;
-  checkIsLiked: (postId: number) => Promise<boolean>;
-  isAuthenticated: boolean;
-  isAuthLoading: boolean;
+  toggleLike: (postId: number) => Promise<{ success: boolean; likeCount: number } | null>;
+  isLoading: boolean;
   refreshLikedPosts: () => Promise<void>;
+  isAuthenticated: boolean;
 }
 
-// Actions
-type LikeAction =
-  | { type: "INITIALIZE"; payload: { likedPosts: Record<number, boolean>; likedPostIds: number[] } }
-  | { type: "SET_LIKED_POST"; payload: { postId: number; isLiked: boolean } }
-  | { type: "LIKE_POST"; payload: { postId: number; count: number } }
-  | { type: "UNLIKE_POST"; payload: { postId: number; count: number } }
-  | { type: "SET_LIKE_COUNT"; payload: { postId: number; count: number } };
-
-// Initial state
-const initialState: LikeState = {
-  likedPosts: {},
-  likeCounts: {},
-  likedPostIds: []
-};
-
-// Reducer function
-function likeReducer(state: LikeState, action: LikeAction): LikeState {
-  switch (action.type) {
-    case "INITIALIZE":
-      const likedPostsMap: Record<number, boolean> = {};
-      action.payload.likedPostIds.forEach(id => {
-        likedPostsMap[id] = true;
-      });
-      
-      return {
-        ...state,
-        likedPosts: likedPostsMap,
-        likedPostIds: action.payload.likedPostIds
-      };
-    case "SET_LIKED_POST": 
-      return {
-        ...state,
-        likedPosts: {
-          ...state.likedPosts,
-          [action.payload.postId]: action.payload.isLiked
-        },
-        likedPostIds: action.payload.isLiked 
-          ? [...state.likedPostIds, action.payload.postId]
-          : state.likedPostIds.filter(id => id !== action.payload.postId)
-      };
-    case "LIKE_POST":
-      return {
-        ...state,
-        likedPosts: {
-          ...state.likedPosts,
-          [action.payload.postId]: true
-        },
-        likeCounts: {
-          ...state.likeCounts,
-          [action.payload.postId]: action.payload.count
-        },
-        likedPostIds: state.likedPostIds.includes(action.payload.postId)
-          ? state.likedPostIds
-          : [...state.likedPostIds, action.payload.postId]
-      };
-    case "UNLIKE_POST":
-      return {
-        ...state,
-        likedPosts: {
-          ...state.likedPosts,
-          [action.payload.postId]: false
-        },
-        likeCounts: {
-          ...state.likeCounts,
-          [action.payload.postId]: action.payload.count
-        },
-        likedPostIds: state.likedPostIds.filter(id => id !== action.payload.postId)
-      };
-    case "SET_LIKE_COUNT":
-      return {
-        ...state,
-        likeCounts: {
-          ...state.likeCounts,
-          [action.payload.postId]: action.payload.count
-        }
-      };
-    default:
-      return state;
-  }
-}
-
-// Create context
 const LikeContext = createContext<LikeContextType | undefined>(undefined);
 
-// Safe localStorage access
-const getLocalStorage = (key: string): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(key);
-};
+interface LikeProviderProps {
+  children: ReactNode;
+}
 
-const setLocalStorage = (key: string, value: string): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(key, value);
-};
+export const LikeProvider: React.FC<LikeProviderProps> = ({ children }) => {
+  const [likedPosts, setLikedPosts] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-const removeLocalStorage = (key: string): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(key);
-};
-
-const LikeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const router = useRouter();
-  const [state, dispatch] = useReducer(likeReducer, initialState);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  
-  // Try to refresh the auth token
-  const refreshAuthToken = async (): Promise<boolean> => {
-    try {
-      const refreshResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, 
-        { 
-          method: 'POST',
-          credentials: 'include'
-        }
-      );
-      
-      return refreshResponse.ok;
-    } catch (error) {
-      console.error("Error refreshing auth token:", error);
-      return false;
-    }
-  };
-
-  // Handle authentication state
+  // Check authentication status and token on mount and set up interval to check periodically
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setIsAuthLoading(true);
-        
-        // First check if we have stored auth data
-        const storedAuth = getLocalStorage('auth');
-        if (storedAuth) {
-          try {
-            const parsedAuth = JSON.parse(storedAuth) as UserAuth;
-            if (parsedAuth?.isAuthenticated && parsedAuth?.user) {
-              setIsAuthenticated(true);
-              setUserProfile(parsedAuth.user);
-              await refreshLikedPosts();
-              return;
-            }
-          } catch (e) {
-            console.error("Error parsing stored auth:", e);
-            removeLocalStorage('auth');
-          }
-        }
-        
-        // If not, check with the server
-        try {
-          const profile = await getUserProfile();
-          if (profile && profile.id) {
-            setIsAuthenticated(true);
-            setUserProfile(profile);
-            setLocalStorage('auth', JSON.stringify({
-              isAuthenticated: true,
-              user: profile
-            }));
-            await refreshLikedPosts();
-          }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-          // Don't redirect here, just set isAuthenticated to false
-          setIsAuthenticated(false);
-          removeLocalStorage('auth');
-        }
-      } finally {
-        setIsAuthLoading(false);
+    const checkAuth = () => {
+      const authStatus = isClientAuthenticated();
+      const token = getClientAuthToken();
+      
+      if (authStatus !== isAuthenticated) {
+        setIsAuthenticated(authStatus);
+      }
+      
+      if (token !== accessToken) {
+        setAccessToken(token);
       }
     };
-    
-    if (typeof window !== 'undefined') {
-      checkAuth();
-    }
-  }, []);
 
-  const refreshLikedPosts = async () => {
-    if (typeof window === 'undefined' || !isAuthenticated) return;
+    // Check immediately
+    checkAuth();
+
+    // Set up interval to check periodically
+    const interval = setInterval(checkAuth, 5000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, accessToken]);
+
+  // Fetch liked posts when authentication status or token changes
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      console.log('User is authenticated with token, fetching liked posts');
+      refreshLikedPosts();
+    } else {
+      console.log('User is not authenticated or no token available, clearing liked posts');
+      setLikedPosts([]);
+    }
+  }, [isAuthenticated, accessToken]);
+
+  const refreshLikedPosts = async (): Promise<void> => {
+    const token = getClientAuthToken();
+    console.log('refreshLikedPosts - Token exists:', !!token);
+    console.log('Token value (first 10 chars):', token ? token.substring(0, 10) + '...' : 'none');
     
+    if (!token) {
+      console.log('No token available, cannot fetch liked posts');
+      setLikedPosts([]);
+      return;
+    }
+
     try {
-      try {
-        const likedPostIds = await clientFetcher<number[]>('/posts/liked');
-        dispatch({
-          type: "INITIALIZE",
-          payload: { likedPosts: {}, likedPostIds }
-        });
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('Authentication required')) {
-          // Token might be expired, try refreshing
-          const refreshSuccessful = await refreshAuthToken();
-          
-          if (refreshSuccessful) {
-            // Try again after refresh
-            const likedPostIds = await clientFetcher<number[]>('/posts/liked');
-            dispatch({
-              type: "INITIALIZE",
-              payload: { likedPosts: {}, likedPostIds }
-            });
-          } else {
-            // Refresh failed, user needs to login again
-            setIsAuthenticated(false);
-            removeLocalStorage('auth');
-            // Don't redirect here
-          }
-        } else {
-          throw error;
-        }
+      console.log('Fetching liked posts from endpoint: /posts/liked');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      console.log('Base URL for API:', baseUrl);
+      
+      // Use direct fetch instead of clientFetcher for more control
+      const response = await fetch(`${baseUrl}/posts/liked`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      
+      console.log('Liked posts response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('Error fetching liked posts:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error details:', errorText);
+        setLikedPosts([]);
+        return;
       }
+      
+      const posts = await response.json();
+      console.log('Fetched liked posts:', posts);
+      setLikedPosts(posts);
     } catch (error) {
-      console.error("Error fetching liked posts:", error);
+      console.error('Failed to fetch liked posts:', error);
+      // If there's an error (like unauthorized), clear the liked posts
+      setLikedPosts([]);
     }
   };
 
   const isPostLiked = (postId: number): boolean => {
-    return !!state.likedPosts[postId];
+    return likedPosts.includes(postId);
   };
 
-  const checkIsLiked = async (postId: number): Promise<boolean> => {
-    // First check local state
-    if (state.likedPostIds.includes(postId)) return true;
+  const toggleLike = async (postId: number): Promise<{ success: boolean; likeCount: number } | null> => {
+    // Get the latest token
+    const token = getClientAuthToken();
+    console.log('Toggle like - Token exists:', !!token);
+    console.log('Token value (first 10 chars):', token ? token.substring(0, 10) + '...' : 'none');
     
-    if (!isAuthenticated) return false;
-    
-    try {
-      try {
-        const data = await clientFetcher<{isLiked: boolean}>(`/posts/${postId}/liked`);
-        
-        // Update the state with this information
-        dispatch({
-          type: "SET_LIKED_POST",
-          payload: { postId, isLiked: data.isLiked }
-        });
-        
-        return data.isLiked;
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('Authentication required')) {
-          const refreshSuccessful = await refreshAuthToken();
-          if (!refreshSuccessful) {
-            setIsAuthenticated(false);
-            removeLocalStorage('auth');
-            return false;
-          }
-          
-          // Try again after refresh
-          const data = await clientFetcher<{isLiked: boolean}>(`/posts/${postId}/liked`);
-          dispatch({
-            type: "SET_LIKED_POST",
-            payload: { postId, isLiked: data.isLiked }
-          });
-          return data.isLiked;
-        }
-        throw error;
-      }
-    } catch (error) {
-      console.error("Error checking if post is liked:", error);
-      return false;
+    if (!token) {
+      console.log('User not authenticated, cannot toggle like');
+      return null;
     }
-  };
 
-  // Get like count from state or fallback to default
-  const getLikeCount = (postId: number, defaultCount: number): number => {
-    return state.likeCounts[postId] !== undefined 
-      ? state.likeCounts[postId]
-      : defaultCount;
-  };
-
-  const toggleLike = async (postId: number, currentCount: number) => {
-    // If not authenticated, return early instead of redirecting
-    if (!isAuthenticated) {
-      return {
-        success: false,
-        newCount: currentCount
-      };
-    }
-    
+    setIsLoading(true);
     try {
       const isLiked = isPostLiked(postId);
+      console.log('Current like status for post', postId, ':', isLiked);
       
-      try {
-        const data: PostLikeResponseDto = await clientFetcher<PostLikeResponseDto>(
-          `/posts/${postId}/like`,
-          { 
-            method: isLiked ? 'DELETE' : 'POST'
-          }
-        );
+      const endpoint = `/posts/${postId}/like`;
+      const method = isLiked ? 'DELETE' : 'POST';
+      console.log('Using method:', method, 'for endpoint:', endpoint);
+
+      // Use a custom fetch to avoid the automatic redirect in clientFetcher
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      console.log('Base URL:', baseUrl);
+      
+      const fullUrl = `${baseUrl}${endpoint}`;
+      console.log('Full request URL:', fullUrl);
+      console.log('Making request with token:', token ? 'Token exists' : 'No token');
+      
+      const response = await fetch(fullUrl, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('Error response:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error details:', errorText);
         
-        dispatch({
-          type: isLiked ? "UNLIKE_POST" : "LIKE_POST",
-          payload: { postId, count: data.likeCount }
-        });
-        
-        return {
-          success: data.success,
-          newCount: data.likeCount
-        };
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('Authentication required')) {
-          // Try to refresh token
-          const refreshSuccessful = await refreshAuthToken();
-          if (!refreshSuccessful) {
-            setIsAuthenticated(false);
-            removeLocalStorage('auth');
-            router.push('/login');
-            return { success: false, newCount: currentCount };
-          }
-          
-          // Try again after refresh
-          return toggleLike(postId, currentCount);
-        } else if (error instanceof Error && error.message.includes('409')) {
-          // Conflict - user already liked/unliked the post
-          await refreshLikedPosts();
+        // If unauthorized, update authentication state
+        if (response.status === 401 || response.status === 403) {
+          setIsAuthenticated(false);
+          setAccessToken(null);
         }
-        throw error;
+        
+        return null;
       }
+
+      const result = await response.json();
+      console.log('Toggle like result:', result);
+
+      // Update the local state based on the result
+      if (result.success) {
+        if (isLiked) {
+          console.log('Removing post', postId, 'from liked posts');
+          setLikedPosts(prev => prev.filter(id => id !== postId));
+        } else {
+          console.log('Adding post', postId, 'to liked posts');
+          setLikedPosts(prev => [...prev, postId]);
+        }
+      }
+
+      return result;
     } catch (error) {
       console.error('Error toggling like:', error);
-      return {
-        success: false,
-        newCount: currentCount
-      };
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // For server-side rendering, provide a fallback
-  if (typeof window === 'undefined') {
-    return (
-      <LikeContext.Provider
-        value={{
-          likedPosts: {},
-          likedPostIds: [],
-          isPostLiked: () => false,
-          toggleLike: async () => ({
-            success: false,
-            newCount: 0
-          }),
-          getLikeCount: () => 0,
-          checkIsLiked: async () => false,
-          isAuthenticated: false,
-          isAuthLoading: true,
-          refreshLikedPosts: async () => {}
-        }}
-      >
-        {children}
-      </LikeContext.Provider>
-    );
-  }
+  const value = {
+    likedPosts,
+    isPostLiked,
+    toggleLike,
+    isLoading,
+    refreshLikedPosts,
+    isAuthenticated,
+  };
 
-  return (
-    <LikeContext.Provider
-      value={{
-        likedPosts: state.likedPosts,
-        likedPostIds: state.likedPostIds,
-        isPostLiked,
-        toggleLike,
-        getLikeCount,
-        checkIsLiked,
-        isAuthenticated,
-        isAuthLoading,
-        refreshLikedPosts
-      }}
-    >
-      {children}
-    </LikeContext.Provider>
-  );
+  return <LikeContext.Provider value={value}>{children}</LikeContext.Provider>;
 };
 
-const useLikeContext = () => {
+export const useLike = (): LikeContextType => {
   const context = useContext(LikeContext);
   if (context === undefined) {
-    throw new Error('useLikeContext must be used within a LikeProvider');
+    throw new Error('useLike must be used within a LikeProvider');
   }
   return context;
 };
-
-export { LikeProvider, useLikeContext };
