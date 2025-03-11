@@ -1,112 +1,60 @@
 import { fetcher } from "./use-fetcher";
 
-/**
- * Response from like/unlike operations
- */
 export interface PostLikeResponse {
   success: boolean;
   likeCount: number;
 }
 
 /**
- * Gets auth token depending on environment
- * @returns The bearer token or undefined
+ * Handles API requests for liking/unliking posts
  */
-const getAuthToken = async (): Promise<string | undefined> => {
-  // Client-side: Get from document.cookie
-  if (typeof window !== 'undefined') {
-    const cookies = document.cookie.split(';');
-    const tokenCookie = cookies.find(c => c.trim().startsWith('Token='));
-    return tokenCookie ? decodeURIComponent(tokenCookie.split('=')[1]) : undefined;
-  } else {
-    // Server-side: Use dynamic import to avoid initial parsing errors
-    try {
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      return cookieStore.get("accessToken")?.value;
-    } catch (error) {
-      console.error("Error accessing server cookies:", error);
-      return undefined;
-    }
+const postLikeRequest = async (
+  postId: number,
+  method: "POST" | "DELETE",
+  token: string
+): Promise<PostLikeResponse> => {
+  if (!token) {
+    console.error("Authentication token missing.");
+    throw new Error("Authentication required");
   }
+
+  return fetcher<PostLikeResponse>(`/posts/${postId}/like`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
+  });
 };
 
 /**
  * Likes a post
- * @param postId The ID of the post to like
- * @returns A promise resolving to the updated like count
  */
-export const likePost = async (postId: number): Promise<PostLikeResponse> => {
-  try {
-    const token = await getAuthToken();
-    
-    if (!token) {
-      throw new Error("Authentication required");
-    }
-
-    console.log("Using token for liking:", token.substring(0, 15) + "...");
-    
-    // Using exactly the same pattern as get-user-profile.ts
-    return await fetcher<PostLikeResponse>(`/posts/${postId}/like`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  } catch (error) {
-    console.error("Error liking post:", error);
-    throw error;
-  }
-};
+export const likePost = (postId: number, token: string) => 
+  postLikeRequest(postId, "POST", token);
 
 /**
  * Unlikes a post
- * @param postId The ID of the post to unlike
- * @returns A promise resolving to the updated like count
  */
-export const unlikePost = async (postId: number): Promise<PostLikeResponse> => {
-  try {
-    const token = await getAuthToken();
-    
-    if (!token) {
-      throw new Error("Authentication required");
-    }
-
-    console.log("Using token for unliking:", token.substring(0, 15) + "...");
-
-    return await fetcher<PostLikeResponse>(`/posts/${postId}/like`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  } catch (error) {
-    console.error("Error unliking post:", error);
-    throw error;
-  }
-};
+export const unlikePost = (postId: number, token: string) => 
+  postLikeRequest(postId, "DELETE", token);
 
 /**
  * Checks if the current user has liked a post
- * @param postId The ID of the post to check
- * @returns A promise resolving to a boolean indicating if the post is liked
  */
-export const checkIfLiked = async (postId: number): Promise<boolean> => {
+export const checkIfLiked = async (postId: number, token: string): Promise<boolean> => {
+  if (!token) return false;
+
   try {
-    const token = await getAuthToken();
-    
-    if (!token) {
-      return false; // Not authenticated, so can't be liked
-    }
-
-    console.log("Using token for checking if liked:", token.substring(0, 15) + "...");
-
-    const data = await fetcher<{isLiked: boolean}>(`/posts/${postId}/liked`, {
+    const data = await fetcher<{ isLiked: boolean }>(`/posts/${postId}/liked`, {
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      credentials: "include"
     });
-    
+
     return data.isLiked;
   } catch (error) {
     console.error("Error checking if post is liked:", error);
@@ -115,23 +63,18 @@ export const checkIfLiked = async (postId: number): Promise<boolean> => {
 };
 
 /**
- * Gets all posts that the current user has liked
- * @returns A promise resolving to an array of post IDs
+ * Gets all posts liked by the current user
  */
-export const getLikedPosts = async (): Promise<number[]> => {
+export const getLikedPosts = async (token: string): Promise<number[]> => {
+  if (!token) return [];
+
   try {
-    const token = await getAuthToken();
-    
-    if (!token) {
-      return [];
-    }
-
-    console.log("Using token for getting liked posts:", token.substring(0, 15) + "...");
-
     return await fetcher<number[]>(`/posts/liked`, {
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      credentials: "include"
     });
   } catch (error) {
     console.error("Error fetching liked posts:", error);
@@ -140,17 +83,12 @@ export const getLikedPosts = async (): Promise<number[]> => {
 };
 
 /**
- * Toggle like status of a post
- * @param postId The ID of the post to toggle like status
- * @param isCurrentlyLiked Whether the post is currently liked
- * @returns A promise resolving to the updated like response
+ * Toggles the like status of a post
  */
 export const toggleLike = async (
   postId: number, 
-  isCurrentlyLiked: boolean
+  isCurrentlyLiked: boolean,
+  token: string
 ): Promise<PostLikeResponse> => {
-  console.log("Toggling like status:", { postId, isCurrentlyLiked });
-  return isCurrentlyLiked 
-    ? unlikePost(postId) 
-    : likePost(postId);
+  return isCurrentlyLiked ? unlikePost(postId, token) : likePost(postId, token);
 };

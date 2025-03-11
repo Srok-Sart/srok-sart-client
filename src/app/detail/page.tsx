@@ -26,9 +26,11 @@ interface Post {
 
 interface DetailPageProps {
   post: Post;
+  isAuthenticated?: boolean;
+  token?: string; // Add this
 }
 
-const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
+const DetailPage: React.FC<DetailPageProps> = ({ post, isAuthenticated = false, token }) => {
   const router = useRouter();
   const [shareUrl, setShareUrl] = useState("");
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -36,17 +38,19 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isUserAuthenticated, setIsUserAuthenticated] = useState(true);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(isAuthenticated);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
       
-      // Check like status from API
+      // Check like status from API using the passed token
       const checkLikeStatus = async () => {
         try {
-          const isLiked = await checkIfLiked(post.id);
-          setIsLiked(isLiked);
+          if (token) {
+            const isLiked = await checkIfLiked(post.id, token);
+            setIsLiked(isLiked);
+          }
         } catch (error) {
           console.error("Error checking like status:", error);
           
@@ -59,25 +63,27 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
       
       checkLikeStatus();
     }
-  }, [post.id, post.likeCount]);
+  }, [post.id, post.likeCount, token]);
 
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Clear any previous errors
+    if (!token) {
+      setError("Please sign in to like this post");
+      setIsUserAuthenticated(false);
+      return;
+    }
+
     setError(null);
     setIsLikeLoading(true);
 
     try {
-      // Call API to toggle like
-      const response = await toggleLike(post.id, isLiked);
+      const response = await toggleLike(post.id, isLiked, token);
       
-      // Update state with response from server
       setIsLiked(!isLiked);
       setLikeCount(response.likeCount);
       
-      // Update localStorage as backup
       const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
       if (!isLiked) {
         likedPosts[post.id] = { isLiked: true, likeCount: response.likeCount };
@@ -89,7 +95,6 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
     } catch (error) {
       console.error("Error handling like:", error);
       
-      // Handle authentication errors
       if (error instanceof Error && 
          (error.message.includes("Authentication") || 
           error.message.includes("Unauthorized") || 
