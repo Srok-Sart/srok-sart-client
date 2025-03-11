@@ -23,7 +23,7 @@ export async function clientFetcher<T>(
   const response = await fetch(`${baseUrl}${endpoint}`, defaultOptions);
 
   if (response.status === 401 || response.status === 403) {
-    // Instead of redirecting, throw an error with specific message
+    window.location.href = "/login";
     throw new Error("Authentication required");
   }
 

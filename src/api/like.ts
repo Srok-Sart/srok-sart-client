@@ -1,4 +1,3 @@
-import { PostLike } from "@/app/interfaces/post-like";
 import { fetcher } from "./use-fetcher";
 
 /**
@@ -9,37 +8,27 @@ export interface PostLikeResponse {
   likeCount: number;
 }
 
-// TEMPORARY: Hard-coded token for testing
-const TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTc0MTY5OTY3MSwiZXhwIjoxNzQxNzAwNTcxfQ.myhEIQpG67FyPnMNXfwUO9PxIGHZqPbTaN6_aOVSM1E";
-
 /**
  * Gets auth token depending on environment
  * @returns The bearer token or undefined
  */
 const getAuthToken = async (): Promise<string | undefined> => {
-  // TEMPORARY: Return hard-coded token for testing
-  return TEST_TOKEN;
-  
-  // Original implementation commented out for testing
-  /*
-  // Check if we're running on client side
+  // Client-side: Get from document.cookie
   if (typeof window !== 'undefined') {
-    // Client-side: Get from document.cookie
     const cookies = document.cookie.split(';');
-    const tokenCookie = cookies.find(c => c.trim().startsWith('accessToken='));
+    const tokenCookie = cookies.find(c => c.trim().startsWith('Token='));
     return tokenCookie ? decodeURIComponent(tokenCookie.split('=')[1]) : undefined;
   } else {
     // Server-side: Use dynamic import to avoid initial parsing errors
     try {
       const { cookies } = await import('next/headers');
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       return cookieStore.get("accessToken")?.value;
     } catch (error) {
       console.error("Error accessing server cookies:", error);
       return undefined;
     }
   }
-  */
 };
 
 /**
@@ -55,30 +44,15 @@ export const likePost = async (postId: number): Promise<PostLikeResponse> => {
       throw new Error("Authentication required");
     }
 
-    console.log("Using token for like API:", token.substring(0, 20) + "...");
-
-    // For testing, use direct fetch to see raw response
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}/like`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-      }
-    );
-
-    console.log("Like API Response Status:", response.status);
+    console.log("Using token for liking:", token.substring(0, 15) + "...");
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API Error Response:", errorText);
-      throw new Error(`API error: ${response.status} - ${errorText}`);
-    }
-
-    return await response.json();
+    // Using exactly the same pattern as get-user-profile.ts
+    return await fetcher<PostLikeResponse>(`/posts/${postId}/like`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error) {
     console.error("Error liking post:", error);
     throw error;
@@ -98,30 +72,14 @@ export const unlikePost = async (postId: number): Promise<PostLikeResponse> => {
       throw new Error("Authentication required");
     }
 
-    console.log("Using token for unlike API:", token.substring(0, 20) + "...");
+    console.log("Using token for unliking:", token.substring(0, 15) + "...");
 
-    // For testing, use direct fetch to see raw response
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}/like`,
-      {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-      }
-    );
-
-    console.log("Unlike API Response Status:", response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API Error Response:", errorText);
-      throw new Error(`API error: ${response.status} - ${errorText}`);
-    }
-
-    return await response.json();
+    return await fetcher<PostLikeResponse>(`/posts/${postId}/like`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error) {
     console.error("Error unliking post:", error);
     throw error;
@@ -138,32 +96,17 @@ export const checkIfLiked = async (postId: number): Promise<boolean> => {
     const token = await getAuthToken();
     
     if (!token) {
-      return false;
+      return false; // Not authenticated, so can't be liked
     }
 
-    console.log("Using token for checkIfLiked API:", token.substring(0, 20) + "...");
+    console.log("Using token for checking if liked:", token.substring(0, 15) + "...");
 
-    // For testing, use direct fetch to see raw response
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}/liked`,
-      {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-      }
-    );
-
-    console.log("checkIfLiked API Response Status:", response.status);
+    const data = await fetcher<{isLiked: boolean}>(`/posts/${postId}/liked`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     
-    if (!response.ok) {
-      console.log("Error in checkIfLiked - returning false");
-      return false;
-    }
-
-    const data = await response.json();
     return data.isLiked;
   } catch (error) {
     console.error("Error checking if post is liked:", error);
@@ -183,29 +126,13 @@ export const getLikedPosts = async (): Promise<number[]> => {
       return [];
     }
 
-    console.log("Using token for getLikedPosts API:", token.substring(0, 20) + "...");
+    console.log("Using token for getting liked posts:", token.substring(0, 15) + "...");
 
-    // For testing, use direct fetch to see raw response
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/posts/liked`,
-      {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-      }
-    );
-
-    console.log("getLikedPosts API Response Status:", response.status);
-    
-    if (!response.ok) {
-      console.log("Error in getLikedPosts - returning empty array");
-      return [];
-    }
-
-    return await response.json();
+    return await fetcher<number[]>(`/posts/liked`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error) {
     console.error("Error fetching liked posts:", error);
     return [];
