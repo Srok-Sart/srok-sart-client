@@ -70,7 +70,7 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
   };
 
   return (
-    <Link href={`posts/${post.id}`}>
+    <Link href={`/posts/${post.id}`}>
       <div className='relative bg-white rounded-lg overflow-hidden shadow-sm break-inside-avoid group'>
         {/* Image Wrapper */}
         <div className='relative overflow-hidden rounded-lg'>
