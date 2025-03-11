@@ -1,6 +1,6 @@
-import { Post } from '@/app/interfaces/post';
-import React, { useState } from 'react';
-import { FaEdit, FaTrashAlt, FaEye, FaCheck, FaTimes } from "react-icons/fa";
+import { Post } from "@/app/interfaces/post";
+import { useState } from "react";
+import { FaCheck, FaEdit, FaEye, FaTimes, FaTrashAlt } from "react-icons/fa";
 
 interface PostsTableProps {
   posts: Post[];
@@ -29,6 +29,7 @@ export const PostsTable = ({
   };
 
   const truncateMaterials = (materials: string[], maxLength: number) => {
+    if (!materials || materials.length === 0) return "No materials";
     if (materials.length <= maxLength) return materials.join(", ");
     return `${materials.slice(0, maxLength).join(", ")}...`;
   };
@@ -63,6 +64,7 @@ export const PostsTable = ({
         <tbody>
           {posts.map((post, index) => {
             const uniqueKey = post.id ?? `post-${index}`;
+            const materials = post.materials || [];
 
             return (
               <tr key={uniqueKey} className='hover:bg-gray-50'>
@@ -75,15 +77,19 @@ export const PostsTable = ({
                 <td className='p-2 border'>{post.postType || "N/A"}</td>
                 <td className='p-2 border'>{post.estimatedTime || "N/A"}</td>
                 <td className='p-2 border'>
-                  <span
-                    className="cursor-pointer text-primary"
-                    onClick={() => handleViewMaterials(post)}
-                  >
-                    {truncateMaterials(
-                      post.materials.map((material) => material.name),
-                      3
-                    )}
-                  </span>
+                  {materials.length > 0 ? (
+                    <span
+                      className='cursor-pointer text-primary'
+                      onClick={() => handleViewMaterials(post)}
+                    >
+                      {truncateMaterials(
+                        materials.map((material) => material.name),
+                        3
+                      )}
+                    </span>
+                  ) : (
+                    <span className='text-gray-500'>No materials</span>
+                  )}
                 </td>
                 <td className='p-2 border'>
                   <div className='flex justify-center space-x-2'>
@@ -151,17 +157,23 @@ export const PostsTable = ({
       </table>
 
       {selectedPost && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-4 rounded-md shadow-md w-1/2">
-            <h2 className="text-2xl font-bold mb-4">Materials for {selectedPost.title}</h2>
-            <ul className="list-disc list-inside">
-              {selectedPost.materials.map((material) => (
-                <li key={material.id}>{material.name}</li>
-              ))}
-            </ul>
+        <div className='fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center'>
+          <div className='bg-white p-4 rounded-md shadow-md w-1/2'>
+            <h2 className='text-2xl font-bold mb-4'>
+              Materials for {selectedPost.title}
+            </h2>
+            {selectedPost.materials && selectedPost.materials.length > 0 ? (
+              <ul className='list-disc list-inside'>
+                {selectedPost.materials.map((material) => (
+                  <li key={material.id}>{material.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No materials found for this post.</p>
+            )}
             <button
               onClick={() => setSelectedPost(null)}
-              className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary"
+              className='mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary'
             >
               Close
             </button>
