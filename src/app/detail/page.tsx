@@ -11,6 +11,8 @@ import {
   FacebookIcon,
   TelegramIcon,
 } from "next-share";
+import { toggleLike, checkIfLiked } from "@/api/like";
+import { useRouter } from 'next/navigation';
 
 interface Post {
   id: number;
@@ -27,49 +29,83 @@ interface DetailPageProps {
 }
 
 const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
+  const router = useRouter();
   const [shareUrl, setShareUrl] = useState("");
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
-
-      // Retrieve like state and count from localStorage
-      const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
-      setIsLiked(!!likedPosts[post.id]);
-      setLikeCount(likedPosts[post.id]?.likeCount || post.likeCount || 0);
+      
+      // Check like status from API
+      const checkLikeStatus = async () => {
+        try {
+          const isLiked = await checkIfLiked(post.id);
+          setIsLiked(isLiked);
+        } catch (error) {
+          console.error("Error checking like status:", error);
+          
+          // Fallback to localStorage if API call fails
+          const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
+          setIsLiked(!!likedPosts[post.id]);
+          setLikeCount(likedPosts[post.id]?.likeCount || post.likeCount || 0);
+        }
+      };
+      
+      checkLikeStatus();
     }
   }, [post.id, post.likeCount]);
 
-  const handleLikeClick = (e: React.MouseEvent) => {
+  const handleLikeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
+    
+    // Clear any previous errors
+    setError(null);
     setIsLikeLoading(true);
 
     try {
-      const newLikedState = !isLiked;
-      const newLikeCount = newLikedState ? likeCount + 1 : likeCount - 1;
-
-      setIsLiked(newLikedState);
-      setLikeCount(newLikeCount);
-
-      // Update localStorage
+      // Call API to toggle like
+      const response = await toggleLike(post.id, isLiked);
+      
+      // Update state with response from server
+      setIsLiked(!isLiked);
+      setLikeCount(response.likeCount);
+      
+      // Update localStorage as backup
       const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
-      if (newLikedState) {
-        likedPosts[post.id] = { isLiked: true, likeCount: newLikeCount };
+      if (!isLiked) {
+        likedPosts[post.id] = { isLiked: true, likeCount: response.likeCount };
       } else {
         delete likedPosts[post.id];
       }
       localStorage.setItem("likedPosts", JSON.stringify(likedPosts));
+      
     } catch (error) {
       console.error("Error handling like:", error);
+      
+      // Handle authentication errors
+      if (error instanceof Error && 
+         (error.message.includes("Authentication") || 
+          error.message.includes("Unauthorized") || 
+          error.message.includes("Forbidden"))) {
+        setError("Please sign in to like this post");
+        setIsUserAuthenticated(false);
+      } else {
+        setError("Failed to like post. Please try again.");
+      }
     } finally {
       setIsLikeLoading(false);
     }
+  };
+  
+  const handleLoginRedirect = () => {
+    router.push('/login');
   };
 
   // Instagram doesn't have a direct share API, so we use copy to clipboard
@@ -122,6 +158,19 @@ const DetailPage: React.FC<DetailPageProps> = ({ post }) => {
 
           {/* Buttons */}
           <div className='flex items-center gap-4'>
+            {error && (
+              <div className="text-red-500 text-sm mb-2">
+                {error} 
+                {!isUserAuthenticated && (
+                  <button 
+                    onClick={handleLoginRedirect}
+                    className="ml-2 text-blue-500 underline"
+                  >
+                    Sign in
+                  </button>
+                )}
+              </div>
+            )}
             <button
               className={`text-gray-600 hover:text-red-500 transition flex items-center ${
                 isLiked ? "text-red-500" : ""

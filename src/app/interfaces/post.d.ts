@@ -22,6 +22,7 @@ export interface Post {
   estimatedTime: string;
   createdAt: Date;
   updatedAt: Date;
+  likeCount: number;
 }
 
 export type FileOrUrl = File | string;
