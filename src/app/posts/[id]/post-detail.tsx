@@ -1,6 +1,7 @@
 "use client";
 
 import { fetchCollections, savePostToCollection } from "@/api/bookmark";
+import { checkIfLiked, toggleLike } from "@/api/like";
 import Navigation from "@/app/components/navigation";
 import { Post } from "@/app/interfaces/post";
 import {
@@ -10,6 +11,7 @@ import {
   TelegramShareButton,
 } from "next-share";
 import Image from "next/image";
+import { useRouter } from 'next/navigation'; 
 import React, { useEffect, useState } from "react";
 import {
   FaBookmark,
@@ -34,9 +36,12 @@ interface Collection {
 
 interface PostDetailPageProps {
   post: Post;
+  isAuthenticated?: boolean; // Added from page.tsx
+  token?: string; // Added from page.tsx
 }
 
-const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
+const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated = false, token }) => {
+  const router = useRouter();
   const [shareUrl, setShareUrl] = useState("");
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -47,12 +52,34 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
   const [comment, setComment] = useState("");
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(isAuthenticated);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
+      
+      // Check like status from API using the passed token
+      const checkLikeStatus = async () => {
+        try {
+          if (token) {
+            const isLiked = await checkIfLiked(post.id, token);
+            setLiked(isLiked);
+          }
+        } catch (error) {
+          console.error("Error checking like status:", error);
+          
+          // Fallback to localStorage if API call fails
+          const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
+          setLiked(!!likedPosts[post.id]);
+          setLikeCount(likedPosts[post.id]?.likeCount || post.likeCount || 0);
+        }
+      };
+      
+      checkLikeStatus();
     }
-  }, []);
+  }, [post.id, post.likeCount, token]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -65,14 +92,62 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
 
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+    
+    if (!token) {
+      setError("Please sign in to save this post");
+      setIsUserAuthenticated(false);
+      return;
+    }
+    
+    setError(null);
     const collections = await fetchCollections();
     setCollections(collections);
     setShowCollections(true);
   };
 
-  const handleLikeClick = () => {
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+  const handleLikeClick = async () => {
+    if (!token) {
+      setError("Please sign in to like this post");
+      setIsUserAuthenticated(false);
+      return;
+    }
+
+    setError(null);
+    setIsLikeLoading(true);
+
+    try {
+      const response = await toggleLike(post.id, liked, token);
+      
+      setLiked(!liked);
+      setLikeCount(response.likeCount);
+      
+      const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
+      if (!liked) {
+        likedPosts[post.id] = { isLiked: true, likeCount: response.likeCount };
+      } else {
+        delete likedPosts[post.id];
+      }
+      localStorage.setItem("likedPosts", JSON.stringify(likedPosts));
+      
+    } catch (error) {
+      console.error("Error handling like:", error);
+      
+      if (error instanceof Error && 
+         (error.message.includes("Authentication") || 
+          error.message.includes("Unauthorized") || 
+          error.message.includes("Forbidden"))) {
+        setError("Please sign in to like this post");
+        setIsUserAuthenticated(false);
+      } else {
+        setError("Failed to like post. Please try again.");
+      }
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  const handleLoginRedirect = () => {
+    router.push('/login');
   };
 
   const handleShareClick = () => {
@@ -116,6 +191,13 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!token) {
+      setError("Please sign in to comment");
+      setIsUserAuthenticated(false);
+      return;
+    }
+    
     if (comment.trim()) {
       // Here you would typically send the comment to your API
       console.log("Submitting comment:", comment);
@@ -388,6 +470,21 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
               </div>
             </div>
 
+            {/* Error message display */}
+            {error && (
+              <div className="bg-white p-3 rounded-lg shadow-sm text-red-500 text-sm">
+                {error} 
+                {!isUserAuthenticated && (
+                  <button 
+                    onClick={handleLoginRedirect}
+                    className="ml-2 text-blue-500 underline"
+                  >
+                    Sign in
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className='bg-white p-4 rounded-lg shadow-sm'>
               <div className='flex items-center justify-between'>
@@ -398,9 +495,10 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
                       : "text-gray-600 hover:bg-gray-50"
                   }`}
                   onClick={handleLikeClick}
+                  disabled={isLikeLoading}
                 >
                   <FaHeart size={18} />
-                  <span>Like</span>
+                  <span>{isLikeLoading ? "..." : "Like"}</span>
                 </button>
 
                 <button
@@ -485,7 +583,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
                   <button
                     type='submit'
                     className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50'
-                    disabled={!comment.trim()}
+                    disabled={!comment.trim() || !token}
                   >
                     Post
                   </button>

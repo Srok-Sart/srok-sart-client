@@ -4,9 +4,9 @@ import PostDetailPage from "@/app/posts/[id]/post-detail";
 import { getAuthToken } from "@/lib/auth";
 
 interface PageProps {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 const Page = async ({ params }: PageProps) => {
