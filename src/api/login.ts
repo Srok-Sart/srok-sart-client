@@ -16,6 +16,7 @@ export const loginUser = async (
 
   // Set tokens in httpOnly cookies for security
   const cookieStore = cookies();
+
   (await cookieStore).set("accessToken", response.accessToken, {
     httpOnly: true,
     secure: true,

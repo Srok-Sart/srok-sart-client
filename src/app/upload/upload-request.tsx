@@ -1,27 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { Material } from "@/app/interfaces/material";
+import { PostDifficulty } from "@/enums/post-difficulty.enum";
+import { PostType } from "@/enums/post-type.enum";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
-import Navigation from "../components/navigation";
+import React, { useEffect, useState } from "react";
+import Select from "react-select";
+import { PostStatus } from "./enum/post-status.enum";
 import FormActions from "./form-action";
 import FormHeader from "./form-header";
 import MediaUpload from "./media-upload";
 import PostDifficultySelector from "./post-difficulty";
 import TitleDescription from "./title-description";
-import Select from 'react-select';
-import { Material } from '@/app/interfaces/material';
-
-// Define enums to match backend
-enum PostType {
-  IMAGE = "IMAGE",
-  VIDEO = "VIDEO",
-}
-
-enum PostDifficulty {
-  EASY = "EASY",
-  MEDIUM = "MEDIUM",
-  HARD = "HARD",
-}
 
 const UploadRequest = () => {
   const router = useRouter();
@@ -48,7 +39,9 @@ const UploadRequest = () => {
     // Fetch materials from the API
     const fetchMaterials = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/materials`
+        );
         if (!response.ok) {
           throw new Error(`Failed to fetch materials: ${response.statusText}`);
         }
@@ -72,14 +65,24 @@ const UploadRequest = () => {
           ? [...uploadedFiles, ...filesArray]
           : [filesArray[0]]
       );
+
+      // Clear any previous validation errors for contents
+      if (validationErrors.contents && filesArray.length > 0) {
+        setValidationErrors((prev) => ({ ...prev, contents: "" }));
+      }
     }
   };
 
   const handleThumbnailUpload = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (event.target.files) {
+    if (event.target.files && event.target.files[0]) {
       setThumbnail(event.target.files[0]);
+
+      // Clear any previous validation errors for thumbnail
+      if (validationErrors.thumbnail) {
+        setValidationErrors((prev) => ({ ...prev, thumbnail: "" }));
+      }
     }
   };
 
@@ -125,6 +128,8 @@ const UploadRequest = () => {
       uploadType === "photo" ? PostType.IMAGE : PostType.VIDEO
     );
     formData.append("postDifficulty", difficulty);
+    // Set default post status to PENDING
+    formData.append("postStatus", PostStatus.PENDING);
 
     if (description) {
       formData.append("description", description);
@@ -143,11 +148,6 @@ const UploadRequest = () => {
       formData.append("thumbnail", thumbnail);
     }
 
-    // Append selected materials
-    selectedMaterials.forEach((material) => {
-      formData.append("materialIds[]", material.id.toString());
-    });
-
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
         method: "POST",
@@ -155,7 +155,10 @@ const UploadRequest = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to submit post: ${response.statusText}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message || `Failed to submit post: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -163,16 +166,29 @@ const UploadRequest = () => {
       router.push("/");
     } catch (error) {
       console.error("Error:", error);
+      setValidationErrors((prev) => ({
+        ...prev,
+        submit:
+          error instanceof Error ? error.message : "Failed to submit post",
+      }));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleMaterialsChange = (selectedOptions: any) => {
-    const selectedMaterialObjects = selectedOptions.map((option: any) =>
-      materials.find((material) => material.id.toString() === option.value)
-    );
+    const selectedMaterialObjects = selectedOptions
+      .map((option: any) =>
+        materials.find((material) => material.id.toString() === option.value)
+      )
+      .filter(Boolean);
+
     setSelectedMaterials(selectedMaterialObjects);
+
+    // Clear any previous validation errors for materials
+    if (validationErrors.materials && selectedOptions.length > 0) {
+      setValidationErrors((prev) => ({ ...prev, materials: "" }));
+    }
   };
 
   const materialOptions = materials.map((material) => ({
@@ -193,7 +209,12 @@ const UploadRequest = () => {
         <TitleDescription
           title={title}
           description={description}
-          setTitle={setTitle}
+          setTitle={(value) => {
+            setTitle(value);
+            if (validationErrors.title && value.trim()) {
+              setValidationErrors((prev) => ({ ...prev, title: "" }));
+            }
+          }}
           setDescription={setDescription}
           error={validationErrors.title}
         />
@@ -219,19 +240,21 @@ const UploadRequest = () => {
         {isClient && (
           <div className='mb-4'>
             <label className='block text-gray-700 font-semibold mb-2'>
-              Materials <span className="text-red-500">*</span>
+              Materials <span className='text-red-500'>*</span>
             </label>
             <Select
               isMulti
               value={selectedMaterialOptions}
               onChange={handleMaterialsChange}
               options={materialOptions}
-              className="w-full"
-              classNamePrefix="react-select"
-              placeholder="Select the materials required for the post"
+              className='w-full'
+              classNamePrefix='react-select'
+              placeholder='Select the materials required for the post'
             />
             {validationErrors.materials && (
-              <p className="text-red-500 text-sm mt-1">{validationErrors.materials}</p>
+              <p className='text-red-500 text-sm mt-1'>
+                {validationErrors.materials}
+              </p>
             )}
           </div>
         )}
@@ -250,6 +273,12 @@ const UploadRequest = () => {
             contents: validationErrors.contents,
           }}
         />
+
+        {validationErrors.submit && (
+          <div className='mb-4 p-3 bg-red-100 text-red-700 rounded'>
+            {validationErrors.submit}
+          </div>
+        )}
 
         <FormActions
           handleCancel={handleCancel}

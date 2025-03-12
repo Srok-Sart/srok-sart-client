@@ -1,12 +1,12 @@
 import { fetcher } from "@/api/use-fetcher";
-import DetailPage from "@/app/detail/page";
 import { type Post } from "@/app/interfaces/post";
+import PostDetailPage from "@/app/posts/[id]/post-detail";
 import { getAuthToken } from "@/lib/auth";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const Page = async ({ params }: PageProps) => {
@@ -19,7 +19,7 @@ const Page = async ({ params }: PageProps) => {
     credentials: "include"
   } : undefined);
 
-  return <DetailPage 
+  return <PostDetailPage 
     post={post} 
     isAuthenticated={!!token} 
     token={token || undefined} 

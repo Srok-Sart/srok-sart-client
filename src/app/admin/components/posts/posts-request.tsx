@@ -1,42 +1,55 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Post } from "../../../interfaces/post";
-import { HeaderSection } from "../posts/subcomponents/header-section";
-import ViewPost from "../posts/view-post";
-import PostsTable from "../posts/subcomponents/posts-table";
 import ConfirmationModal from "../posts/subcomponents/confirmation-modal";
+import { HeaderSection } from "../posts/subcomponents/header-section";
+import PostsTable from "../posts/subcomponents/posts-table";
+import ViewPost from "../posts/view-post";
 
-const PostsRequest = ({ activeTab }: { activeTab: string }) => {
+const PostsRequest = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("ID Ascending");
   const [showViewPost, setShowViewPost] = useState(false);
   const [viewPostId, setViewPostId] = useState<number | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmationData, setConfirmationData] = useState<{ id: number; status: "PUBLISH" | "REJECTED" } | null>(null);
+  const [confirmationData, setConfirmationData] = useState<{
+    id: number;
+    status: "PUBLISH" | "REJECTED";
+  } | null>(null);
   const [hasPendingPosts, setHasPendingPosts] = useState(false);
 
-  useEffect(() => {
-    const fetchPendingPosts = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`);
-        if (!res.ok) throw new Error(`Failed to fetch posts: ${res.statusText}`);
-        
-        const data: Post[] = await res.json();
-        if (Array.isArray(data)) {
-          // Only get pending posts
-          const pendingPosts = data.filter(post => post.postStatus === "PENDING");
-          const sortedPosts = pendingPosts.sort((a, b) => a.id - b.id);
-          setPosts(sortedPosts);
-          setHasPendingPosts(pendingPosts.length > 0);
-        }
-      } catch (error) {
-        console.error("Error fetching pending posts:", error);
+  const fetchPendingPosts = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`);
+      if (!res.ok) throw new Error(`Failed to fetch posts: ${res.statusText}`);
+
+      const data = await res.json();
+      let posts: Post[] = Array.isArray(data) ? data : data.data;
+
+      if (Array.isArray(posts)) {
+        // Make sure materials exists for each post
+        posts = posts.map((post) => ({
+          ...post,
+          materials: post.materials || [],
+        }));
+
+        const pendingPosts = posts.filter(
+          (post) => post.postStatus === "PENDING"
+        );
+        const sortedPosts = pendingPosts.sort((a, b) => a.id - b.id);
+        setPosts(sortedPosts);
+        setHasPendingPosts(pendingPosts.length > 0);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching pending posts:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchPendingPosts();
 
-    // Polling mechanism to check for new pending posts every minute
+    // Poll for new pending posts every minute
     const intervalId = setInterval(fetchPendingPosts, 60000);
     return () => clearInterval(intervalId);
   }, []);
@@ -55,12 +68,15 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
     setShowViewPost(true);
   };
 
-  const handleApproveOrReject = async (id: number, status: "PUBLISH" | "REJECTED") => {
+  const handleApproveOrReject = (
+    id: number,
+    status: "PUBLISH" | "REJECTED"
+  ) => {
     setConfirmationData({ id, status });
     setShowConfirmation(true);
   };
 
-  const confirmApproveOrReject = async () => {
+  const updatePostStatus = async () => {
     if (!confirmationData) return;
 
     const { id, status } = confirmationData;
@@ -77,17 +93,19 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
           body: JSON.stringify({ postStatus: status }),
         }
       );
+
       if (!res.ok)
         throw new Error(`Failed to update post status: ${res.statusText}`);
-      setPosts((prevPosts) =>
-        prevPosts.filter((post) => post.id !== id)
-      );
-      setHasPendingPosts(posts.length > 1); // Update the pending posts status
+
+      // Remove the approved/rejected post from the list
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id));
+      setHasPendingPosts(posts.length > 1);
     } catch (error) {
       console.error("Error updating post status:", error);
     }
   };
 
+  // Filter posts based on search term
   const filteredPosts = posts.filter((post) =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -99,10 +117,11 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
   return (
     <div className='p-4'>
       {hasPendingPosts && (
-        <div className="mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-md">
+        <div className='mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-md'>
           There are pending posts that need your attention.
         </div>
       )}
+
       <HeaderSection
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -110,8 +129,8 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
         handleSortChange={handleSortChange}
         hideAddButton={true}
       />
-      
-      <PostsTable 
+
+      <PostsTable
         posts={filteredPosts}
         onView={handleView}
         onEdit={() => {}} // Not used in this context
@@ -122,8 +141,10 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
 
       {showConfirmation && confirmationData && (
         <ConfirmationModal
-          message={`Are you sure you want to ${confirmationData.status === "PUBLISH" ? "approve" : "reject"} this post?`}
-          onConfirm={confirmApproveOrReject}
+          message={`Are you sure you want to ${
+            confirmationData.status === "PUBLISH" ? "approve" : "reject"
+          } this post?`}
+          onConfirm={updatePostStatus}
           onCancel={() => setShowConfirmation(false)}
         />
       )}

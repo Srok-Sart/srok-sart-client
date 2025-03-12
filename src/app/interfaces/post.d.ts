@@ -1,6 +1,6 @@
-import { PostType } from '../enums/post-type.enum';
-import { PostDifficulty } from '../enums/post-difficulty.enum';
-import { Material } from './material';
+import { PostDifficulty } from "../enums/post-difficulty.enum";
+import { PostType } from "../enums/post-type.enum";
+import { Material } from "./material";
 
 export interface PaginationPost {
   data: Post[];
@@ -17,11 +17,14 @@ export interface Post {
   postType?: PostType;
   imageUrls: string[];
   thumbnailUrl: string;
+  viewCount: number;
+  likeCount: number;
   postStatus: string;
   materials: Material[];
   estimatedTime: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
   likeCount: number;
 }
 
