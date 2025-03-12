@@ -11,9 +11,6 @@ interface PageProps {
 
 const Page = async ({ params }: PageProps) => {
   const token = await getAuthToken();
-  
-  console.log("Retrieved token:", token ? token : "No token found");
-
   const post: Post = await fetcher<Post>(`/posts/${params.id}`, token ? {
     headers: {
       "Content-Type": "application/json",
