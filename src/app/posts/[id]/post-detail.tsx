@@ -36,8 +36,8 @@ interface Collection {
 
 interface PostDetailPageProps {
   post: Post;
-  isAuthenticated?: boolean; // Added from page.tsx
-  token?: string; // Added from page.tsx
+  isAuthenticated?: boolean; 
+  token?: string; 
 }
 
 const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated = false, token }) => {
