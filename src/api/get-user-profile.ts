@@ -1,12 +1,27 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetcher } from "./use-fetcher";
 import { UserProfile } from "@/app/interfaces/user-profile";
 
 export const getUserProfile = async (): Promise<UserProfile> => {
-  // Await cookies() to get the actual cookie store
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  // Get the token depending on environment
+  let token: string | undefined;
+
+  // Check if we're running on client side
+  if (typeof window !== 'undefined') {
+    // Client-side: Get from document.cookie
+    const cookies = document.cookie.split(';');
+    const tokenCookie = cookies.find(c => c.trim().startsWith('accessToken='));
+    token = tokenCookie ? decodeURIComponent(tokenCookie.split('=')[1]) : undefined;
+  } else {
+    // Server-side: Use dynamic import to avoid initial parsing errors
+    try {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      token = cookieStore.get("accessToken")?.value;
+    } catch (error) {
+      console.error("Error accessing server cookies:", error);
+    }
+  }
 
   if (!token) {
     redirect("/login");
