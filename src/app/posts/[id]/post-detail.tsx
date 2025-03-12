@@ -1,7 +1,6 @@
 "use client";
 
 import { fetchCollections, savePostToCollection } from "@/api/bookmark";
-import { checkIfLiked, toggleLike } from "@/api/like";
 import Navigation from "@/app/components/navigation";
 import { Post } from "@/app/interfaces/post";
 import React, { useEffect, useState } from "react";
@@ -9,14 +8,20 @@ import CollectionSelectionModal from "./collection-selection-modal";
 import PostInfoCard from "./post-info-card";
 import MediaGallery from "./media-gallery";
 import PostHeader from "./post-header";
+import { useRouter } from 'next/navigation'; 
+import { checkIfLiked, toggleLike } from "@/api/like";
 
 interface PostDetailPageProps {
   post: Post;
-  isAuthenticated?: boolean; 
-  token?: string; 
+  isAuthenticated?: boolean;
+  token?: string;
 }
 
-const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated = false, token }) => {
+const PostDetailPage: React.FC<PostDetailPageProps> = ({ 
+  post, 
+  isAuthenticated = false,
+  token 
+}) => {
   const router = useRouter();
   const [shareUrl, setShareUrl] = useState("");
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -26,6 +31,9 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [comment, setComment] = useState("");
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(isAuthenticated);
+  const [error, setError] = useState<string | null>(null);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -148,14 +156,6 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
       });
   };
 
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    if (comment.trim()) {
-      console.log("Submitting comment:", comment);
-      setComment("");
-    }
-  };
-
   return (
     <>
       <Navigation />
@@ -164,6 +164,20 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
 
         <div className='flex flex-col md:flex-row gap-8'>
           <MediaGallery post={post} />
+
+          {error && (
+            <div className="bg-white p-3 rounded-lg shadow-sm text-red-500 text-sm">
+              {error} 
+              {!isUserAuthenticated && (
+                <button 
+                  onClick={handleLoginRedirect}
+                  className="ml-2 text-blue-500 underline"
+                >
+                  Sign in
+                </button>
+              )}
+            </div>
+          )}
 
           <PostInfoCard
             post={post}
@@ -175,10 +189,12 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
             handleLikeClick={handleLikeClick}
             handleSaveClick={handleSaveClick}
             handleShareClick={handleShareClick}
-            handleCommentSubmit={handleCommentSubmit}
+            handleCommentSubmit={() => {}}  // This will be handled inside PostInfoCard now
             copyToClipboard={copyToClipboard}
             showShareMenu={showShareMenu}
             shareUrl={shareUrl}
+            token={token}
+            isUserAuthenticated={isUserAuthenticated}
           />
         </div>
       </div>
