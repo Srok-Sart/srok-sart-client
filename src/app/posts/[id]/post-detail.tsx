@@ -21,8 +21,12 @@ import {
   FaComment,
   FaExpand,
   FaHeart,
-  FaShareAlt,
+  FaShareAlt, 
+  FaEllipsisV, 
+  FaPen, 
+  FaTrash
 } from "react-icons/fa";
+import { Comment, createComment, getAllComments, updateComment, deleteComment } from "@/api/comments";
 
 interface Collection {
   id: string;
@@ -55,6 +59,31 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(isAuthenticated);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      setCommentsLoading(true);
+      try {
+        // Filter comments by post ID on the client side
+        const allComments = await getAllComments(token);
+        const postComments = allComments.filter(comment => comment.postId === post.id);
+        setComments(postComments);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+        setCommentError("Failed to load comments");
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    fetchComments();
+  }, [post.id, token]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -189,7 +218,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
       });
   };
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!token) {
@@ -198,12 +227,89 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
       return;
     }
     
-    if (comment.trim()) {
-      // Here you would typically send the comment to your API
-      console.log("Submitting comment:", comment);
+    if (!comment.trim()) return;
+
+    setIsSubmittingComment(true);
+    
+    try {
+      const newComment = await createComment({
+        content: comment,
+        postId: post.id
+      }, token);
+      
+      setComments(prevComments => [...prevComments, newComment]);
       setComment("");
-      // You could add the comment to a local state array to display it immediately
+      setCommentError(null);
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      setCommentError("Failed to post comment. Please try again.");
+    } finally {
+      setIsSubmittingComment(false);
     }
+  };
+
+  const handleEditComment = (commentId: number, content: string) => {
+    setEditingCommentId(commentId);
+    setEditCommentContent(content);
+  };
+
+  const handleSaveEdit = async (commentId: number) => {
+    if (!editCommentContent.trim() || !token) return;
+    
+    try {
+      const updatedComment = await updateComment(commentId, { content: editCommentContent }, token);
+      
+      setComments(prevComments => 
+        prevComments.map(comment => 
+          comment.id === commentId ? { ...comment, content: updatedComment.content, updatedAt: updatedComment.updatedAt } : comment
+        )
+      );
+      
+      setEditingCommentId(null);
+      setEditCommentContent("");
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      setCommentError("Failed to update comment");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!token) return;
+    
+    if (!window.confirm("Are you sure you want to delete this comment?")) {
+      return;
+    }
+    
+    try {
+      await deleteComment(commentId, token);
+      setComments(prevComments => prevComments.filter(comment => comment.id !== commentId));
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      setCommentError("Failed to delete comment");
+    }
+  };
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
+    
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+    
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return `${diffMonths} month${diffMonths !== 1 ? 's' : ''} ago`;
+    
+    const diffYears = Math.floor(diffMonths / 12);
+    return `${diffYears} year${diffYears !== 1 ? 's' : ''} ago`;
   };
 
   const nextMedia = () => {
@@ -565,13 +671,13 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
             </div>
 
             {/* Comments Section */}
-            <div className='bg-white p-4 rounded-lg shadow-sm'>
+             <div className='bg-white p-4 rounded-lg shadow-sm'>
               <div className='flex items-center gap-2 mb-4'>
                 <FaComment size={18} className='text-gray-600' />
                 <h3 className='text-lg font-semibold'>Comments</h3>
               </div>
 
-              <form onSubmit={handleCommentSubmit} className='mb-4'>
+              <form onSubmit={handleCommentSubmit} className='mb-6'>
                 <div className='flex gap-2'>
                   <input
                     type='text'
@@ -583,16 +689,117 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated =
                   <button
                     type='submit'
                     className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50'
-                    disabled={!comment.trim() || !token}
+                    disabled={!comment.trim() || !token || isSubmittingComment}
                   >
-                    Post
+                    {isSubmittingComment ? "Posting..." : "Post"}
                   </button>
                 </div>
               </form>
 
-              <div className='text-gray-500 text-center py-4'>
-                No comments yet. Be the first to comment!
-              </div>
+              {commentError && (
+                <div className="mb-4 p-3 bg-red-50 text-red-500 rounded-lg text-sm">
+                  {commentError}
+                </div>
+              )}
+
+              {/* Comments List */}
+              {commentsLoading ? (
+                <div className="py-4 text-center">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
+                  <p className="mt-2 text-sm text-gray-500">Loading comments...</p>
+                </div>
+              ) : comments.length > 0 ? (
+                <div className="space-y-4">
+                  {comments.map(comment => (
+                    <div key={comment.id} className="border rounded-lg p-3">
+                      {editingCommentId === comment.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={editCommentContent}
+                            onChange={(e) => setEditCommentContent(e.target.value)}
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => setEditingCommentId(null)}
+                              className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleSaveEdit(comment.id)}
+                              className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                {comment.user?.profileImageUrl ? (
+                                  <Image
+                                    src={getApiBaseUrl() + comment.user.profileImageUrl}
+                                    alt={comment.user.username}
+                                    width={32}
+                                    height={32}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-xs font-bold text-gray-500">
+                                    {comment.user?.username?.charAt(0) || '?'}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">
+                                  {comment.user?.username || "Anonymous User"}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {formatRelativeTime(comment.createdAt)}
+                                  {comment.updatedAt !== comment.createdAt && " (edited)"}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Comment actions dropdown */}
+                            <div className="relative group">
+
+                              {/* This is the button for making the edits */}
+                              {/* <button className="p-1 rounded-full hover:bg-gray-100">
+                                <FaEllipsisV size={14} className="text-gray-500" />
+                              </button> */}
+                              <div className="absolute right-0 mt-1 w-36 bg-white shadow-lg rounded-md py-1 z-10 hidden group-hover:block">
+                                <button
+                                  onClick={() => handleEditComment(comment.id, comment.content)}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                  <FaPen size={12} />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                  <FaTrash size={12} />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="mt-2 text-gray-700">{comment.content}</p>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className='text-gray-500 text-center py-4'>
+                  No comments yet. Be the first to comment!
+                </div>
+              )}
             </div>
           </div>
         </div>
