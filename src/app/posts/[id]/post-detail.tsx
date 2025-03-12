@@ -1,6 +1,7 @@
 "use client";
 
 import { fetchCollections, savePostToCollection } from "@/api/bookmark";
+import { checkIfLiked, toggleLike } from "@/api/like";
 import Navigation from "@/app/components/navigation";
 import { Post } from "@/app/interfaces/post";
 import React, { useEffect, useState } from "react";
@@ -11,9 +12,12 @@ import PostHeader from "./post-header";
 
 interface PostDetailPageProps {
   post: Post;
+  isAuthenticated?: boolean; 
+  token?: string; 
 }
 
-const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
+const PostDetailPage: React.FC<PostDetailPageProps> = ({ post, isAuthenticated = false, token }) => {
+  const router = useRouter();
   const [shareUrl, setShareUrl] = useState("");
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -26,19 +30,86 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({ post }) => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
+      
+      // Check like status from API using the passed token
+      const checkLikeStatus = async () => {
+        try {
+          if (token) {
+            const isLiked = await checkIfLiked(post.id, token);
+            setLiked(isLiked);
+          }
+        } catch (error) {
+          console.error("Error checking like status:", error);
+          
+          // Fallback to localStorage if API call fails
+          const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
+          setLiked(!!likedPosts[post.id]);
+          setLikeCount(likedPosts[post.id]?.likeCount || post.likeCount || 0);
+        }
+      };
+      
+      checkLikeStatus();
     }
-  }, []);
+  }, [post.id, post.likeCount, token]);
 
   const handleSaveClick = async (e) => {
     e.preventDefault();
+    
+    if (!token) {
+      setError("Please sign in to save this post");
+      setIsUserAuthenticated(false);
+      return;
+    }
+    
+    setError(null);
     const collections = await fetchCollections();
     setCollections(collections);
     setShowCollections(true);
   };
 
-  const handleLikeClick = () => {
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+  const handleLikeClick = async () => {
+    if (!token) {
+      setError("Please sign in to like this post");
+      setIsUserAuthenticated(false);
+      return;
+    }
+
+    setError(null);
+    setIsLikeLoading(true);
+
+    try {
+      const response = await toggleLike(post.id, liked, token);
+      
+      setLiked(!liked);
+      setLikeCount(response.likeCount);
+      
+      const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
+      if (!liked) {
+        likedPosts[post.id] = { isLiked: true, likeCount: response.likeCount };
+      } else {
+        delete likedPosts[post.id];
+      }
+      localStorage.setItem("likedPosts", JSON.stringify(likedPosts));
+      
+    } catch (error) {
+      console.error("Error handling like:", error);
+      
+      if (error instanceof Error && 
+         (error.message.includes("Authentication") || 
+          error.message.includes("Unauthorized") || 
+          error.message.includes("Forbidden"))) {
+        setError("Please sign in to like this post");
+        setIsUserAuthenticated(false);
+      } else {
+        setError("Failed to like post. Please try again.");
+      }
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  const handleLoginRedirect = () => {
+    router.push('/login');
   };
 
   const handleShareClick = () => {
