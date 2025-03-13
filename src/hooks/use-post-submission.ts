@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { PostDifficulty } from '@/enums/post-difficulty.enum';
 import { PostType } from '@/enums/post-type.enum';
 import { FileOrUrl, Post } from '@/app/interfaces/post';
-import { Material } from '@/app/interfaces/material';
+import { PostMaterial } from '@/app/interfaces/material';
+import { useFormValidation } from './use-form-validation';
 
 interface PostFormState {
   title: string;
   description: string;
   difficultyLevel: PostDifficulty | '';
   type: PostType | '';
-  estimatedTime: string;
+  estimatedTime: string; // Will store only numeric value
+  timeUnit: 'minutes' | 'hours';
 }
 
 interface UsePostSubmissionProps {
@@ -18,7 +20,7 @@ interface UsePostSubmissionProps {
   onAddNewPost: (post: Post) => void;
   setShowAddNewPost: (show: boolean) => void;
   resetFileUploads: () => void;
-  selectedMaterials: Material[];
+  selectedMaterials: PostMaterial[];
   defaultStatus?: string;
 }
 
@@ -28,10 +30,16 @@ interface PostPayload {
   postDifficulty: PostDifficulty;
   postType: PostType;
   estimatedTime: string;
+  timeUnit: string;
   imageUrls: string[];
   thumbnailUrl?: string;
-  materialIds: number[];
+  materials: MaterialPayload[];
   postStatus?: string;
+}
+
+interface MaterialPayload {
+  materialId: number;
+  quantityRequired?: number;
 }
 
 export const usePostSubmission = ({
@@ -49,9 +57,13 @@ export const usePostSubmission = ({
     difficultyLevel: '',
     type: '',
     estimatedTime: '',
+    timeUnit: 'minutes',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use our validation hook
+  const { errors, validateForm, clearErrors, submitted } = useFormValidation();
 
   const updateField = <K extends keyof PostFormState>(
     field: K,
@@ -60,26 +72,15 @@ export const usePostSubmission = ({
     setFormState(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateForm = () => {
-    const { title, difficultyLevel, type } = formState;
-    
-    if (!title || !difficultyLevel || !type) {
-      setError('Title, difficulty level, and type are required.');
-      return false;
-    }
-
-    if (type === PostType.IMAGE) {
-      if (images.length === 0) {
-        setError('At least one image is required.');
-        return false;
-      }
-      if (!thumbnail) {
-        setError('Thumbnail is required.');
-        return false;
-      }
-    }
-
-    return true;
+  const validateFormFields = () => {
+    return validateForm({
+      title: formState.title,
+      difficultyLevel: formState.difficultyLevel,
+      type: formState.type,
+      images,
+      thumbnail,
+      selectedMaterials
+    });
   };
 
   const createPost = async (payload: PostPayload, images: FileOrUrl[], thumbnail: FileOrUrl | null) => {
@@ -88,12 +89,19 @@ export const usePostSubmission = ({
     formData.append('description', payload.description || '');
     formData.append('postDifficulty', payload.postDifficulty);
     formData.append('postType', payload.postType);
-    formData.append('estimatedTime', payload.estimatedTime);
+    
+    // Format estimated time with unit - estimatedTime now contains only numeric value
+    const formattedTime = payload.estimatedTime ? 
+      `${payload.estimatedTime} ${payload.timeUnit}` : 
+      '';
+    formData.append('estimatedTime', formattedTime);
+    
     formData.append('postStatus', payload.postStatus || '');
     
-    payload.materialIds.forEach(id => formData.append('materialIds', id.toString()));
+    // Add materials data as JSON string
+    formData.append('materials', JSON.stringify(payload.materials));
     
-    // Add images with the correct field name: 'contents' instead of 'imageUrls'
+    // Add images
     images.forEach(image => {
       if (image instanceof File) {
         formData.append('contents', image);
@@ -102,7 +110,7 @@ export const usePostSubmission = ({
       }
     });
   
-    // Add thumbnail with the correct field name: 'thumbnail' instead of 'thumbnailUrl'
+    // Add thumbnail
     if (thumbnail) {
       if (thumbnail instanceof File) {
         formData.append('thumbnail', thumbnail);
@@ -132,33 +140,54 @@ export const usePostSubmission = ({
       difficultyLevel: '',
       type: '',
       estimatedTime: '',
+      timeUnit: 'minutes',
     });
     resetFileUploads();
+    clearErrors();
     setShowAddNewPost(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-
+    // Validate the form and show specific field errors immediately
+    if (!validateFormFields()) {
+      setError(null); // Remove any general error message
+      return;
+    }
+  
     setIsLoading(true);
     setError(null);
-
+  
     try {
+      const materialsPayload = selectedMaterials.map(material => ({
+        materialId: material.materialId,
+        quantityRequired: material.quantityRequired || 1
+      }));
+  
       const postPayload: PostPayload = {
         title: formState.title,
         description: formState.description || '',
         postDifficulty: formState.difficultyLevel as PostDifficulty,
         postType: formState.type as PostType,
-        estimatedTime: formState.estimatedTime,
+        estimatedTime: formState.estimatedTime, // Now contains only numeric part
+        timeUnit: formState.timeUnit,
         imageUrls: [],
         thumbnailUrl: '',
-        materialIds: selectedMaterials.map(material => material.id),
+        materials: materialsPayload,
         postStatus: defaultStatus
       };
-
-      const postData = await createPost(postPayload, images, thumbnail);
+  
+      let postData = await createPost(postPayload, images, thumbnail);
+      
+      // Fetch the newly created post with complete material information
+      if (postData && postData.id) {
+        const completePostResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${postData.id}`);
+        if (completePostResponse.ok) {
+          postData = await completePostResponse.json();
+        }
+      }
+      
       onAddNewPost(postData);
       resetForm();
     } catch (error) {
@@ -174,6 +203,8 @@ export const usePostSubmission = ({
     handleSubmit,
     isLoading,
     error,
-    isFormValid: formState.title && formState.difficultyLevel && formState.type,
+    errors,
+    submitted,
+    isFormValid: validateFormFields,
   };
 };

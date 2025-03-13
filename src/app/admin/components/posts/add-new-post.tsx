@@ -5,7 +5,7 @@ import { FileUploadSection } from './subcomponents/file-upload-section';
 import { ImagePreview } from './subcomponents/image-preview';
 import { useFileUpload } from '@/hooks/use-file-upload';
 import { usePostSubmission } from '@/hooks/use-post-submission';
-import { Material } from '@/app/interfaces/material';
+import { Material, PostMaterial } from '@/app/interfaces/material';
 import React, { useEffect, useState } from 'react';
 
 type AddNewPostProps = {
@@ -15,7 +15,7 @@ type AddNewPostProps = {
 
 const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [selectedMaterials, setSelectedMaterials] = useState<Material[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>([]);
 
   useEffect(() => {
     const fetchMaterials = async () => {
@@ -52,11 +52,12 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
   };
 
   const {
-    formState: { title, description, difficultyLevel, type, estimatedTime },
+    formState: { title, description, difficultyLevel, type, estimatedTime, timeUnit },
     updateField,
     handleSubmit,
     isLoading,
     error,
+    errors,
     isFormValid,
   } = usePostSubmission({
     images,
@@ -67,6 +68,25 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
     selectedMaterials,
     defaultStatus: "PUBLISH" 
   });
+
+  // Extract only the numeric part of estimated time
+  const parseEstimatedTime = () => {
+    if (!estimatedTime) return "";
+    // Extract just the numeric part by removing any non-numeric characters
+    return estimatedTime.replace(/[^0-9]/g, '');
+  };
+
+  // Handle time value change - store only the numeric value
+  const handleTimeValueChange = (value: string) => {
+    // Keep only numeric characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+    updateField("estimatedTime", numericValue);
+  };
+
+  // Handle time unit change
+  const handleTimeUnitChange = (unit: 'minutes' | 'hours') => {
+    updateField("timeUnit", unit);
+  };
 
   return (
     <div className='p-4'>
@@ -81,19 +101,23 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
           postType={type}
           materials={materials}
           selectedMaterials={selectedMaterials}
+          errors={errors}
           onTitleChange={(value) => updateField("title", value)}
           onDescriptionChange={(value) => updateField("description", value)}
           onDifficultyChange={(value) => updateField("difficultyLevel", value)}
           onTypeChange={(value) => updateField("type", value)}
           onMaterialsChange={setSelectedMaterials}
-          estimatedTime={estimatedTime}
-          onEstimatedTimeChange={(value) => updateField("estimatedTime", value)}
+          estimatedTime={parseEstimatedTime()}
+          timeUnit={timeUnit || 'minutes'}
+          onEstimatedTimeChange={handleTimeValueChange}
+          onTimeUnitChange={handleTimeUnitChange}
         />
 
         {type === PostType.IMAGE && (
           <FileUploadSection
             images={images}
             thumbnail={thumbnail}
+            errors={errors}
             onImagesChange={handleImageChange}
             onThumbnailChange={handleThumbnailChange}
             onRemoveImage={handleRemoveImage}
@@ -103,18 +127,18 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
           />
         )}
 
-        <div className='flex justify-end'>
+        <div className='flex justify-end mt-6'>
           <button
             type='button'
             onClick={() => setShowAddNewPost(false)}
-            className='px-4 py-2 bg-gray-500 text-white rounded-md mr-2'
+            className='px-4 py-2 bg-gray-500 text-white rounded-md mr-2 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400'
           >
             Cancel
           </button>
           <button
             type='submit'
-            className='px-4 py-2 bg-primary text-white rounded-md'
-            disabled={!isFormValid || isLoading}
+            className='px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-light disabled:bg-gray-400 disabled:cursor-not-allowed'
+            disabled={isLoading}
           >
             {isLoading ? "Submitting..." : "Add Post"}
           </button>

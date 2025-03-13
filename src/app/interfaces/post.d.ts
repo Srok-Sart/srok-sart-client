@@ -20,7 +20,7 @@ export interface Post {
   viewCount: number;
   likeCount: number;
   postStatus: string;
-  materials: Material[];
+  postMaterials?: PostMaterial[];
   estimatedTime: string;
   createdAt: string;
   updatedAt: string;

@@ -64,7 +64,8 @@ export const PostsTable = ({
         <tbody>
           {posts.map((post, index) => {
             const uniqueKey = post.id ?? `post-${index}`;
-            const materials = post.materials || [];
+            // Use post.postMaterials now instead of post.materials
+            const materials = post.postMaterials || [];
 
             return (
               <tr key={uniqueKey} className='hover:bg-gray-50'>
@@ -79,21 +80,20 @@ export const PostsTable = ({
                 <td className='p-2 border'>
                   {materials.length > 0 ? (
                     <span
-                      className='cursor-pointer text-primary'
+                      className="cursor-pointer text-primary"
                       onClick={() => handleViewMaterials(post)}
                     >
                       {truncateMaterials(
-                        materials.map((material) => material.name),
+                        materials.map((material) => material.material?.name || "Unknown"),
                         3
                       )}
                     </span>
                   ) : (
-                    <span className='text-gray-500'>No materials</span>
+                    "No materials"
                   )}
                 </td>
                 <td className='p-2 border'>
                   <div className='flex justify-center space-x-2'>
-                    {/* View Button (Always Visible) */}
                     <button
                       onClick={() => post.id && onView(post.id)}
                       disabled={!post.id}
@@ -102,8 +102,6 @@ export const PostsTable = ({
                     >
                       <FaEye className='text-lg' />
                     </button>
-
-                    {/* Conditional Buttons for Posts Tab */}
                     {!isPostsRequestTab && (
                       <>
                         <button
@@ -124,13 +122,11 @@ export const PostsTable = ({
                         </button>
                       </>
                     )}
-
-                    {/* Conditional Buttons for Posts Request Tab */}
                     {isPostsRequestTab && post.postStatus === "PENDING" && (
                       <>
                         <button
                           onClick={() =>
-                            onApproveOrReject?.(post.id, "PUBLISH")
+                            post.id && onApproveOrReject?.(post.id, "PUBLISH")
                           }
                           className='bg-green-100 text-green-600 hover:bg-green-200 transition-colors p-2 rounded-full shadow-md'
                           title='Approve Post'
@@ -139,7 +135,7 @@ export const PostsTable = ({
                         </button>
                         <button
                           onClick={() =>
-                            onApproveOrReject?.(post.id, "REJECTED")
+                            post.id && onApproveOrReject?.(post.id, "REJECTED")
                           }
                           className='bg-red-100 text-red-600 hover:bg-red-200 transition-colors p-2 rounded-full shadow-md'
                           title='Reject Post'
@@ -157,19 +153,19 @@ export const PostsTable = ({
       </table>
 
       {selectedPost && (
-        <div className='fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center'>
-          <div className='bg-white p-4 rounded-md shadow-md w-1/2'>
-            <h2 className='text-2xl font-bold mb-4'>
-              Materials for {selectedPost.title}
-            </h2>
-            {selectedPost.materials && selectedPost.materials.length > 0 ? (
-              <ul className='list-disc list-inside'>
-                {selectedPost.materials.map((material) => (
-                  <li key={material.id}>{material.name}</li>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-4 rounded-md shadow-md w-1/2">
+            <h2 className="text-2xl font-bold mb-4">Materials for {selectedPost.title}</h2>
+            {selectedPost.postMaterials && selectedPost.postMaterials.length > 0 ? (
+              <ul className="list-disc list-inside">
+                {selectedPost.postMaterials.map((material) => (
+                  <li key={material.id}>
+                    {material.material?.name || "Unknown material"} - Quantity: {material.quantity}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p>No materials found for this post.</p>
+              <p>No materials available for this post.</p>
             )}
             <button
               onClick={() => setSelectedPost(null)}
