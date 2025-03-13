@@ -1,60 +1,144 @@
 import { useState } from "react";
 import { Post } from "@/app/interfaces/post";
+import { PostMaterial } from "@/app/interfaces/material";
+import { PostDifficulty } from "@/enums/post-difficulty.enum";
+import { PostType } from "@/enums/post-type.enum";
+import { FileOrUrl } from "@/app/interfaces/post";
+import { useFormValidation } from "./use-form-validation";
 
 interface UsePostUpdateProps {
   onUpdatePost: (post: Post) => void;
   setShowEditPost: (show: boolean) => void;
+  images: FileOrUrl[];
+  newImages: File[];
+  thumbnail: FileOrUrl | null;
+  selectedMaterials: PostMaterial[];
 }
 
-export const usePostUpdate = ({ onUpdatePost, setShowEditPost }: UsePostUpdateProps) => {
+interface PostUpdatePayload {
+  title: string;
+  description?: string;
+  postDifficulty: PostDifficulty;
+  postType: PostType;
+  estimatedTime: string;
+  materials: MaterialPayload[];
+  postStatus?: string;
+}
+
+interface MaterialPayload {
+  materialId: number;
+  quantityRequired?: number;
+}
+
+export const usePostUpdate = ({
+  onUpdatePost,
+  setShowEditPost,
+  images,
+  newImages,
+  thumbnail,
+  selectedMaterials,
+}: UsePostUpdateProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use our validation hook
+  const { errors, validateForm, clearErrors, submitted } = useFormValidation();
 
-  const handlePostUpdate = async (
-    post: Post, 
+  const validatePostFields = (post: Post): boolean => {
+    return validateForm({
+      title: post.title,
+      difficultyLevel: post.postDifficulty as PostDifficulty | '',
+      type: post.postType as PostType | '',
+      images,
+      thumbnail,
+      selectedMaterials
+    });
+  };
+
+  const updatePost = async (
+    payload: PostUpdatePayload,
     id: number,
-    newThumbnail: File | null,
     newImages: File[],
-    materialIds: number[]
+    thumbnail: FileOrUrl | null
   ) => {
+    const formData = new FormData();
+    formData.append("title", payload.title);
+    formData.append("description", payload.description || "");
+    formData.append("postDifficulty", payload.postDifficulty);
+    formData.append("postType", payload.postType);
+    formData.append("estimatedTime", payload.estimatedTime);
+    
+    if (payload.postStatus) {
+      formData.append("postStatus", payload.postStatus);
+    }
+    
+    // Add materials data as JSON string
+    formData.append('materials', JSON.stringify(payload.materials));
+    
+    // Add new images
+    newImages.forEach((image) => {
+      formData.append("contents", image);
+    });
+    
+    // Add thumbnail if it's a File (new thumbnail)
+    if (thumbnail instanceof File) {
+      formData.append("thumbnail", thumbnail);
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
+      method: "PATCH",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const errorMessage = errorData ? JSON.stringify(errorData) : await response.text();
+      throw new Error(`Failed to update post: ${errorMessage}`);
+    }
+
+    return response.json();
+  };
+
+  const handlePostUpdate = async (post: Post, id: number) => {
+    // Validate and show specific field errors immediately
+    if (!validatePostFields(post)) {
+      setError(null); // Remove any general error message
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("title", post.title);
-      formData.append("description", post.description || "");
-      formData.append("postDifficulty", post.postDifficulty);
-      formData.append("postType", post.postType);
-      formData.append("estimatedTime", post.estimatedTime || "");
+      // Create materials payload
+      const materialsPayload = selectedMaterials.map(material => ({
+        materialId: material.materialId,
+        quantityRequired: material.quantityRequired || 1
+      }));
 
-      if (materialIds.length === 1) {
-        formData.append('materialIds[]', materialIds[0].toString());
-      } else {
-        materialIds.forEach(id => formData.append('materialIds[]', id.toString()));
-      }
+      // Create post payload
+      const postPayload: PostUpdatePayload = {
+        title: post.title,
+        description: post.description || "",
+        postDifficulty: post.postDifficulty as PostDifficulty,
+        postType: post.postType as PostType,
+        estimatedTime: post.estimatedTime || "",
+        materials: materialsPayload,
+        postStatus: post.postStatus
+      };
 
-      if (newThumbnail) {
-        formData.append("thumbnail", newThumbnail);
-      }
+      const updatedPostData = await updatePost(
+        postPayload,
+        id,
+        newImages,
+        thumbnail
+      );
       
-      newImages.forEach((image) => formData.append("images", image));
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
-        method: "PATCH",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to update post: ${errorText}`);
-      }
-
-      const updatedPostData = await response.json();
+      // Call onUpdatePost with the returned data
       onUpdatePost(updatedPostData);
-      setShowEditPost(false);
+      clearErrors();
     } catch (error) {
-      setError("Error updating post. Please try again.");
+      setError(error instanceof Error ? error.message : "An unknown error occurred.");
       console.error("Update error:", error);
     } finally {
       setIsLoading(false);
@@ -64,6 +148,9 @@ export const usePostUpdate = ({ onUpdatePost, setShowEditPost }: UsePostUpdatePr
   return {
     isLoading,
     error,
+    errors,
+    submitted,
     handlePostUpdate,
+    validatePost: validatePostFields
   };
 };

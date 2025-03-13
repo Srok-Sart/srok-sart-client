@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Material } from "@/app/interfaces/material";
+import { Material, PostMaterial } from "@/app/interfaces/material";
 import { PostDifficulty } from "@/enums/post-difficulty.enum";
 import { PostType } from "@/enums/post-type.enum";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,7 @@ const UploadRequest = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [estimatedTime, setEstimatedTime] = useState<string>("");
-  const [selectedMaterials, setSelectedMaterials] = useState<Material[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<
@@ -90,6 +90,8 @@ const UploadRequest = () => {
     router.back();
   };
 
+
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -108,6 +110,8 @@ const UploadRequest = () => {
     if (selectedMaterials.length === 0) {
       errors.materials = "At least one material is required";
     }
+
+
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -137,6 +141,13 @@ const UploadRequest = () => {
 
     if (estimatedTime) {
       formData.append("estimatedTime", estimatedTime);
+    }
+
+
+
+    // Append materials with quantities
+    if (selectedMaterials.length > 0) {
+      formData.append("materials", JSON.stringify(selectedMaterials));
     }
 
     // Append files with correct field names
@@ -175,31 +186,6 @@ const UploadRequest = () => {
       setIsSubmitting(false);
     }
   };
-
-  const handleMaterialsChange = (selectedOptions: any) => {
-    const selectedMaterialObjects = selectedOptions
-      .map((option: any) =>
-        materials.find((material) => material.id.toString() === option.value)
-      )
-      .filter(Boolean);
-
-    setSelectedMaterials(selectedMaterialObjects);
-
-    // Clear any previous validation errors for materials
-    if (validationErrors.materials && selectedOptions.length > 0) {
-      setValidationErrors((prev) => ({ ...prev, materials: "" }));
-    }
-  };
-
-  const materialOptions = materials.map((material) => ({
-    value: material.id.toString(),
-    label: material.name,
-  }));
-
-  const selectedMaterialOptions = selectedMaterials.map((material) => ({
-    value: material.id.toString(),
-    label: material.name,
-  }));
 
   return (
     <>
@@ -242,19 +228,104 @@ const UploadRequest = () => {
             <label className='block text-gray-700 font-semibold mb-2'>
               Materials <span className='text-red-500'>*</span>
             </label>
+            
             <Select
               isMulti
-              value={selectedMaterialOptions}
-              onChange={handleMaterialsChange}
-              options={materialOptions}
+              options={materials.map(material => ({
+                value: material.id.toString(),
+                label: material.name,
+              }))}
+              onChange={(selectedOptions) => {
+                const materialObjects = selectedOptions.map((option: any) => {
+                  const material = materials.find(m => m.id.toString() === option.value);
+                  const existingMaterial = selectedMaterials.find(m => m.materialId.toString() === option.value);
+                  
+                  return {
+                    materialId: material?.id || parseInt(option.value),
+                    material,
+                    quantityRequired: existingMaterial?.quantityRequired || 1,
+                  };
+                });
+                setSelectedMaterials(materialObjects);
+                
+                // Clear any previous validation errors
+                if (validationErrors.materials && materialObjects.length > 0) {
+                  setValidationErrors((prev) => ({ ...prev, materials: "" }));
+                }
+              }}
+              value={selectedMaterials.map(material => ({
+                value: material.materialId.toString(),
+                label: material.material?.name || materials.find(m => m.id === material.materialId)?.name || 'Unknown',
+              }))}
               className='w-full'
               classNamePrefix='react-select'
               placeholder='Select the materials required for the post'
             />
+            
             {validationErrors.materials && (
               <p className='text-red-500 text-sm mt-1'>
                 {validationErrors.materials}
               </p>
+            )}
+            
+            {selectedMaterials.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-medium mb-2">Material Quantities:</h3>
+                <div className="space-y-2">
+                  {selectedMaterials.map((material, index) => (
+                    <div key={index} className="flex items-center">
+                      <span className="flex-grow">
+                        {material.material?.name || 
+                         materials.find(m => m.id === material.materialId)?.name || 
+                         'Unknown'}:
+                      </span>
+                      <div className="flex items-center ml-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedMaterials = [...selectedMaterials];
+                            const currentQuantity = updatedMaterials[index].quantityRequired || 1;
+                            updatedMaterials[index].quantityRequired = Math.max(1, currentQuantity - 1);
+                            setSelectedMaterials(updatedMaterials);
+                          }}
+                          className="px-2 py-1 bg-blue-600 text-white rounded-l-md hover:bg-blue-700"
+                          aria-label="Decrease quantity"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={material.quantityRequired || 1}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^\d]/g, '');
+                            const updatedMaterials = [...selectedMaterials];
+                            updatedMaterials[index].quantityRequired = parseInt(value) || 1;
+                            setSelectedMaterials(updatedMaterials);
+                          }}
+                          placeholder="1"
+                          className="w-12 px-2 py-1 border-t border-b border-gray-300 text-center"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedMaterials = [...selectedMaterials];
+                            const currentQuantity = updatedMaterials[index].quantityRequired || 1;
+                            updatedMaterials[index].quantityRequired = currentQuantity + 1;
+                            setSelectedMaterials(updatedMaterials);
+                          }}
+                          className="px-2 py-1 bg-blue-600 text-white rounded-r-md hover:bg-blue-700"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Use the +/- buttons to adjust quantities or enter a value directly.</p>
+              </div>
             )}
           </div>
         )}

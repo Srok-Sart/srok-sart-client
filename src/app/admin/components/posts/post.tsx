@@ -21,12 +21,16 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
     const fetchPosts = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`);
-        if (!res.ok) throw new Error(`Failed to fetch posts: ${res.statusText}`);
-        
-        const data: Post[] = await res.json();
-        if (Array.isArray(data)) {
-          const sortedPosts = data.sort((a, b) => a.id - b.id);
+        if (!res.ok)
+          throw new Error(`Failed to fetch posts: ${res.statusText}`);
+
+        const result = await res.json();
+        // Make sure to extract posts from the 'data' key
+        if (result && Array.isArray(result.data)) {
+          const sortedPosts = result.data.sort((a: Post, b: Post) => a.id - b.id);
           setPosts(sortedPosts);
+        } else {
+          console.error("Unexpected response structure", result);
         }
       } catch (error) {
         console.error("Error fetching posts:", error);

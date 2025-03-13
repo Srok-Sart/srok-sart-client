@@ -11,3 +11,10 @@ export interface Material {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Add a new interface for the association
+export interface PostMaterial {
+  materialId: number;
+  material?: Material;
+  quantityRequired?: number;
+}
