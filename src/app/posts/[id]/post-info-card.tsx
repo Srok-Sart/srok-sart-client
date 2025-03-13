@@ -68,6 +68,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   // Fetch comments when component mounts
   useEffect(() => {
@@ -82,9 +83,20 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
           (comment) => comment.postId === post.id
         );
         setComments(postComments);
+        setCommentError(null);
       } catch (error) {
         console.error("Error fetching comments:", error);
-        setCommentError("Failed to load comments");
+        // Check if the error is related to authentication
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        if (
+          errorMessage.includes("Unauthorized") || 
+          errorMessage.includes("Authentication required") ||
+          errorMessage.includes("Forbidden")
+        ) {
+          setCommentError("authentication_required");
+        } else {
+          setCommentError("Failed to load comments");
+        }
       } finally {
         setCommentsLoading(false);
       }
@@ -152,6 +164,10 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
   const handleEditComment = (commentId: number, content: string) => {
     setEditingCommentId(commentId);
     setEditCommentContent(content);
+  };
+
+  const toggleCommentMenu = (commentId: number) => {
+    setActiveDropdownId(activeDropdownId === commentId ? null : commentId);
   };
 
   const handleSaveEdit = async (commentId: number) => {
@@ -274,17 +290,18 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
       {/* Action Buttons */}
       <div className='bg-white p-4 rounded-lg shadow-sm'>
         <div className='flex items-center justify-between'>
-          <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-              liked
-                ? "text-red-500 bg-red-50"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
-            onClick={handleLikeClick}
-          >
-            <FaHeart size={18} />
-            <span>Like</span>
-          </button>
+        <button
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+            liked
+              ? "text-red-500 bg-red-50"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+          onClick={handleLikeClick}
+          title={token ? "Like this post" : "Sign in to like this post"}
+        >
+          <FaHeart size={18} />
+          <span>{token ? "Like" : "Sign in to like"}</span>
+        </button>
 
           <button
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
@@ -395,7 +412,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
             </div>
           </form>
 
-          {commentError && (
+          {commentError && commentError !== "authentication_required" && (
             <div className='mb-4 p-3 bg-red-50 text-red-500 rounded-lg text-sm'>
               {commentError}
             </div>
@@ -406,6 +423,19 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
             <div className='py-4 text-center'>
               <div className='inline-block h-6 w-6 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500'></div>
               <p className='mt-2 text-sm text-gray-500'>Loading comments...</p>
+            </div>
+          ) : commentError === "authentication_required" ? (
+            <div className='py-8 text-center bg-blue-50 rounded-lg'>
+              <div className='mx-auto w-12 h-12 flex items-center justify-center bg-blue-100 rounded-full mb-3'>
+                <FaComment size={20} className='text-blue-500' />
+              </div>
+              <h4 className='text-lg font-medium text-gray-900 mb-2'>Sign in to view comments</h4>
+              <p className='text-gray-600 mb-4 max-w-md mx-auto'>
+                Please log in to view and participate in the discussion.
+              </p>
+              <a href="/login" className='inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition'>
+                Sign in
+              </a>
             </div>
           ) : comments.length > 0 ? (
             <div className='space-y-4'>
@@ -468,31 +498,45 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
 
                         {/* Comment actions dropdown - only show for user's own comments */}
                         {comment.userId && (
-                          <div className='relative group'>
-                            <button className='p-1 rounded-full hover:bg-gray-100'>
+                          <div className='relative'>
+                            <button 
+                              className='p-1 rounded-full hover:bg-gray-100'
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCommentMenu(comment.id);
+                              }}
+                            >
                               <FaEllipsisV
                                 size={14}
                                 className='text-gray-500'
                               />
                             </button>
-                            <div className='absolute right-0 mt-1 w-36 bg-white shadow-lg rounded-md py-1 z-10 hidden group-hover:block'>
-                              <button
-                                onClick={() =>
-                                  handleEditComment(comment.id, comment.content)
-                                }
-                                className='w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2'
-                              >
-                                <FaPen size={12} />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteComment(comment.id)}
-                                className='w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 flex items-center gap-2'
-                              >
-                                <FaTrash size={12} />
-                                <span>Delete</span>
-                              </button>
-                            </div>
+                            {activeDropdownId === comment.id && (
+                              <div className='absolute right-0 mt-1 w-36 bg-white shadow-lg rounded-md py-1 z-10'>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditComment(comment.id, comment.content);
+                                    setActiveDropdownId(null);
+                                  }}
+                                  className='w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2'
+                                >
+                                  <FaPen size={12} />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteComment(comment.id);
+                                    setActiveDropdownId(null);
+                                  }}
+                                  className='w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 flex items-center gap-2'
+                                >
+                                  <FaTrash size={12} />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

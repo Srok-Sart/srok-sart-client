@@ -81,20 +81,20 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
 
   const handleLikeClick = async () => {
     if (!token) {
-      setError("Please sign in to like this post");
       setIsUserAuthenticated(false);
+      router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
       return;
     }
-
+  
     setError(null);
     setIsLikeLoading(true);
-
+  
     try {
       const response = await toggleLike(post.id, liked, token);
-
+  
       setLiked(!liked);
       setLikeCount(response.likeCount);
-
+  
       const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
       if (!liked) {
         likedPosts[post.id] = { isLiked: true, likeCount: response.likeCount };
@@ -104,17 +104,17 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
       localStorage.setItem("likedPosts", JSON.stringify(likedPosts));
     } catch (error) {
       console.error("Error handling like:", error);
-
+  
       if (
         error instanceof Error &&
         (error.message.includes("Authentication") ||
           error.message.includes("Unauthorized") ||
           error.message.includes("Forbidden"))
       ) {
-        setError("Please sign in to like this post");
         setIsUserAuthenticated(false);
+        router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
       } else {
-        setError("Failed to like post. Please try again.");
+        setError("Something went wrong. Please try again later.");
       }
     } finally {
       setIsLikeLoading(false);
@@ -184,7 +184,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
             </div>
           )}
 
-          <PostInfoCard
+        <PostInfoCard
             post={post}
             saved={saved}
             liked={liked}
