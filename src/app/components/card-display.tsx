@@ -33,7 +33,6 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
 
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent the Link from navigating
-<<<<<<< HEAD
     try {
       const fetchedCollections = await fetchCollections(); // Fetch collections
       setCollections(fetchedCollections);
@@ -42,21 +41,11 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
       console.error("Error fetching collections:", error);
       alert("Failed to fetch collections. Please try again.");
     }
-=======
-    const collections = await fetchCollections();
-    setCollections(collections);
-    setShowCollections(true); // Show the modal for this post
->>>>>>> 05763ea19246e89b0959c7e3f29e348bcc0dea0c
   };
 
   const handleCollectionSelect = async (e: React.MouseEvent, collectionId: string) => {
     e.stopPropagation(); // Stop event propagation
     e.preventDefault(); // Prevent default behavior
-<<<<<<< HEAD
-
-=======
-  
->>>>>>> 05763ea19246e89b0959c7e3f29e348bcc0dea0c
     try {
       await savePostToCollection(collectionId, post.id);
       setSaved(true);
