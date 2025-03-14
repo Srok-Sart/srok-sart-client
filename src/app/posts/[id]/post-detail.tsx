@@ -73,7 +73,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
   }, [post.id, post.likeCount, token]);
 
-  const handleSaveClick = (e: any) => {
+  const handleSaveClick = async (e: React.MouseEvent) => {
     e.preventDefault();
   
     if (!token) {
@@ -86,9 +86,15 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
   
     setError(null);
-    const collections: any = fetchCollections();
-    setCollections(collections);
-    setShowCollections(true);
+
+    try {
+      const fetchedCollections = await fetchCollections();
+      setCollections(fetchedCollections);
+      setShowCollections(true);
+    } catch (error) {
+      console.error("Error fetching collections:", error);
+      setError("Failed to fetch collections. Please try again.");
+    }
   };
 
   const handleLikeClick = async () => {
@@ -103,7 +109,6 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
   
     try {
       const response = await toggleLike(post.id, liked, token);
-
       setLiked(!liked);
       setLikeCount(response.likeCount);
   

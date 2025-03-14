@@ -33,7 +33,6 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
 
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent the Link from navigating
-    setIsLoading(true);
     try {
       const fetchedCollections = await fetchCollections(); // Fetch collections
       setCollections(fetchedCollections);
@@ -41,16 +40,12 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
     } catch (error) {
       console.error("Error fetching collections:", error);
       alert("Failed to fetch collections. Please try again.");
-    } finally {
-    setIsLoading(false); // Reset loading state
-  }
+    }
   };
 
   const handleCollectionSelect = async (e: React.MouseEvent, collectionId: string) => {
     e.stopPropagation(); // Stop event propagation
     e.preventDefault(); // Prevent default behavior
-
-    setIsLoading(true);
 
     try {
       await savePostToCollection(collectionId, post.id);
