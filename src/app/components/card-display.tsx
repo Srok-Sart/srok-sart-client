@@ -33,6 +33,7 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
 
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent the Link from navigating
+<<<<<<< HEAD
     try {
       const fetchedCollections = await fetchCollections(); // Fetch collections
       setCollections(fetchedCollections);
@@ -41,12 +42,21 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
       console.error("Error fetching collections:", error);
       alert("Failed to fetch collections. Please try again.");
     }
+=======
+    const collections = await fetchCollections();
+    setCollections(collections);
+    setShowCollections(true); // Show the modal for this post
+>>>>>>> 05763ea19246e89b0959c7e3f29e348bcc0dea0c
   };
 
   const handleCollectionSelect = async (e: React.MouseEvent, collectionId: string) => {
     e.stopPropagation(); // Stop event propagation
     e.preventDefault(); // Prevent default behavior
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 05763ea19246e89b0959c7e3f29e348bcc0dea0c
     try {
       await savePostToCollection(collectionId, post.id);
       setSaved(true);
@@ -142,13 +152,34 @@ const CardDisplay = ({ post, isInCollection = false, collectionId, onUnsave }: C
       </div>
 
       {/* Collection Selection Modal */}
-      <CollectionSelectModal
-        showCollections={showCollections}
-        setShowCollections={setShowCollections}
-        collections={collections}
-        handleCollectionSelect={handleCollectionSelect}
-        isLoading={isLoading}
-      />
+      {showCollections && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Choose a Collection</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {collections.map((collection) => (
+                <button
+                  key={collection.id}
+                  onClick={(e) => handleCollectionSelect(e, collection.id)}
+                  className="p-4 border rounded-lg hover:bg-gray-100"
+                >
+                  {collection.name}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setShowCollections(false);
+              }}
+              className="mt-4 text-red-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </Link>
   );
 };
