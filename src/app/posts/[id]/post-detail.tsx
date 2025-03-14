@@ -35,7 +35,12 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
   const [isUserAuthenticated, setIsUserAuthenticated] =
     useState(isAuthenticated);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
   const [, setIsLikeLoading] = useState(false);
+  const [isSaveLoading, setIsSaveLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -64,37 +69,84 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
   }, [post.id, post.likeCount, token]);
 
-  const handleSaveClick = (e: any) => {
-    e.preventDefault();
+  // Auto-dismiss notifications after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
+  const handleSaveClick = async (e: any) => {
+    e.preventDefault();
+  
     if (!token) {
-      setError("Please sign in to save this post");
+      setError("Please sign in to save this post to your collections");
       setIsUserAuthenticated(false);
+      setTimeout(() => {
+        router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
+      }, 3000);
       return;
     }
-
+  
     setError(null);
-    const collections: any = fetchCollections();
-    setCollections(collections);
-    setShowCollections(true);
+    setIsSaveLoading(true);
+    
+    try {
+      const collections: any = await fetchCollections();
+      if (collections.length === 0) {
+        setNotification({
+          message: "You don't have any collections yet. Create one first!",
+          type: "error"
+        });
+        return;
+      }
+      setCollections(collections);
+      setShowCollections(true);
+    } catch (error) {
+      console.error("Error fetching collections:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      
+      if (errorMessage.includes("Unauthorized") || 
+          errorMessage.includes("Authentication") ||
+          errorMessage.includes("Forbidden")) {
+        setIsUserAuthenticated(false);
+        setNotification({
+          message: "Your session has expired. Please sign in again.",
+          type: "error"
+        });
+        setTimeout(() => {
+          router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
+        }, 3000);
+      } else {
+        setNotification({
+          message: "Failed to load your collections. Please try again.",
+          type: "error"
+        });
+      }
+    } finally {
+      setIsSaveLoading(false);
+    }
   };
 
   const handleLikeClick = async () => {
     if (!token) {
-      setError("Please sign in to like this post");
       setIsUserAuthenticated(false);
+      router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
       return;
     }
-
+  
     setError(null);
     setIsLikeLoading(true);
-
+  
     try {
       const response = await toggleLike(post.id, liked, token);
-
+  
       setLiked(!liked);
       setLikeCount(response.likeCount);
-
+  
       const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
       if (!liked) {
         likedPosts[post.id] = { isLiked: true, likeCount: response.likeCount };
@@ -104,17 +156,17 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
       localStorage.setItem("likedPosts", JSON.stringify(likedPosts));
     } catch (error) {
       console.error("Error handling like:", error);
-
+  
       if (
         error instanceof Error &&
         (error.message.includes("Authentication") ||
           error.message.includes("Unauthorized") ||
           error.message.includes("Forbidden"))
       ) {
-        setError("Please sign in to like this post");
         setIsUserAuthenticated(false);
+        router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
       } else {
-        setError("Failed to like post. Please try again.");
+        setError("Something went wrong. Please try again later.");
       }
     } finally {
       setIsLikeLoading(false);
@@ -132,21 +184,50 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
   const handleCollectionSelect = async (e: any, collectionId: any) => {
     e.stopPropagation();
     e.preventDefault();
+    
+    setIsSaveLoading(true);
 
     try {
       await savePostToCollection(collectionId, post.id);
       setSaved(true);
       setShowCollections(false);
+      setNotification({
+        message: "Post saved to collection successfully!",
+        type: "success"
+      });
     } catch (error) {
       if (
         error instanceof Error &&
         error.message === "Post already exists in the collection"
       ) {
-        alert("This post is already in the collection.");
+        setNotification({
+          message: "This post is already in the selected collection.",
+          type: "error"
+        });
+      } else if (
+        error instanceof Error &&
+        (error.message.includes("Authentication") ||
+        error.message.includes("Unauthorized") ||
+        error.message.includes("Forbidden"))
+      ) {
+        setIsUserAuthenticated(false);
+        setShowCollections(false);
+        setNotification({
+          message: "Your session has expired. Please sign in again.",
+          type: "error"
+        });
+        setTimeout(() => {
+          router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
+        }, 3000);
       } else {
         console.error("Error saving post to collection:", error);
-        alert("Failed to save post. Please try again.");
+        setNotification({
+          message: "Failed to save post to collection. Please try again.",
+          type: "error"
+        });
       }
+    } finally {
+      setIsSaveLoading(false);
     }
   };
 
@@ -154,16 +235,53 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {
-        alert("Link copied! You can now paste it anywhere.");
+        setNotification({
+          message: "Link copied to clipboard!",
+          type: "success"
+        });
       })
       .catch((err) => {
-        console.error("Failed to copy: ", err);
+        console.error("Failed to copy:", err);
+        setNotification({
+          message: "Failed to copy link. Please try again.",
+          type: "error"
+        });
       });
   };
 
   return (
     <>
       <Navigation />
+      {/* Toast Notification */}
+      {notification && (
+        <div className={`fixed top-20 right-4 p-4 rounded-md shadow-lg z-50 transition-all duration-300 ease-in-out animate-fadeIn ${
+          notification.type === "success" 
+            ? "bg-green-50 border-l-4 border-green-500 text-green-700" 
+            : "bg-red-50 border-l-4 border-red-500 text-red-700"
+        }`}>
+          <div className="flex items-center">
+            {notification.type === "success" ? (
+              <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            )}
+            <span>{notification.message}</span>
+            <button 
+              onClick={() => setNotification(null)}
+              className="ml-auto text-gray-500 hover:text-gray-700"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className='pt-16 pb-16 max-w-5xl mx-auto px-4'>
         <PostHeader post={post} />
 
@@ -199,6 +317,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
             shareUrl={shareUrl}
             token={token}
             isUserAuthenticated={isUserAuthenticated}
+            isSaveLoading={isSaveLoading}
           />
         </div>
       </div>
@@ -208,6 +327,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
         setShowCollections={setShowCollections}
         collections={collections}
         handleCollectionSelect={handleCollectionSelect}
+        isLoading={isSaveLoading}
       />
     </>
   );

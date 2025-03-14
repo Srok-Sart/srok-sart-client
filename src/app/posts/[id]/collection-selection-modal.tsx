@@ -22,6 +22,7 @@ interface CollectionSelectModalProps {
     e: React.MouseEvent,
     collectionId: string
   ) => Promise<void>;
+  isLoading: boolean;
 }
 
 const CollectionSelectModal: React.FC<CollectionSelectModalProps> = ({
