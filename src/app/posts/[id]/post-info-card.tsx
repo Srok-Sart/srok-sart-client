@@ -26,6 +26,7 @@ import {
   TelegramIcon,
   TelegramShareButton,
 } from "react-share";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface PostInfoCardProps {
   post: Post;
@@ -70,6 +71,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
   const [editCommentContent, setEditCommentContent] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
+  const debouncedHandleLikeClick = useDebounce(handleLikeClick, 500); // Debounce the like click
 
   // Fetch comments when component mounts
   useEffect(() => {
@@ -307,7 +309,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
               ? "text-red-500 bg-red-50"
               : "text-gray-600 hover:bg-gray-50"
           }`}
-          onClick={handleLikeClick}
+          onClick={debouncedHandleLikeClick}
           title={token ? "Like this post" : "Sign in to like this post"}
         >
           <FaHeart size={18} />
