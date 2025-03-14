@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FaEllipsisV, FaEdit, FaTrash, FaTag, FaTimes } from "react-icons/fa";
-import { updateCollection, deleteCollection, fetchPostsInCollection, unsavePostFromCollection } from "../../api/bookmark";
+import { FaEllipsisV, FaEdit, FaTrash, FaTag, FaBookmark } from "react-icons/fa";
+import { updateCollection, deleteCollection, fetchPostsInCollection } from "../../api/bookmark";
 import useClickOutside from "../../hooks/use-click-outside";
 import { Post } from "../interfaces/post";
 
@@ -35,8 +35,22 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
 
   useClickOutside(menuRef, () => setMenuOpen(false));
 
+  // Fetch posts in the collection when the component mounts
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const posts = await fetchPostsInCollection(collection.id);
+        setPosts(posts);
+      } catch (error) {
+        console.error("Failed to fetch posts:", error);
+      }
+    };
+
+    fetchPosts();
+  }, [collection.id]);
+
   const handleNavigateToCollection = () => {
-    router.push(`/bookmark/${collection.id}`); 
+    router.push(`/bookmark/${collection.id}`);
   };
 
   const handleDeleteCollection = async () => {
@@ -46,16 +60,16 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
       if (!response.ok) {
         throw new Error("Failed to fetch collection");
       }
-  
+
       const collectionData = await response.json();
       console.log("Collection data:", collectionData); // Debugging
-  
+
       // Check if the collection has posts
       if (collectionData.posts && collectionData.posts.length > 0) {
         alert("Cannot delete collection because it contains posts.");
         return; // Exit the function without deleting
       }
-  
+
       // Confirm deletion if the collection is empty
       if (window.confirm("Are you sure you want to delete this collection?")) {
         await deleteCollection(collection.id);
@@ -94,23 +108,32 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
     setMenuOpen(false);
   };
 
-  const handleUnsavePost = async (postId: number) => {
-    try {
-      await unsavePostFromCollection(collection.id, postId);
-      setPosts((prev) => prev.filter((post) => post.id !== Number(postId)));
-    } catch (error) {
-      console.error("Error unsaving post:", error);
-      alert("Failed to unsave post. Please try again.");
-    }
-  };
+  // Get the thumbnail URL of the first post (if available)
+  const firstPostThumbnail = posts.length > 0 ? posts[0].thumbnailUrl : null;
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl relative">
       <div
-        className="relative w-full h-48 overflow-hidden rounded-md cursor-pointer"
+        className="relative w-full h-48 overflow-hidden rounded-md cursor-pointer flex items-center justify-center"
         onClick={handleNavigateToCollection}
-        style={{ backgroundColor: collection.color }}
+        style={{
+          backgroundColor: firstPostThumbnail ? "transparent" : collection.color, // Use color if no thumbnail
+          backgroundImage: firstPostThumbnail
+            ? `url(${process.env.NEXT_PUBLIC_API_URL + firstPostThumbnail})`
+            : "none",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
+        {/* Overlay to improve text readability */}
+        {firstPostThumbnail && (
+          <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+        )}
+
+        {/* Display a big bookmark icon if there are no posts */}
+        {!firstPostThumbnail && (
+          <FaBookmark className="text-white text-6xl opacity-80" />
+        )}
       </div>
 
       {isEditing ? (
@@ -139,31 +162,6 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
       <p className="text-sm text-gray-500">
         {collection.isPrivate ? "Private" : "Public"}
       </p>
-
-      {posts.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-lg font-semibold">Saved Posts</h4>
-          <div className="grid grid-cols-2 gap-4">
-            {posts.map((post) => (
-              <div key={post.id} className="relative">
-                <Image
-                  src={process.env.NEXT_PUBLIC_API_URL + post.thumbnailUrl}
-                  alt={post.title}
-                  width={150}
-                  height={150}
-                  className="w-full h-32 object-cover rounded-lg"
-                />
-                <button
-                  onClick={() => handleUnsavePost(post.id)}
-                  className="absolute top-2 right-2 p-1 bg-white rounded-full"
-                >
-                  <FaTimes className="text-red-500" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {!collection.isDefault && (
         <div className="relative" ref={menuRef}>
