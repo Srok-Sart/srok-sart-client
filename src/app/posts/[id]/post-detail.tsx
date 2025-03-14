@@ -73,6 +73,16 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
   }, [post.id, post.likeCount, token]);
 
+  // Auto-dismiss notifications after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.preventDefault();
   
@@ -86,14 +96,36 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
   
     setError(null);
+    setIsSaveLoading(true);
 
     try {
+      
       const fetchedCollections = await fetchCollections();
       setCollections(fetchedCollections);
       setShowCollections(true);
     } catch (error) {
       console.error("Error fetching collections:", error);
-      setError("Failed to fetch collections. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+      if (errorMessage.includes("Unauthorized") || 
+          errorMessage.includes("Authentication") ||
+          errorMessage.includes("Forbidden")) {
+        setIsUserAuthenticated(false);
+        setNotification({
+          message: "Your session has expired. Please sign in again.",
+          type: "error"
+        });
+        setTimeout(() => {
+          router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
+        }, 3000);
+      } else {
+        setNotification({
+          message: "Failed to load your collections. Please try again.",
+          type: "error"
+        });
+      }
+    } finally {
+      setIsSaveLoading(false);
     }
   };
 
