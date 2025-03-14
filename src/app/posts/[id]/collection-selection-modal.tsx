@@ -46,7 +46,7 @@ const CollectionSelectModal: React.FC<CollectionSelectModalProps> = ({
 
         {collections.length === 0 ? (
           <p className='text-gray-500 text-center py-4'>
-            You dont have any collections yet. Create one to save this post.
+            You don't have any collections yet. Create one to save this post.
           </p>
         ) : (
           <div className='grid grid-cols-2 gap-4 max-h-80 overflow-y-auto'>
