@@ -43,6 +43,7 @@ interface PostInfoCardProps {
   setComment: (comment: string) => void;
   token?: string;
   isUserAuthenticated?: boolean;
+  isSaveLoading: boolean;
 }
 
 const PostInfoCard: React.FC<PostInfoCardProps> = ({
