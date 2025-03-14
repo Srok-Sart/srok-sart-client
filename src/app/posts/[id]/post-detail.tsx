@@ -7,10 +7,20 @@ import Navigation from "@/app/components/navigation";
 import { Post } from "@/app/interfaces/post";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import CollectionSelectionModal from "./collection-selection-modal";
+import CollectionSelectModal from "./collection-selection-modal";
 import MediaGallery from "./media-gallery";
 import PostHeader from "./post-header";
 import PostInfoCard from "./post-info-card";
+
+interface Collection {
+  id: string;
+  name: string;
+  saved?: number;
+  isDefault?: boolean;
+  thumbnails?: string[];
+  description?: string;
+  isPrivate?: boolean;
+}
 
 interface PostDetailPageProps {
   post: Post;
@@ -28,12 +38,11 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [comment, setComment] = useState("");
-  const [isUserAuthenticated, setIsUserAuthenticated] =
-    useState(isAuthenticated);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(isAuthenticated);
   const [error, setError] = useState<string | null>(null);
   const [notification, setNotification] = useState<{
     message: string;
@@ -46,7 +55,6 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href);
 
-      // Check like status from API using the passed token
       const checkLikeStatus = async () => {
         try {
           if (token) {
@@ -55,11 +63,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
           }
         } catch (error) {
           console.error("Error checking like status:", error);
-
-          // Fallback to localStorage if API call fails
-          const likedPosts = JSON.parse(
-            localStorage.getItem("likedPosts") || "{}"
-          );
+          const likedPosts = JSON.parse(localStorage.getItem("likedPosts") || "{}");
           setLiked(!!likedPosts[post.id]);
           setLikeCount(likedPosts[post.id]?.likeCount || post.likeCount || 0);
         }
@@ -69,17 +73,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
   }, [post.id, post.likeCount, token]);
 
-  // Auto-dismiss notifications after 5 seconds
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => {
-        setNotification(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
-
-  const handleSaveClick = async (e: any) => {
+  const handleSaveClick = (e: any) => {
     e.preventDefault();
   
     if (!token) {
@@ -92,43 +86,9 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
   
     setError(null);
-    setIsSaveLoading(true);
-    
-    try {
-      const collections: any = await fetchCollections();
-      if (collections.length === 0) {
-        setNotification({
-          message: "You don't have any collections yet. Create one first!",
-          type: "error"
-        });
-        return;
-      }
-      setCollections(collections);
-      setShowCollections(true);
-    } catch (error) {
-      console.error("Error fetching collections:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      
-      if (errorMessage.includes("Unauthorized") || 
-          errorMessage.includes("Authentication") ||
-          errorMessage.includes("Forbidden")) {
-        setIsUserAuthenticated(false);
-        setNotification({
-          message: "Your session has expired. Please sign in again.",
-          type: "error"
-        });
-        setTimeout(() => {
-          router.push("/login?returnUrl=" + encodeURIComponent(window.location.pathname));
-        }, 3000);
-      } else {
-        setNotification({
-          message: "Failed to load your collections. Please try again.",
-          type: "error"
-        });
-      }
-    } finally {
-      setIsSaveLoading(false);
-    }
+    const collections: any = fetchCollections();
+    setCollections(collections);
+    setShowCollections(true);
   };
 
   const handleLikeClick = async () => {
@@ -143,7 +103,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
   
     try {
       const response = await toggleLike(post.id, liked, token);
-  
+
       setLiked(!liked);
       setLikeCount(response.likeCount);
   
@@ -181,7 +141,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     setShowShareMenu(!showShareMenu);
   };
 
-  const handleCollectionSelect = async (e: any, collectionId: any) => {
+  const handleCollectionSelect = async (e: React.MouseEvent, collectionId: string) => {
     e.stopPropagation();
     e.preventDefault();
     
@@ -322,7 +282,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
         </div>
       </div>
 
-      <CollectionSelectionModal
+      <CollectionSelectModal
         showCollections={showCollections}
         setShowCollections={setShowCollections}
         collections={collections}
