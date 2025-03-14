@@ -77,6 +77,14 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
 
       setCommentsLoading(true);
       try {
+        // Only attempt to fetch comments if the user has a token
+        if (!token) {
+          // Instead of throwing an error, just set a specific state
+          setCommentError("authentication_required");
+          setCommentsLoading(false);
+          return;
+        }
+        
         // Filter comments by post ID on the client side
         const allComments = await getAllComments(token);
         const postComments = allComments.filter(
@@ -85,7 +93,9 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
         setComments(postComments);
         setCommentError(null);
       } catch (error) {
-        console.error("Error fetching comments:", error);
+        // Don't log the error to console to avoid cluttering the console
+        // console.error("Error fetching comments:", error);
+        
         // Check if the error is related to authentication
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         if (
