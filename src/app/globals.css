@@ -9,14 +9,6 @@
   --save-hover: #FFD700; /* Gold color for Save Icon */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary-color: #6437A0;
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   color: var(--foreground);
   background: var(--background);
