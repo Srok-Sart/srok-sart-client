@@ -10,31 +10,56 @@ interface EditMaterialProps {
   setShowEditMaterial: (show: boolean) => void;
   onUpdateMaterial: (material: Material) => void;
   id: number;
+  token: string; // Add token to props
 }
 
-const EditMaterial = ({ setShowEditMaterial, onUpdateMaterial, id }: EditMaterialProps) => {
+const EditMaterial = ({ 
+  setShowEditMaterial, 
+  onUpdateMaterial, 
+  id, 
+  token 
+}: EditMaterialProps) => {
   const [material, setMaterial] = useState<Material | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const { isLoading, error, handleMaterialUpdate } = useMaterialUpdate({
     onUpdateMaterial,
     setShowEditMaterial,
+    token, // Pass token to hook
   });
 
   useEffect(() => {
     const fetchMaterial = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials/${id}`);
-        if (!res.ok) throw new Error(`Failed to fetch material: ${res.statusText}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error('Unauthorized: Please log in again');
+          }
+          throw new Error(`Failed to fetch material: ${res.statusText}`);
+        }
 
         const data = await res.json();
         setMaterial(data);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Error fetching material";
+        setFetchError(errorMessage);
         console.error("Fetch error:", error);
       }
     };
 
-    fetchMaterial();
-  }, [id]);
+    if (token) {
+      fetchMaterial();
+    } else {
+      setFetchError("Authentication token is missing");
+    }
+  }, [id, token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +67,18 @@ const EditMaterial = ({ setShowEditMaterial, onUpdateMaterial, id }: EditMateria
 
     await handleMaterialUpdate(material, id);
   };
+
+  if (fetchError) {
+    return (
+      <div className="p-4">
+        <div className="text-red-500">
+          {fetchError.includes('Unauthorized') 
+            ? 'Your session has expired. Please log in again.'
+            : fetchError}
+        </div>
+      </div>
+    );
+  }
 
   if (!material) return <div className="p-4">Loading material...</div>;
 
@@ -76,7 +113,7 @@ const EditMaterial = ({ setShowEditMaterial, onUpdateMaterial, id }: EditMateria
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300"
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 disabled:bg-gray-400"
             disabled={!isFormValid || isLoading}
           >
             {isLoading ? "Updating..." : "Update Material"}

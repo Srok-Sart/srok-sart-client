@@ -5,25 +5,33 @@ import { useMaterialSubmission } from '@/hooks/use-material-submission';
 type AddNewMaterialProps = {
   setShowAddNewMaterial: (show: boolean) => void;
   onAddNewMaterial: (material: Material) => void;
+  token: string;
 };
 
-const AddNewMaterial = ({ setShowAddNewMaterial, onAddNewMaterial }: AddNewMaterialProps) => {
+const AddNewMaterial = ({ setShowAddNewMaterial, onAddNewMaterial, token }: AddNewMaterialProps) => {
   const {
     formState: { name, weightPerUnit, environmentalImpact, category, unit },
     updateField,
     handleSubmit,
     isLoading,
     error,
-    isFormValid,
+    validationErrors,
   } = useMaterialSubmission({
     onAddNewMaterial,
     setShowAddNewMaterial,
+    token,
   });
 
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Add New Material</h2>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+      {error && (
+        <div className="text-red-500 mb-4">
+          {error.includes('Unauthorized') 
+            ? 'Your session has expired. Please log in again.'
+            : error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <MaterialFormFields
@@ -37,25 +45,37 @@ const AddNewMaterial = ({ setShowAddNewMaterial, onAddNewMaterial }: AddNewMater
           onEnvironmentalImpactChange={(value) => updateField('environmentalImpact', value)}
           onCategoryChange={(value) => updateField('category', value)}
           onUnitChange={(value) => updateField('unit', value)}
+          errors={validationErrors}
         />
 
         <div className="flex justify-end">
           <button
             type="button"
             onClick={() => setShowAddNewMaterial(false)}
-            className="px-4 py-2 bg-gray-500 text-white rounded-md mr-2"
+            className="px-4 py-2 bg-gray-500 text-white rounded-md mr-2 hover:bg-gray-600"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
-            disabled={!isFormValid || isLoading}
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80"
           >
             {isLoading ? "Submitting..." : "Add Material"}
           </button>
         </div>
       </form>
+
+      {/* Show validation summary if there are any errors */}
+      {Object.keys(validationErrors).length > 0 && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600 font-medium mb-2">Please fix the following errors:</p>
+          <ul className="list-disc list-inside text-red-500">
+            {Object.entries(validationErrors).map(([field, message]) => (
+              <li key={field}>{message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

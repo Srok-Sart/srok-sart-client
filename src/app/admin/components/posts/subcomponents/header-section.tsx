@@ -39,7 +39,7 @@ export const HeaderSection = ({
         {!hideAddButton && setShowAddNewPost && (
           <button
             onClick={() => setShowAddNewPost(true)}
-            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors"
+            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors"
           >
             Add New Post
           </button>

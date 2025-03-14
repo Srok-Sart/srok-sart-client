@@ -15,9 +15,10 @@ interface EditPostProps {
   setShowEditPost: (show: boolean) => void;
   onUpdatePost: (post: Post) => void;
   id: number;
+  token: string;
 }
 
-const EditPost = ({ setShowEditPost, onUpdatePost, id }: EditPostProps) => {
+const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) => {
   const [post, setPost] = useState<Post | null>(null);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>([]);
@@ -38,12 +39,16 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id }: EditPostProps) => {
     handleThumbnailView,
   } = useFileUpload();
 
-  // Fetch initial data
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         if (!res.ok) throw new Error(`Failed to fetch post: ${res.statusText}`);
 
         const data = await res.json();
@@ -91,7 +96,12 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id }: EditPostProps) => {
 
     const fetchMaterials = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         if (!res.ok) throw new Error(`Failed to fetch materials: ${res.statusText}`);
         const data: Material[] = await res.json();
         setMaterials(data);
@@ -102,7 +112,7 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id }: EditPostProps) => {
 
     fetchPost();
     fetchMaterials();
-  }, [id]);
+  }, [id, token]);
 
   // Helper function to update post fields
   const updateField = <K extends keyof Post>(field: K, value: Post[K]) => {
@@ -182,37 +192,40 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id }: EditPostProps) => {
     handlePostUpdate 
   } = usePostUpdate({
     onUpdatePost: (updatedPost) => {
-      // This is the key fix - we need to fetch the complete post data after update
       const fetchUpdatedPost = async () => {
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`);
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
           if (res.ok) {
             const completePost = await res.json();
-            // Update parent component state with complete post data
             onUpdatePost(completePost);
-            // Close the edit form
             setShowEditPost(false);
           } else {
-            // If fetch fails, still use the returned data from update
             onUpdatePost(updatedPost);
             setShowEditPost(false);
           }
         } catch (error) {
           console.error("Error fetching updated post:", error);
-          // On error, still use returned data from update
           onUpdatePost(updatedPost);
           setShowEditPost(false);
         }
       };
       
-      // Fetch the complete post with all related data
       fetchUpdatedPost();
     },
-    setShowEditPost: () => {}, // We handle this in our success callback now
+    setShowEditPost: () => {}, // Handled in success callback
     images,
     newImages: newImagesFiles,
     thumbnail,
     selectedMaterials,
+    token, // Pass token to usePostUpdate hook
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

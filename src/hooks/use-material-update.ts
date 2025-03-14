@@ -4,9 +4,14 @@ import { Material } from "../app/interfaces/material";
 interface UseMaterialUpdateProps {
   onUpdateMaterial: (material: Material) => void;
   setShowEditMaterial: (show: boolean) => void;
+  token: string; // Add token to props
 }
 
-export const useMaterialUpdate = ({ onUpdateMaterial, setShowEditMaterial }: UseMaterialUpdateProps) => {
+export const useMaterialUpdate = ({ 
+  onUpdateMaterial, 
+  setShowEditMaterial,
+  token 
+}: UseMaterialUpdateProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,13 +19,18 @@ export const useMaterialUpdate = ({ onUpdateMaterial, setShowEditMaterial }: Use
     material: Material, 
     id: number
   ) => {
+    if (!token) {
+      setError('Authentication token is missing');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
       const updatedMaterial = {
         name: material.name,
-        weightPerUnit: parseFloat(material.weightPerUnit), // Convert weightPerUnit to a number
+        weightPerUnit: parseFloat(material.weightPerUnit),
         environmentalImpact: material.environmentalImpact,
         category: material.category,
         unit: material.unit,
@@ -28,11 +38,17 @@ export const useMaterialUpdate = ({ onUpdateMaterial, setShowEditMaterial }: Use
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(updatedMaterial),
       });
 
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Unauthorized: Please log in again');
+        }
         const errorText = await res.text();
         throw new Error(`Failed to update material: ${errorText}`);
       }
@@ -41,7 +57,10 @@ export const useMaterialUpdate = ({ onUpdateMaterial, setShowEditMaterial }: Use
       onUpdateMaterial(updatedMaterialData);
       setShowEditMaterial(false);
     } catch (error) {
-      setError("Error updating material. Please try again.");
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Error updating material. Please try again.";
+      setError(errorMessage);
       console.error("Update error:", error);
     } finally {
       setIsLoading(false);

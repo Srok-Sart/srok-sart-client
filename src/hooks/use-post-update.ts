@@ -13,6 +13,7 @@ interface UsePostUpdateProps {
   newImages: File[];
   thumbnail: FileOrUrl | null;
   selectedMaterials: PostMaterial[];
+  token: string;
 }
 
 interface PostUpdatePayload {
@@ -37,6 +38,7 @@ export const usePostUpdate = ({
   newImages,
   thumbnail,
   selectedMaterials,
+  token,
 }: UsePostUpdateProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,11 +89,17 @@ export const usePostUpdate = ({
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
       method: "PATCH",
+      headers: {
+        'Authorization': `Bearer ${token}`, // Add authorization header
+      },
       body: formData,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
+      if (response.status === 401) {
+        throw new Error('Unauthorized: Please log in again');
+      }
       const errorMessage = errorData ? JSON.stringify(errorData) : await response.text();
       throw new Error(`Failed to update post: ${errorMessage}`);
     }
@@ -100,9 +108,14 @@ export const usePostUpdate = ({
   };
 
   const handlePostUpdate = async (post: Post, id: number) => {
+    if (!token) {
+      setError('Authentication token is missing');
+      return;
+    }
+
     // Validate and show specific field errors immediately
     if (!validatePostFields(post)) {
-      setError(null); // Remove any general error message
+      setError(null);
       return;
     }
     
@@ -134,11 +147,15 @@ export const usePostUpdate = ({
         thumbnail
       );
       
-      // Call onUpdatePost with the returned data
       onUpdatePost(updatedPostData);
       clearErrors();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An unknown error occurred.");
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        // Handle authentication errors
+        setError('Your session has expired. Please log in again.');
+      } else {
+        setError(error instanceof Error ? error.message : "An unknown error occurred.");
+      }
       console.error("Update error:", error);
     } finally {
       setIsLoading(false);
