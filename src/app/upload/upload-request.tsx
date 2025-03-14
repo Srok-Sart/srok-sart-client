@@ -14,7 +14,11 @@ import MediaUpload from "./media-upload";
 import PostDifficultySelector from "./post-difficulty";
 import TitleDescription from "./title-description";
 
-const UploadRequest = () => {
+interface UploadRequestProps {
+  token: string;
+}
+
+const UploadRequest = ({ token }: UploadRequestProps) => {
   const router = useRouter();
 
   // Overall state
@@ -27,6 +31,7 @@ const UploadRequest = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [estimatedTime, setEstimatedTime] = useState<string>("");
+  const [timeUnit, setTimeUnit] = useState<'minutes' | 'hours'>('minutes');
   const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -36,13 +41,22 @@ const UploadRequest = () => {
   const [isClient, setIsClient] = useState<boolean>(false);
 
   useEffect(() => {
-    // Fetch materials from the API
     const fetchMaterials = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/materials`
+          `${process.env.NEXT_PUBLIC_API_URL}/materials`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
         );
         if (!response.ok) {
+          if (response.status === 401) {
+            router.push('/login');
+            return;
+          }
           throw new Error(`Failed to fetch materials: ${response.statusText}`);
         }
         const data = await response.json();
@@ -53,8 +67,8 @@ const UploadRequest = () => {
     };
 
     fetchMaterials();
-    setIsClient(true); // Set isClient to true after the component mounts
-  }, []);
+    setIsClient(true);
+  }, [token, router]);
 
   // Handlers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +104,11 @@ const UploadRequest = () => {
     router.back();
   };
 
-
+  const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow numbers
+    const value = e.target.value.replace(/[^\d]/g, '');
+    setEstimatedTime(value);
+  };
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -110,8 +128,6 @@ const UploadRequest = () => {
     if (selectedMaterials.length === 0) {
       errors.materials = "At least one material is required";
     }
-
-
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -140,10 +156,9 @@ const UploadRequest = () => {
     }
 
     if (estimatedTime) {
-      formData.append("estimatedTime", estimatedTime);
+      const timeWithUnit = `${estimatedTime} ${timeUnit}`;
+      formData.append("estimatedTime", timeWithUnit);
     }
-
-
 
     // Append materials with quantities
     if (selectedMaterials.length > 0) {
@@ -162,10 +177,17 @@ const UploadRequest = () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
         const errorData = await response.json().catch(() => null);
         throw new Error(
           errorData?.message || `Failed to submit post: ${response.statusText}`
@@ -185,6 +207,18 @@ const UploadRequest = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Custom styles for react-select
+  const customStyles = {
+    control: (provided: any, state: any) => ({
+      ...provided,
+      borderColor: state.isFocused ? 'purple' : provided.borderColor,
+      boxShadow: state.isFocused ? '0 0 0 1px purple' : provided.boxShadow,
+      '&:hover': {
+        borderColor: state.isFocused ? 'purple' : provided.borderColor,
+      },
+    }),
   };
 
   return (
@@ -209,13 +243,28 @@ const UploadRequest = () => {
           <label className='block text-gray-700 font-semibold mb-2'>
             Estimated Time (optional)
           </label>
-          <input
-            type='text'
-            className='w-full p-2 border border-gray-300 rounded'
-            value={estimatedTime}
-            onChange={(e) => setEstimatedTime(e.target.value)}
-            placeholder='e.g., 15 minutes'
-          />
+          <div className="flex items-center">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className="w-36 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary h-10"
+              value={estimatedTime}
+              onChange={handleTimeInputChange}
+              placeholder="Enter time value"
+              aria-label="Estimated time value"
+            />
+            <select
+              value={timeUnit}
+              onChange={(e) => setTimeUnit(e.target.value as 'minutes' | 'hours')}
+              className="px-3 py-2 border-t border-r border-b rounded-r-md border-l-0 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary h-10"
+              aria-label="Time unit"
+            >
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+            </select>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Enter the estimated time as a number only.</p>
         </div>
 
         <PostDifficultySelector
@@ -257,9 +306,10 @@ const UploadRequest = () => {
                 value: material.materialId.toString(),
                 label: material.material?.name || materials.find(m => m.id === material.materialId)?.name || 'Unknown',
               }))}
-              className='w-full'
-              classNamePrefix='react-select'
-              placeholder='Select the materials required for the post'
+              styles={customStyles}
+              className={`w-full ${validationErrors.materials ? 'border-red-500 rounded-md' : ''}`}
+              classNamePrefix="react-select"
+              placeholder="Select materials needed for this project..."
             />
             
             {validationErrors.materials && (
@@ -288,7 +338,7 @@ const UploadRequest = () => {
                             updatedMaterials[index].quantityRequired = Math.max(1, currentQuantity - 1);
                             setSelectedMaterials(updatedMaterials);
                           }}
-                          className="px-2 py-1 bg-blue-600 text-white rounded-l-md hover:bg-blue-700"
+                          className="px-2 py-1 bg-primary text-white rounded-l-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
                           aria-label="Decrease quantity"
                         >
                           -
@@ -315,7 +365,7 @@ const UploadRequest = () => {
                             updatedMaterials[index].quantityRequired = currentQuantity + 1;
                             setSelectedMaterials(updatedMaterials);
                           }}
-                          className="px-2 py-1 bg-blue-600 text-white rounded-r-md hover:bg-blue-700"
+                          className="px-2 py-1 bg-primary text-white rounded-r-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
                           aria-label="Increase quantity"
                         >
                           +

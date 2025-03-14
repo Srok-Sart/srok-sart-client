@@ -7,25 +7,37 @@ import { HeaderSection } from "./subcomponents/header-section";
 import { PostsTable } from "./subcomponents/posts-table";
 import ViewPost from "./view-post";
 
-const Posts = ({ activeTab }: { activeTab: string }) => {
+type PostsProps = {
+  activeTab: string;
+  token: string;
+};
+
+type PostStatus = "PUBLISH" | "REJECTED" | "PENDING";
+
+type SortOption = "ID Ascending" | "ID Descending";
+
+const Posts = ({ activeTab, token }: PostsProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState("ID Ascending");
-  const [showAddNewPost, setShowAddNewPost] = useState(false);
-  const [showEditPost, setShowEditPost] = useState(false);
-  const [showViewPost, setShowViewPost] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortOption, setSortOption] = useState<SortOption>("ID Ascending");
+  const [showAddNewPost, setShowAddNewPost] = useState<boolean>(false);
+  const [showEditPost, setShowEditPost] = useState<boolean>(false);
+  const [showViewPost, setShowViewPost] = useState<boolean>(false);
   const [editPostId, setEditPostId] = useState<number | null>(null);
   const [viewPostId, setViewPostId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`);
-        if (!res.ok)
-          throw new Error(`Failed to fetch posts: ${res.statusText}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!res.ok) throw new Error(`Failed to fetch posts: ${res.statusText}`);
 
         const result = await res.json();
-        // Make sure to extract posts from the 'data' key
         if (result && Array.isArray(result.data)) {
           const sortedPosts = result.data.sort((a: Post, b: Post) => a.id - b.id);
           setPosts(sortedPosts);
@@ -36,11 +48,14 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
         console.error("Error fetching posts:", error);
       }
     };
-    fetchPosts();
-  }, []);
 
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const option = e.target.value;
+    if (token) {
+      fetchPosts();
+    }
+  }, [token]);
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    const option = e.target.value as SortOption;
     setSortOption(option);
     const sortedPosts = [...posts].sort((a, b) => {
       return option === "ID Ascending" ? a.id - b.id : b.id - a.id;
@@ -48,14 +63,15 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
     setPosts(sortedPosts);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number): Promise<void> => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`,
-        {
-          method: "DELETE",
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
+        method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
       if (!res.ok) throw new Error(`Failed to delete post: ${res.statusText}`);
       setPosts(posts.filter((post) => post.id !== id));
     } catch (error) {
@@ -63,43 +79,37 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
     }
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: number): void => {
     setEditPostId(id);
     setShowEditPost(true);
   };
 
-  const handleView = (id: number) => {
+  const handleView = (id: number): void => {
     setViewPostId(id);
     setShowViewPost(true);
   };
 
-  const handleAddNewPost = (newPost: Post) => {
+  const handleAddNewPost = (newPost: Post): void => {
     setPosts((prevPosts) => [...prevPosts, newPost]);
   };
 
-  const handleUpdatePost = (updatedPost: Post) => {
+  const handleUpdatePost = (updatedPost: Post): void => {
     setPosts((prevPosts) =>
       prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post))
     );
   };
 
-  const handleApproveOrReject = async (
-    id: number,
-    status: "PUBLISH" | "REJECTED"
-  ) => {
+  const handleApproveOrReject = async (id: number, status: PostStatus): Promise<void> => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ postStatus: status }),
-        }
-      );
-      if (!res.ok)
-        throw new Error(`Failed to update post status: ${res.statusText}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
+        method: "PATCH",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': "application/json",
+        },
+        body: JSON.stringify({ postStatus: status }),
+      });
+      if (!res.ok) throw new Error(`Failed to update post status: ${res.statusText}`);
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post.id === id ? { ...post, postStatus: status } : post
@@ -128,6 +138,7 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
       <AddNewPost
         setShowAddNewPost={setShowAddNewPost}
         onAddNewPost={handleAddNewPost}
+        token={token}
       />
     );
   }
@@ -138,12 +149,19 @@ const Posts = ({ activeTab }: { activeTab: string }) => {
         setShowEditPost={setShowEditPost}
         onUpdatePost={handleUpdatePost}
         id={editPostId}
+        token={token}
       />
     );
   }
 
   if (showViewPost && viewPostId !== null) {
-    return <ViewPost setShowViewPost={setShowViewPost} id={viewPostId} />;
+    return (
+      <ViewPost 
+        setShowViewPost={setShowViewPost} 
+        id={viewPostId} 
+        token={token}
+      />
+    );
   }
 
   return (

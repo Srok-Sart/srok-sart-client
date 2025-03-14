@@ -10,7 +10,7 @@ interface PostFormState {
   description: string;
   difficultyLevel: PostDifficulty | '';
   type: PostType | '';
-  estimatedTime: string; // Will store only numeric value
+  estimatedTime: string;
   timeUnit: 'minutes' | 'hours';
 }
 
@@ -22,6 +22,7 @@ interface UsePostSubmissionProps {
   resetFileUploads: () => void;
   selectedMaterials: PostMaterial[];
   defaultStatus?: string;
+  token: string;
 }
 
 interface PostPayload {
@@ -50,6 +51,7 @@ export const usePostSubmission = ({
   resetFileUploads,
   selectedMaterials,
   defaultStatus = "PENDING",
+  token,
 }: UsePostSubmissionProps) => {
   const [formState, setFormState] = useState<PostFormState>({
     title: '',
@@ -121,6 +123,9 @@ export const usePostSubmission = ({
   
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
       body: formData,
     });
   
@@ -150,9 +155,8 @@ export const usePostSubmission = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate the form and show specific field errors immediately
     if (!validateFormFields()) {
-      setError(null); // Remove any general error message
+      setError(null);
       return;
     }
   
@@ -170,7 +174,7 @@ export const usePostSubmission = ({
         description: formState.description || '',
         postDifficulty: formState.difficultyLevel as PostDifficulty,
         postType: formState.type as PostType,
-        estimatedTime: formState.estimatedTime, // Now contains only numeric part
+        estimatedTime: formState.estimatedTime,
         timeUnit: formState.timeUnit,
         imageUrls: [],
         thumbnailUrl: '',
@@ -182,7 +186,15 @@ export const usePostSubmission = ({
       
       // Fetch the newly created post with complete material information
       if (postData && postData.id) {
-        const completePostResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${postData.id}`);
+        const completePostResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/posts/${postData.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
         if (completePostResponse.ok) {
           postData = await completePostResponse.json();
         }

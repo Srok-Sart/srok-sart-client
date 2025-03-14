@@ -6,19 +6,36 @@ import EditMaterial from "./edit-material";
 import { HeaderSection } from "./header-section";
 import { MaterialsTable } from "./materials-table";
 
-const Materials = ({ activeTab }: { activeTab: string }) => {
+interface MaterialsProps {
+  activeTab: string;
+  token: string;
+}
+
+const Materials = ({ activeTab, token }: MaterialsProps) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("ID Ascending");
   const [showAddNewMaterial, setShowAddNewMaterial] = useState(false);
   const [showEditMaterial, setShowEditMaterial] = useState(false);
   const [editMaterialId, setEditMaterialId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`);
-        if (!res.ok) throw new Error(`Failed to fetch materials: ${res.statusText}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error('Unauthorized: Please log in again');
+          }
+          throw new Error(`Failed to fetch materials: ${res.statusText}`);
+        }
         
         const data: Material[] = await res.json();
         if (Array.isArray(data)) {
@@ -26,11 +43,18 @@ const Materials = ({ activeTab }: { activeTab: string }) => {
           setMaterials(sortedMaterials);
         }
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Error fetching materials";
+        setError(errorMessage);
         console.error("Error fetching materials:", error);
       }
     };
-    fetchMaterials();
-  }, []);
+
+    if (token) {
+      fetchMaterials();
+    } else {
+      setError("Authentication token is missing");
+    }
+  }, [token]);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const option = e.target.value;
@@ -45,11 +69,24 @@ const Materials = ({ activeTab }: { activeTab: string }) => {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/materials/${id}`,
-        { method: "DELETE" }
+        { 
+          method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
-      if (!res.ok) throw new Error(`Failed to delete material: ${res.statusText}`);
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Unauthorized: Please log in again');
+        }
+        throw new Error(`Failed to delete material: ${res.statusText}`);
+      }
       setMaterials(materials.filter((material) => material.id !== id));
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Error deleting material";
+      setError(errorMessage);
       console.error("Error deleting material:", error);
     }
   };
@@ -74,11 +111,40 @@ const Materials = ({ activeTab }: { activeTab: string }) => {
   );
 
   if (showAddNewMaterial) {
-    return <AddNewMaterial setShowAddNewMaterial={setShowAddNewMaterial} onAddNewMaterial={handleAddNewMaterial} />;
+    return (
+      <AddNewMaterial 
+        setShowAddNewMaterial={setShowAddNewMaterial} 
+        onAddNewMaterial={handleAddNewMaterial}
+        token={token}
+      />
+    );
   }
 
   if (showEditMaterial && editMaterialId !== null) {
-    return <EditMaterial setShowEditMaterial={setShowEditMaterial} onUpdateMaterial={handleUpdateMaterial} id={editMaterialId} />;
+    return (
+      <EditMaterial 
+        setShowEditMaterial={setShowEditMaterial} 
+        onUpdateMaterial={handleUpdateMaterial} 
+        id={editMaterialId}
+        token={token}
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-500">
+        <p>{error}</p>
+        {error.includes('Unauthorized') && (
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-md"
+          >
+            Refresh Page
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (

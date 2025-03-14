@@ -127,7 +127,7 @@ export const PostFormFields = ({
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Enter a descriptive title (e.g., 'DIY Garden Planter Box')"
-          className={`w-full px-3 py-2 border rounded-md ${errors.title ? 'border-red-500' : ''}`}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.title ? 'border-red-500' : ''}`}
         />
         {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
       </div>
@@ -138,7 +138,7 @@ export const PostFormFields = ({
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Describe your post in detail. Include any instructions, tips, or important information."
-          className="w-full px-3 py-2 border rounded-md"
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
           rows={4}
         />
       </div>

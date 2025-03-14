@@ -7,9 +7,10 @@ import Image from "next/image";
 interface ViewPostProps {
   setShowViewPost: (show: boolean) => void;
   id: number;
+  token: string;
 }
 
-const ViewPost = ({ setShowViewPost, id }: ViewPostProps) => {
+const ViewPost = ({ setShowViewPost, id, token}: ViewPostProps) => {
   const [post, setPost] = useState<Post | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,23 +20,38 @@ const ViewPost = ({ setShowViewPost, id }: ViewPostProps) => {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`);
-        if (!res.ok) throw new Error(`Failed to fetch post: ${res.statusText}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error('Unauthorized: Please log in again');
+          }
+          throw new Error(`Failed to fetch post: ${res.statusText}`);
+        }
+
         const data = await res.json();
-        
-        // Log the post materials to debug
-        console.log('Post Materials:', data.postMaterials);
-        
         setPost(data);
       } catch (error) {
-        setError("Error fetching post. Please try again.");
+        const errorMessage = error instanceof Error ? error.message : "Error fetching post";
+        setError(errorMessage);
         console.error("Fetch error:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchPost();
-  }, [id]);
+
+    if (token) {
+      fetchPost();
+    } else {
+      setError("Authentication token is missing");
+      setLoading(false);
+    }
+  }, [id, token]);
 
   const handlePrevImage = () => {
     if (currentImageIndex > 0) {
@@ -77,7 +93,11 @@ const ViewPost = ({ setShowViewPost, id }: ViewPostProps) => {
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold mb-4">Error Loading Post</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4">
+            {error.includes('Unauthorized') 
+              ? 'Your session has expired. Please log in again.'
+              : error}
+          </p>
           <button
             onClick={() => setShowViewPost(false)}
             className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark"

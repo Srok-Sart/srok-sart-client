@@ -6,7 +6,12 @@ import { HeaderSection } from "../posts/subcomponents/header-section";
 import PostsTable from "../posts/subcomponents/posts-table";
 import ViewPost from "../posts/view-post";
 
-const PostsRequest = ({ activeTab }: { activeTab: string }) => {
+type PostsRequestProps = {
+  activeTab: string;
+  token: string;
+};
+
+const PostsRequest = ({ activeTab, token }: PostsRequestProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("ID Ascending");
@@ -16,12 +21,14 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
   const [confirmationData, setConfirmationData] = useState<{ id: number; status: "PUBLISH" | "REJECTED" } | null>(null);
   const [hasPendingPosts, setHasPendingPosts] = useState(false);
 
-  /**
-   * Fetches only pending posts from the API
-   */
   const fetchPendingPosts = useCallback(async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!res.ok) throw new Error(`Failed to fetch posts: ${res.statusText}`);
 
       const data = await res.json();
@@ -43,7 +50,7 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
     } catch (error) {
       console.error("Error fetching pending posts:", error);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     fetchPendingPosts();
@@ -92,6 +99,7 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
         method: "PATCH",
         headers: {
+          'Authorization': `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ postStatus: status }),
@@ -99,7 +107,6 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
 
       if (!res.ok) throw new Error(`Failed to update post status: ${res.statusText}`);
 
-      // Remove the post from the list after approval/rejection
       setPosts((prevPosts) => {
         const updatedPosts = prevPosts.filter((post) => post.id !== id);
         setHasPendingPosts(updatedPosts.length > 0);
@@ -114,7 +121,7 @@ const PostsRequest = ({ activeTab }: { activeTab: string }) => {
   const filteredPosts = posts.filter((post) => post.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
   if (showViewPost && viewPostId !== null) {
-    return <ViewPost setShowViewPost={setShowViewPost} id={viewPostId} />;
+    return <ViewPost setShowViewPost={setShowViewPost} id={viewPostId} token={token} />;
   }
 
   return (

@@ -11,16 +11,22 @@ import React, { useEffect, useState } from 'react';
 type AddNewPostProps = {
   setShowAddNewPost: (show: boolean) => void;
   onAddNewPost: (post: Post) => void;
+  token: string;
 };
 
-const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
+const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>([]);
 
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         if (!res.ok) throw new Error(`Failed to fetch materials: ${res.statusText}`);
         const data: Material[] = await res.json();
         setMaterials(data);
@@ -29,7 +35,7 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
       }
     };
     fetchMaterials();
-  }, []);
+  }, [token]);
 
   const {
     images,
@@ -66,7 +72,8 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost }: AddNewPostProps) => {
     setShowAddNewPost,
     resetFileUploads,
     selectedMaterials,
-    defaultStatus: "PUBLISH" 
+    defaultStatus: "PUBLISH",
+    token,
   });
 
   // Extract only the numeric part of estimated time
