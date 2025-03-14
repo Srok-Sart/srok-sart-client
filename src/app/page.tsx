@@ -84,7 +84,7 @@ const Home = () => {
         {/* Display posts */}
         <div className='columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4'>
           {posts?.map((post, index) => (
-            <CardDisplay key={post.id || index} post={post} />
+            <CardDisplay key={post.id || index} post={post}  />
           ))}
         </div>
 
