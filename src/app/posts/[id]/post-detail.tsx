@@ -50,6 +50,9 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
   } | null>(null);
   const [, setIsLikeLoading] = useState(false);
   const [isSaveLoading, setIsSaveLoading] = useState(false);
+  const handleCreateCollection = (newCollection: Collection) => {
+    setCollections((prevCollections) => [...prevCollections, newCollection]);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -324,6 +327,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
         setShowCollections={setShowCollections}
         collections={collections}
         handleCollectionSelect={handleCollectionSelect}
+        onCreateCollection={handleCreateCollection}
         isLoading={isSaveLoading}
       />
     </>
