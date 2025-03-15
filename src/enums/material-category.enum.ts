@@ -7,5 +7,4 @@ export enum MaterialCategory {
     ORGANIC = 'ORGANIC',
     ELECTRONIC = 'ELECTRONIC',
     BATTERY = 'BATTERY',
-    OTHER = 'OTHER',
 }

@@ -1,4 +1,4 @@
-import { Material } from "../../../interfaces/material";
+import { Material } from "@/app/interfaces/material";
 import { MaterialFormFields } from './material-form';
 import { useMaterialSubmission } from '@/hooks/use-material-submission';
 
@@ -64,18 +64,6 @@ const AddNewMaterial = ({ setShowAddNewMaterial, onAddNewMaterial, token }: AddN
           </button>
         </div>
       </form>
-
-      {/* Show validation summary if there are any errors */}
-      {Object.keys(validationErrors).length > 0 && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-600 font-medium mb-2">Please fix the following errors:</p>
-          <ul className="list-disc list-inside text-red-500">
-            {Object.entries(validationErrors).map(([field, message]) => (
-              <li key={field}>{message}</li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };

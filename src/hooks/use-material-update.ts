@@ -4,7 +4,7 @@ import { Material } from "../app/interfaces/material";
 interface UseMaterialUpdateProps {
   onUpdateMaterial: (material: Material) => void;
   setShowEditMaterial: (show: boolean) => void;
-  token: string; // Add token to props
+  token: string;
 }
 
 export const useMaterialUpdate = ({ 
