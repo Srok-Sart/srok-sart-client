@@ -145,7 +145,7 @@ const ViewPost = ({ setShowViewPost, id, token}: ViewPostProps) => {
 
       {/* Image Gallery Section */}
       {totalImages > 0 ? (
-        <div className="w-full h-[60vh] flex justify-center items-center bg-gray-800 relative">
+        <div className="w-full h-[60vh] flex justify-center items-center bg-gray-200 relative">
           {/* Show the thumbnail first */}
           {hasThumbnail && currentImageIndex === 0 && (
             <div className="relative w-full h-full">
@@ -261,10 +261,10 @@ const ViewPost = ({ setShowViewPost, id, token}: ViewPostProps) => {
                 return (
                   <div 
                     key={index} 
-                    className="flex items-center bg-green-50 p-4 rounded-lg border border-green-100"
+                    className="flex items-center bg-purple-50 p-4 rounded-lg border border-green-100"
                   >
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-green-600 font-bold">{index + 1}</span>
+                    <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-primary font-bold">{index + 1}</span>
                     </div>
                     <div className="flex-grow">
                       <div className="flex items-baseline">
