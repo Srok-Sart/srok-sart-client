@@ -41,13 +41,20 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
       try {
         const posts = await fetchPostsInCollection(collection.id);
         setPosts(posts);
+
+        // Update the saved count in the collection
+        setCollections((prev) =>
+          prev.map((col) =>
+            col.id === collection.id ? { ...col, saved: posts.length } : col
+          )
+        );
       } catch (error) {
         console.error("Failed to fetch posts:", error);
       }
     };
 
     fetchPosts();
-  }, [collection.id]);
+  }, [collection.id]); // Only include collection.id in the dependency array
 
   const handleNavigateToCollection = () => {
     router.push(`/bookmark/${collection.id}`);
@@ -157,7 +164,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
         </h3>
       )}
 
-      <p className="text-sm text-black">{collection.saved} Saved</p>
+      <p className="text-sm text-black">{collection.saved ?? 0} Saved</p>
       <p className="text-sm text-gray-500">{collection.description}</p>
       <p className="text-sm text-gray-500">
         {collection.isPrivate ? "Private" : "Public"}

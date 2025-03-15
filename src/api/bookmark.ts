@@ -36,34 +36,75 @@ export const updateCollection = async (id: string, collection: { name: string; i
   return response.json();
 };
 
+// export const deleteCollection = async (id: string) => {
+//   try {
+//     // Fetch the collection to check if it has posts
+//     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`);
+//     if (!response.ok) {
+//       throw new Error("Failed to fetch collection");
+//     }
+
+//     const collection = await response.json();
+//     console.log("Collection:", collection); // Debugging
+
+//     // Check if the collection has posts
+//     if (collection.posts && collection.posts.length > 0) {
+//       throw new Error("Cannot delete collection because it contains posts");
+//     }
+
+//     // Delete the collection
+//     const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`, {
+//       method: "DELETE",
+//     });
+
+//     if (!deleteResponse.ok) {
+//       const errorText = await deleteResponse.text(); // Log the error response
+//       console.error("Delete response error:", errorText); // Debugging
+//       throw new Error(`Failed to delete collection: ${errorText}`);
+//     }
+
+//     return deleteResponse.json();
+//   } catch (error) {
+//     console.error("Error in deleteCollection:", error);
+//     throw error;
+//   }
+// };
+
 export const deleteCollection = async (id: string) => {
   try {
-    // Fetch the collection to check if it has posts
+    console.log("Fetching collection to check for posts..."); // Debugging
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`);
     if (!response.ok) {
-      throw new Error("Failed to fetch collection");
+      const errorText = await response.text(); // Log the error response
+      console.error("Fetch collection error:", errorText); // Debugging
+      throw new Error(`Failed to fetch collection: ${errorText}`);
     }
 
     const collection = await response.json();
-    console.log("Collection:", collection); // Debugging
+    console.log("Collection fetched:", collection); // Debugging
 
     // Check if the collection has posts
     if (collection.posts && collection.posts.length > 0) {
       throw new Error("Cannot delete collection because it contains posts");
     }
 
-    // Delete the collection
+    console.log("Deleting collection..."); // Debugging
     const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`, {
       method: "DELETE",
     });
 
     if (!deleteResponse.ok) {
       const errorText = await deleteResponse.text(); // Log the error response
-      console.error("Delete response error:", errorText); // Debugging
+      console.error("Delete collection error:", errorText); // Debugging
       throw new Error(`Failed to delete collection: ${errorText}`);
     }
 
-    return deleteResponse.json();
+    // Ensure the response is JSON
+    const deleteResponseText = await deleteResponse.text();
+    const deleteResponseData = deleteResponseText ? JSON.parse(deleteResponseText) : {};
+    console.log("Delete response:", deleteResponseData); // Debugging
+
+    return deleteResponseData;
   } catch (error) {
     console.error("Error in deleteCollection:", error);
     throw error;
