@@ -26,6 +26,7 @@ export interface Post {
   updatedAt: string;
   viewCount: number;
   likeCount: number;
+  user?: User;
 }
 
 export type FileOrUrl = File | string;
