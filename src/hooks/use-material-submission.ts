@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Material } from "../app/interfaces/material";
 import { MaterialCategory } from "@/enums/material-category.enum";
 import { MaterialUnit } from "@/enums/material-unit.enum";
+import { useMaterialValidation } from "./use-material-validation";
 
 interface UseMaterialSubmissionProps {
   onAddNewMaterial: (material: Material) => void;
@@ -29,44 +30,24 @@ export const useMaterialSubmission = ({ onAddNewMaterial, setShowAddNewMaterial,
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { errors: validationErrors, validateForm, clearErrors } = useMaterialValidation();
+
   const updateField = (field: keyof FormState, value: string | number) => {
     setFormState((prevState) => ({
       ...prevState,
       [field]: value,
     }));
-  };
-
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-
-    if (!formState.name.trim()) {
-      errors.name = "Material name is required";
-    }
-
-    if (!formState.weightPerUnit) {
-      errors.weightPerUnit = "Weight per unit is required";
-    }
-
-    if (!formState.environmentalImpact) {
-      errors.environmentalImpact = "Environmental impact is required";
-    }
-
-    if (!formState.category) {
-      errors.category = "Category is required";
-    }
-
-    if (!formState.unit) {
-      errors.unit = "Unit is required";
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    clearErrors();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Run validation before proceeding
+    if (!validateForm(formState)) {
+      return;
+    }
+
     if (!token) {
       setError('Authentication token is missing');
       return;
@@ -113,14 +94,6 @@ export const useMaterialSubmission = ({ onAddNewMaterial, setShowAddNewMaterial,
       setIsLoading(false);
     }
   };
-
-  const isFormValid = Boolean(
-    formState.name && 
-    formState.weightPerUnit && 
-    formState.environmentalImpact && 
-    formState.category && 
-    formState.unit
-  );
 
   return {
     formState,

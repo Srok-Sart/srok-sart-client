@@ -5,12 +5,13 @@ import { MaterialCategory } from "@/enums/material-category.enum";
 import { MaterialUnit } from "@/enums/material-unit.enum";
 import { MaterialFormFields } from "./material-form";
 import { useMaterialUpdate } from "@/hooks/use-material-update";
+import { useMaterialValidation } from "@/hooks/use-material-validation";
 
 interface EditMaterialProps {
   setShowEditMaterial: (show: boolean) => void;
   onUpdateMaterial: (material: Material) => void;
   id: number;
-  token: string; // Add token to props
+  token: string;
 }
 
 const EditMaterial = ({ 
@@ -25,8 +26,10 @@ const EditMaterial = ({
   const { isLoading, error, handleMaterialUpdate } = useMaterialUpdate({
     onUpdateMaterial,
     setShowEditMaterial,
-    token, // Pass token to hook
+    token,
   });
+
+  const { errors: validationErrors, validateForm, clearErrors } = useMaterialValidation();
 
   useEffect(() => {
     const fetchMaterial = async () => {
@@ -65,6 +68,10 @@ const EditMaterial = ({
     e.preventDefault();
     if (!material) return;
 
+    if (!validateForm(material)) {
+      return;
+    }
+
     await handleMaterialUpdate(material, id);
   };
 
@@ -82,28 +89,35 @@ const EditMaterial = ({
 
   if (!material) return <div className="p-4">Loading material...</div>;
 
-  const isFormValid = material.name && material.weightPerUnit && material.environmentalImpact && material.category && material.unit;
+  const handleFieldUpdate = (field: keyof Material, value: string | number) => {
+    setMaterial(prev => {
+      if (!prev) return null;
+      return { ...prev, [field]: value };
+    });
+    clearErrors();
+  };
 
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Edit Material</h2>
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <MaterialFormFields
           name={material.name}
           weightPerUnit={material.weightPerUnit || ""}
           environmentalImpact={material.environmentalImpact || 0}
           category={material.category || ""}
           unit={material.unit || ""}
-          onNameChange={(value) => setMaterial({ ...material, name: value })}
-          onWeightPerUnitChange={(value) => setMaterial({ ...material, weightPerUnit: value })}
-          onEnvironmentalImpactChange={(value) => setMaterial({ ...material, environmentalImpact: value })}
-          onCategoryChange={(value) => setMaterial({ ...material, category: value as MaterialCategory })}
-          onUnitChange={(value) => setMaterial({ ...material, unit: value as MaterialUnit })}
+          onNameChange={(value) => handleFieldUpdate('name', value)}
+          onWeightPerUnitChange={(value) => handleFieldUpdate('weightPerUnit', value)}
+          onEnvironmentalImpactChange={(value) => handleFieldUpdate('environmentalImpact', value)}
+          onCategoryChange={(value) => handleFieldUpdate('category', value as MaterialCategory)}
+          onUnitChange={(value) => handleFieldUpdate('unit', value as MaterialUnit)}
+          errors={validationErrors}
         />
 
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-6">
           <button
             type="button"
             onClick={() => setShowEditMaterial(false)}
@@ -113,8 +127,8 @@ const EditMaterial = ({
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 disabled:bg-gray-400"
-            disabled={!isFormValid || isLoading}
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 disabled:opacity-50"
+            disabled={isLoading}
           >
             {isLoading ? "Updating..." : "Update Material"}
           </button>
