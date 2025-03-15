@@ -265,16 +265,29 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
     <div className='flex-1 space-y-6'>
       {/* Creator Info */}
       <div className='flex items-center gap-3 bg-white p-4 rounded-lg shadow-sm'>
-        <Image
-          src='/grid/img1.png'
-          alt='Creator'
-          width={40}
-          height={40}
-          className='w-10 h-10 rounded-full object-cover border-2 border-gray-200'
-        />
+        <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200'>
+          {post.user?.profileImageUrl ? (
+            <Image
+              src={getApiBaseUrl() + post.user.profileImageUrl}
+              alt={post.user.username}
+              width={40}
+              height={40}
+              className='w-10 h-10 object-cover'
+            />
+          ) : (
+            <div className='w-10 h-10 bg-gray-200 flex items-center justify-center'>
+              <span className='text-lg font-bold text-gray-500'>
+                {post.user?.username?.charAt(0) || "?"}
+              </span>
+            </div>
+          )}
+        </div>
         <div>
-          <p className='text-lg font-semibold'>Mr. Cat</p>
-          <p className='text-sm text-gray-500'>Content Creator</p>
+          <p className='text-lg font-semibold'>
+            {post.user ? 
+              (post.user.username)
+              : "Anonymous User"}
+          </p>
         </div>
       </div>
 
