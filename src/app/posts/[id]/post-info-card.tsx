@@ -120,8 +120,15 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
 
   const handleMarkAsCompleted = async (e: React.MouseEvent) => {
     e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!token) {
+      alert("Please log in to mark this post as completed");
+      return;
+    }
+    
     if (completed || isMarkingCompleted) return;
-
+  
     try {
       setIsMarkingCompleted(true);
       const res = await markPostAsCompleted(post.id);
@@ -397,7 +404,9 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
           className={`mt-4 flex items-center justify-center w-full px-4 py-3 rounded-lg transition-all duration-200 ${
             completed
               ? "bg-green-100 text-green-700 border border-green-300"
-              : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg"
+              : token 
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg"
+                  : "bg-gray-100 text-gray-500 border border-gray-200"
           } ${isMarkingCompleted ? "opacity-70 cursor-not-allowed" : ""}`}
         >
           <span className="mr-2">
@@ -418,7 +427,9 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
               ? "Processing..."
               : completed
               ? "Completed"
-              : "Mark as Completed"}
+              : token 
+                ? "Mark as Completed" 
+                : "Sign in to mark as completed"}
           </span>
         </button>
 
@@ -594,3 +605,4 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
 };
 
 export default PostInfoCard;
+
