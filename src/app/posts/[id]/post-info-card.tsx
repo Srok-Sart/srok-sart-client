@@ -381,16 +381,26 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
         <button
           onClick={handleMarkAsCompleted}
           disabled={completed || isMarkingCompleted}
-          className={`mt-4 flex items-center justify-center w-full px-4 py-2 rounded-md ${
+          className={`mt-4 flex items-center justify-center w-full px-4 py-3 rounded-lg transition-all duration-200 ${
             completed
-              ? "bg-green-100 text-green-700"
-              : "bg-blue-500 text-white hover:bg-blue-600"
+              ? "bg-green-100 text-green-700 border border-green-300"
+              : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg"
           } ${isMarkingCompleted ? "opacity-70 cursor-not-allowed" : ""}`}
         >
-          <span className='material-icons mr-1'>
-            {completed ? "check_circle" : "check_circle_outline"}
+          <span className="mr-2">
+            {completed ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            )}
           </span>
-          <span>
+          <span className="font-medium">
             {isMarkingCompleted
               ? "Processing..."
               : completed
