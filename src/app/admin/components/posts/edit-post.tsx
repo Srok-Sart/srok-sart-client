@@ -1,15 +1,17 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Post } from "../../../interfaces/post";
 import { PostDifficulty } from "@/enums/post-difficulty.enum";
 import { PostType } from "@/enums/post-type.enum";
 import { PostFormFields } from "./subcomponents/post-form";
 import { FileUploadSection } from "./subcomponents/file-upload-section";
+import { VideoUploadSection } from "./subcomponents/video-upload-section";
 import { ImagePreview } from "./subcomponents/image-preview";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { usePostUpdate } from "@/hooks/use-post-update";
 import { Material, PostMaterial } from "@/app/interfaces/material";
 import { FileOrUrl } from "@/app/interfaces/post";
+import VideoPreview from "./subcomponents/video-Preview";
 
 interface EditPostProps {
   setShowEditPost: (show: boolean) => void;
@@ -18,25 +20,38 @@ interface EditPostProps {
   token: string;
 }
 
-const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) => {
+const EditPost = ({ setShowEditPost, onUpdatePost, id, token }: EditPostProps) => {
   const [post, setPost] = useState<Post | null>(null);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>([]);
   const [newImagesFiles, setNewImagesFiles] = useState<File[]>([]);
+  const [newVideosFiles, setNewVideosFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [timeUnit, setTimeUnit] = useState<'minutes' | 'hours'>('minutes');
+  const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
 
   // Use file upload functionality
   const {
+    // Image-related props
     images,
     setImages,
     thumbnail,
     setThumbnail,
     selectedImage,
     setSelectedImage,
+    handleImageChange,
+    handleThumbnailChange,
+    handleRemoveImage,
+    handleRemoveThumbnail,
     handleImageView,
     handleThumbnailView,
+    // Video-related props
+    videos,
+    setVideos,
+    selectedVideo,
+    setSelectedVideo,
+    handleVideoView,
   } = useFileUpload();
 
   useEffect(() => {
@@ -86,6 +101,19 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
         if (data.imageUrls && Array.isArray(data.imageUrls)) {
           setImages(data.imageUrls);
         }
+        
+        // Initialize videos - only keep the first video if multiple exist
+        if (data.postType === PostType.VIDEO && data.imageUrls && Array.isArray(data.imageUrls) && data.imageUrls.length > 0) {
+          // For video posts, the first image URL is the video
+          const videoPath = data.imageUrls[0];
+          setVideos([videoPath]);
+          
+          // Store the full video URL for player
+          setExistingVideoUrl(`${process.env.NEXT_PUBLIC_API_URL}${videoPath}`);
+          
+          console.log('Loaded video path:', videoPath);
+          console.log('Full video URL:', `${process.env.NEXT_PUBLIC_API_URL}${videoPath}`);
+        }
       } catch (error) {
         console.error("Fetch error:", error);
         setLoadError(error instanceof Error ? error.message : "Failed to load post");
@@ -112,7 +140,7 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
 
     fetchPost();
     fetchMaterials();
-  }, [id, token]);
+  }, [id, token, setImages, setThumbnail, setVideos]);
 
   // Helper function to update post fields
   const updateField = <K extends keyof Post>(field: K, value: Post[K]) => {
@@ -149,40 +177,38 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
     }
   };
 
-  // Image handling functions
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const fileArray = Array.from(e.target.files);
-      setNewImagesFiles(prev => [...prev, ...fileArray]);
+  // Video handling functions - only allow one video
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Only allow one video - clear previous videos and set the new one
+      const newVideo = e.target.files[0];
+      
+      // Clear existing videos
+      setExistingVideoUrl(null);
+      setVideos([]);
+      setNewVideosFiles([newVideo]);
+      
+      console.log('New video uploaded:', newVideo.name);
     }
   };
 
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setThumbnail(e.target.files[0]);
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    const currentImagesLength = images.length;
-    
-    if (index < currentImagesLength) {
-      // Remove existing image
-      setImages(prev => {
-        const updated = [...prev];
-        updated.splice(index, 1);
-        return updated;
-      });
+  const handleRemoveVideo = (index: number) => {
+    // If we have new videos, remove them
+    if (newVideosFiles.length > 0) {
+      setNewVideosFiles([]);
+      console.log('Removed new video');
     } else {
-      // Remove new image
-      const newIndex = index - currentImagesLength;
-      setNewImagesFiles(prev => prev.filter((_, i) => i !== newIndex));
+      // Otherwise remove the existing video
+      setExistingVideoUrl(null);
+      setVideos([]);
+      console.log('Removed existing video');
     }
   };
 
-  const handleRemoveThumbnail = () => {
-    setThumbnail(null);
-  };
+  // Check if we have any videos (new or existing)
+  const hasVideos = () => {
+    return newVideosFiles.length > 0 || videos.length > 0;
+  }
 
   // Use post update hook
   const { 
@@ -222,15 +248,49 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
     },
     setShowEditPost: () => {}, // Handled in success callback
     images,
+    videos,
     newImages: newImagesFiles,
+    newVideos: newVideosFiles,
     thumbnail,
     selectedMaterials,
-    token, // Pass token to usePostUpdate hook
+    token,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!post) return;
+    
+    // Log the state of videos before validation
+    console.log("Video validation check:");
+    console.log("- New videos:", newVideosFiles.length);
+    console.log("- Existing videos:", videos.length);
+    console.log("- Has videos function result:", hasVideos());
+    
+    // Form validation checks
+    if (post.postType === PostType.VIDEO && !hasVideos()) {
+      console.error("Video validation failed: No videos found");
+      alert('Please upload a video');
+      return;
+    }
+    
+    if (post.postType === PostType.IMAGE) {
+      if (images.length === 0 && newImagesFiles.length === 0) {
+        alert('Please upload at least one image');
+        return;
+      }
+      
+      if (!thumbnail) {
+        alert('Please upload a thumbnail for image post');
+        return;
+      }
+    }
+    
+    // Log what we're submitting
+    console.log("Submitting post with:", {
+      newVideos: newVideosFiles.length,
+      existingVideos: videos.length,
+      postType: post.postType
+    });
     
     await handlePostUpdate(post, id);
   };
@@ -239,8 +299,12 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
   if (loadError) return <div className="p-4 text-red-500">Error: {loadError}</div>;
   if (!post) return <div className="p-4">Post not found</div>;
 
-  // Combine existing images and new files for display
+  // Combine existing images/videos and new files for display
   const allImages: FileOrUrl[] = [...images, ...newImagesFiles];
+  
+  // Updated: Make sure we're passing the correct video array based on priority
+  // If we have new videos, use those, otherwise use existing videos
+  const allVideos: FileOrUrl[] = newVideosFiles.length > 0 ? newVideosFiles : videos;
 
   return (
     <div className="p-4">
@@ -259,7 +323,20 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
           onTitleChange={(value) => updateField("title", value)}
           onDescriptionChange={(value) => updateField("description", value)}
           onDifficultyChange={(value) => updateField("postDifficulty", value as PostDifficulty)}
-          onTypeChange={(value) => updateField("postType", value as PostType)}
+          onTypeChange={(value) => {
+            updateField("postType", value as PostType);
+            console.log('Type changed to:', value);
+            // Clear thumbnail if switching to video type
+            if (value === PostType.VIDEO && thumbnail) {
+              setThumbnail(null);
+            }
+            // Clear videos if switching to image type
+            if (value === PostType.IMAGE) {
+              setExistingVideoUrl(null);
+              setVideos([]);
+              setNewVideosFiles([]);
+            }
+          }}
           onMaterialsChange={setSelectedMaterials}
           estimatedTime={parseEstimatedTime()}
           timeUnit={timeUnit}
@@ -281,6 +358,18 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
           />
         )}
 
+        {post.postType === PostType.VIDEO && (
+          <VideoUploadSection
+            videos={allVideos}
+            errors={errors}
+            onVideosChange={handleVideoChange}
+            onRemoveVideo={handleRemoveVideo}
+            onVideoView={handleVideoView}
+            existingVideoUrl={existingVideoUrl}
+            newVideos={newVideosFiles}
+          />
+        )}
+
         <div className="flex justify-end mt-6">
           <button
             type="button"
@@ -291,7 +380,7 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-light disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-purple-700 text-white rounded-md hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             disabled={isUpdating}
           >
             {isUpdating ? "Updating..." : "Update Post"}
@@ -301,6 +390,10 @@ const EditPost = ({ setShowEditPost, onUpdatePost, id, token}: EditPostProps) =>
 
       {selectedImage && (
         <ImagePreview src={selectedImage} onClose={() => setSelectedImage(null)} />
+      )}
+      
+      {selectedVideo && (
+        <VideoPreview src={selectedVideo} onClose={() => setSelectedVideo(null)} />
       )}
     </div>
   );

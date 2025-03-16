@@ -117,7 +117,8 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
       errors.title = "Title is required";
     }
 
-    if (!thumbnail) {
+    // Thumbnail is only required for photo uploads
+    if (uploadType === "photo" && !thumbnail) {
       errors.thumbnail = "Thumbnail is required";
     }
 
@@ -170,7 +171,8 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
       formData.append("contents", file);
     });
 
-    if (thumbnail) {
+    // Only append thumbnail for photo uploads
+    if (uploadType === "photo" && thumbnail) {
       formData.append("thumbnail", thumbnail);
     }
 
