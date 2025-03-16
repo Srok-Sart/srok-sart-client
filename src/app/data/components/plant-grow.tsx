@@ -199,10 +199,6 @@ export const PlantGrow = () => {
         <div className="flex flex-col items-center md:col-span-1 pt-16">
           <TreeVisualization
             activeProgress={activeProgress}
-            treeHeight={treeHeight}
-            trunkWidth={trunkWidth}
-            leafScale={leafScale}
-            fruitScale={fruitScale}
           />
           <MetricDisplay activeMetricData={activeMetricData} activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
         </div>
