@@ -10,20 +10,28 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
+  const { id } = params;
   const token = await getAuthToken();
-  const post: Post = await fetcher<Post>(`/posts/${params.id}`, token ? {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include"
-  } : undefined);
+  const post: Post = await fetcher<Post>(
+    `/posts/${id}`,
+    token
+      ? {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        }
+      : undefined
+  );
 
-  return <PostDetailPage 
-    post={post} 
-    isAuthenticated={!!token} 
-    token={token || undefined} 
-  />;
+  return (
+    <PostDetailPage
+      post={post}
+      isAuthenticated={!!token}
+      token={token || undefined}
+    />
+  );
 };
 
 export default Page;
