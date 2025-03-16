@@ -1,8 +1,8 @@
 "use client";
 
 import Navigation from "../components/navigation"; 
-import { PlantGrow } from "./plant-grow";
-import ProjectCard from "./project-card";
+import PlantGrow from "./components/plant-grow";
+import ProjectCard from "./components/project-card";
 
 const projects: { difficulty: "easy" | "medium" | "hard"; completedCount: number; totalCount: number }[] = [
   { difficulty: "easy", completedCount: 3, totalCount: 5 },
