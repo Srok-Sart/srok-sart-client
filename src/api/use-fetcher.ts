@@ -9,8 +9,6 @@ export async function fetcher<T>(
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const token = (await cookies()).get("accessToken")?.value;
 
-  // console.log("Fetching", token, endpoint);
-
   const headers = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -26,18 +24,16 @@ export async function fetcher<T>(
 
   const response = await fetch(`${baseUrl}${endpoint}`, defaultOptions);
 
-  console.log("Response", response);
-
-  // Check for common errors
-  if (response.status === 401) {
-    throw new Error("Unauthorized");
-  }
-
-  if (response.status === 403) {
-    throw new Error("Forbidden");
-  }
-
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Unauthorized");
+    }
+
+    if (response.status === 403) {
+      throw new Error("Forbidden");
+    }
+
+    // For other errors, try to get the error message from the response
     const errorData = await response.json().catch(() => null);
     const errorMessage = errorData?.message || response.statusText;
     throw new Error(`API error: ${errorMessage}`);
