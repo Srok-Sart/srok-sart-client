@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { FaBookmark, FaTimes } from "react-icons/fa";
+import { useState, useRef, useEffect } from "react";
+import { FaBookmark, FaTimes, FaPlay } from "react-icons/fa";
 import { Post } from "../interfaces/post";
 import {
   fetchCollections,
@@ -13,6 +13,7 @@ import {
 } from "../../api/bookmark";
 import CollectionSelectModal from "../posts/[id]/collection-selection-modal";
 import { generateRandomColor } from "@/app/utils/colors";
+import { PostType } from "@/enums/post-type.enum";
 
 interface Collection {
   id: string;
@@ -44,6 +45,29 @@ const CardDisplay = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+
+  // Video-specific states (only used for video posts)
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [videoDuration, setVideoDuration] = useState<string>("0:00");
+
+  // Check if post is a video type
+  const isVideoPost = post.postType === PostType.VIDEO;
+
+  // Detect if the device is mobile (only matters for video posts)
+  useEffect(() => {
+    if (!isVideoPost) return;
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [isVideoPost]);
 
   const handleCreateCollection = (newCollection: Collection) => {
     setCollections((prevCollections) => [...prevCollections, newCollection]);
@@ -137,18 +161,98 @@ const CardDisplay = ({
     }
   };
 
+  // Video-specific handlers (only used for video posts)
+  const handleVideoPlay = (e: React.MouseEvent) => {
+    if (!isVideoPost || !videoRef.current) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const handleVideoMouseEnter = () => {
+    if (!isVideoPost || isMobile || !videoRef.current) return;
+    videoRef.current.play().catch(() => {});
+    setIsPlaying(true);
+  };
+
+  const handleVideoMouseLeave = () => {
+    if (!isVideoPost || !videoRef.current) return;
+    videoRef.current.pause();
+    videoRef.current.currentTime = 0;
+    setIsPlaying(false);
+  };
+  
+  // Format duration from seconds to MM:SS
+  const formatDuration = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Handle video metadata loading to get duration
+  const handleVideoMetadata = () => {
+    if (videoRef.current && videoRef.current.duration) {
+      setVideoDuration(formatDuration(videoRef.current.duration));
+    }
+  };
+
   return (
     <div className="relative bg-white rounded-lg overflow-hidden shadow-sm break-inside-avoid group">
-      {/* Image Wrapper */}
+      {/* Image/Video Wrapper */}
       <Link href={`/posts/${post.id}`} passHref>
-        <div className="relative overflow-hidden rounded-lg cursor-pointer">
-          <Image
-            src={process.env.NEXT_PUBLIC_API_URL + post.thumbnailUrl}
-            alt={post.title}
-            width={300}
-            height={400}
-            className="w-full object-cover rounded-lg"
-          />
+        <div 
+          className="relative overflow-hidden rounded-lg cursor-pointer"
+          onMouseEnter={isVideoPost ? handleVideoMouseEnter : undefined}
+          onMouseLeave={isVideoPost ? handleVideoMouseLeave : undefined}
+        >
+          {isVideoPost ? (
+            <>
+              <video
+                ref={videoRef}
+                src={post.imageUrls && post.imageUrls.length > 0 ? 
+                  `${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[0]}` : undefined}
+                className="w-full object-cover rounded-lg"
+                width={300}
+                height={400}
+                loop
+                muted
+                playsInline
+                poster={process.env.NEXT_PUBLIC_API_URL + post.thumbnailUrl}
+                onLoadedMetadata={handleVideoMetadata}
+              />
+              {(isMobile || !isPlaying) && (
+                <div
+                  onClick={handleVideoPlay}
+                  className="absolute inset-0 flex items-center justify-center z-10"
+                >
+                  <div className="bg-black bg-opacity-40 rounded-full p-3">
+                    <FaPlay className="text-white" size={24} />
+                  </div>
+                </div>
+              )}
+              
+              {/* Video Duration Badge */}
+              <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded z-10">
+                {videoDuration}
+              </div>
+            </>
+          ) : (
+            <Image
+              src={process.env.NEXT_PUBLIC_API_URL + post.thumbnailUrl}
+              alt={post.title}
+              width={300}
+              height={400}
+              className="w-full object-cover rounded-lg"
+            />
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 rounded-lg">
             <div className="flex justify-between items-center">
               <p className="text-white font-medium">{post.title}</p>
@@ -173,16 +277,20 @@ const CardDisplay = ({
               )}
             </div>
             <div className="flex gap-2">
-              {post.imageUrls.map((url, index) => (
-                <Image
-                  key={index}
-                  src={process.env.NEXT_PUBLIC_API_URL + url}
-                  alt={post.title}
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                />
-              ))}
+              {post.imageUrls?.map((url, index) => {
+                // For video posts, skip the first URL as it's the video itself
+                if (isVideoPost && index === 0) return null;
+                return (
+                  <Image
+                    key={index}
+                    src={process.env.NEXT_PUBLIC_API_URL + url}
+                    alt={post.title}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                );
+              })}
             </div>
           </div>
         </div>

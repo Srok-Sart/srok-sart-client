@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Post } from "@/app/interfaces/post";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import Image from "next/image";
+import { PostType } from "@/enums/post-type.enum";
 
 interface ViewPostProps {
   setShowViewPost: (show: boolean) => void;
@@ -15,6 +16,9 @@ const ViewPost = ({ setShowViewPost, id, token}: ViewPostProps) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [videoError, setVideoError] = useState(false);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -76,6 +80,12 @@ const ViewPost = ({ setShowViewPost, id, token}: ViewPostProps) => {
     return numericPart ? `${numericPart} ${unit}` : 'N/A';
   };
 
+  // Handle video error
+  const handleVideoError = () => {
+    console.error("Video failed to load");
+    setVideoError(true);
+  };
+
   if (loading) {
     return (
       <div className="w-full h-screen flex justify-center items-center bg-gray-100">
@@ -125,9 +135,21 @@ const ViewPost = ({ setShowViewPost, id, token}: ViewPostProps) => {
     );
   }
 
+  const isVideoPost = post.postType === PostType.VIDEO;
   const hasImages = post.imageUrls && post.imageUrls.length > 0;
   const hasThumbnail = !!post.thumbnailUrl;
-  const totalImages = (hasThumbnail ? 1 : 0) + (hasImages ? post.imageUrls.length : 0);
+  const totalImages = isVideoPost ? 1 : (hasThumbnail ? 1 : 0) + (hasImages ? post.imageUrls.length : 0);
+
+  // Function to get video source from post
+  const getVideoSource = () => {
+    if (!hasImages) return '';
+    return `${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[0]}`;
+  };
+
+  // Debug output - remove in production
+  console.log("Video source:", getVideoSource());
+  console.log("Is video post:", isVideoPost);
+  console.log("Has images:", hasImages);
 
   return (
     <div className="w-full h-screen overflow-auto bg-gray-100">
@@ -143,77 +165,110 @@ const ViewPost = ({ setShowViewPost, id, token}: ViewPostProps) => {
         <div className="w-24"></div> {/* Spacer for balance */}
       </div>
 
-      {/* Image Gallery Section */}
-      {totalImages > 0 ? (
-        <div className="w-full h-[60vh] flex justify-center items-center bg-gray-200 relative">
-          {/* Show the thumbnail first */}
-          {hasThumbnail && currentImageIndex === 0 && (
-            <div className="relative w-full h-full">
-              <Image
-                src={`${process.env.NEXT_PUBLIC_API_URL}${post.thumbnailUrl}`}
-                alt={`${post.title} - Thumbnail`}
-                layout="fill"
-                objectFit="contain"
-                priority
-              />
-            </div>
-          )}
-
-          {/* Show the images after the thumbnail */}
-          {hasImages && currentImageIndex > (hasThumbnail ? 0 : -1) && 
-           currentImageIndex <= (hasThumbnail ? post.imageUrls.length : post.imageUrls.length - 1) && (
-            <div className="relative w-full h-full">
-              <Image
-                src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[hasThumbnail ? currentImageIndex - 1 : currentImageIndex]}`}
-                alt={`${post.title} - Image ${currentImageIndex}`}
-                layout="fill"
-                objectFit="contain"
-              />
-            </div>
-          )}
-
-          {/* Image Navigation Controls */}
-          {totalImages > 1 && (
-            <>
-              {/* Left navigation button */}
-              <button
-                className={`absolute left-4 top-1/2 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-md transition-opacity ${
-                  currentImageIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'opacity-90 hover:opacity-100'
-                }`}
-                onClick={handlePrevImage}
-                disabled={currentImageIndex === 0}
-                aria-label="Previous image"
-              >
-                <FaArrowLeft className="text-gray-800" />
-              </button>
-
-              {/* Right navigation button */}
-              <button
-                className={`absolute right-4 top-1/2 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-md transition-opacity ${
-                  currentImageIndex === totalImages - 1 ? 'opacity-50 cursor-not-allowed' : 'opacity-90 hover:opacity-100'
-                }`}
-                onClick={handleNextImage}
-                disabled={currentImageIndex === totalImages - 1}
-                aria-label="Next image"
-              >
-                <FaArrowRight className="text-gray-800" />
-              </button>
-
-              {/* Image Counter */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm">
-                {currentImageIndex + 1} / {totalImages}
+      {/* Media Content Section */}
+      <div className="w-full bg-white shadow-md overflow-hidden">
+        {isVideoPost && hasImages ? (
+          // Video Display
+          <div className="relative max-w-4xl mx-auto p-4">
+            {videoError ? (
+              <div className="flex flex-col items-center justify-center h-64 bg-gray-100 text-red-500 p-4 rounded">
+                <p className="mb-2">Error loading video. The file may be unavailable or in an unsupported format.</p>
+                <button 
+                  onClick={() => setVideoError(false)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                >
+                  Try Again
+                </button>
               </div>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="w-full py-16 bg-gray-800 flex justify-center items-center text-white">
-          <p>No images available for this post</p>
-        </div>
-      )}
+            ) : (
+              <video 
+                ref={videoRef}
+                src={getVideoSource()} 
+                className="w-full max-h-[500px] object-contain rounded" 
+                controls 
+                controlsList="nodownload"
+                poster={hasThumbnail ? `${process.env.NEXT_PUBLIC_API_URL}${post.thumbnailUrl}` : undefined}
+                onError={handleVideoError}
+                preload="auto"
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
+          </div>
+        ) : (
+          // Image Gallery
+          <div className="w-full h-[60vh] flex justify-center items-center bg-gray-200 relative">
+            {/* Show the thumbnail first */}
+            {hasThumbnail && currentImageIndex === 0 && (
+              <div className="relative w-full h-full">
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_API_URL}${post.thumbnailUrl}`}
+                  alt={`${post.title} - Thumbnail`}
+                  layout="fill"
+                  objectFit="contain"
+                  priority
+                />
+              </div>
+            )}
+
+            {/* Show the images after the thumbnail */}
+            {hasImages && currentImageIndex > (hasThumbnail ? 0 : -1) && 
+             currentImageIndex <= (hasThumbnail ? post.imageUrls.length : post.imageUrls.length - 1) && (
+              <div className="relative w-full h-full">
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[hasThumbnail ? currentImageIndex - 1 : currentImageIndex]}`}
+                  alt={`${post.title} - Image ${currentImageIndex}`}
+                  layout="fill"
+                  objectFit="contain"
+                />
+              </div>
+            )}
+
+            {/* Image Navigation Controls */}
+            {totalImages > 1 && (
+              <>
+                {/* Left navigation button */}
+                <button
+                  className={`absolute left-4 top-1/2 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-md transition-opacity ${
+                    currentImageIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'opacity-90 hover:opacity-100'
+                  }`}
+                  onClick={handlePrevImage}
+                  disabled={currentImageIndex === 0}
+                  aria-label="Previous image"
+                >
+                  <FaArrowLeft className="text-gray-800" />
+                </button>
+
+                {/* Right navigation button */}
+                <button
+                  className={`absolute right-4 top-1/2 transform -translate-y-1/2 bg-white p-3 rounded-full shadow-md transition-opacity ${
+                    currentImageIndex === totalImages - 1 ? 'opacity-50 cursor-not-allowed' : 'opacity-90 hover:opacity-100'
+                  }`}
+                  onClick={handleNextImage}
+                  disabled={currentImageIndex === totalImages - 1}
+                  aria-label="Next image"
+                >
+                  <FaArrowRight className="text-gray-800" />
+                </button>
+
+                {/* Image Counter */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm">
+                  {currentImageIndex + 1} / {totalImages}
+                </div>
+              </>
+            )}
+            
+            {!hasImages && !hasThumbnail && (
+              <div className="w-full py-16 flex justify-center items-center text-gray-500">
+                <p>No media available for this post</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Post Details */}
-      <div className="w-full p-8 bg-white shadow-md">
+      <div className="w-full p-8 bg-white shadow-md mt-6">
         <h2 className="text-3xl font-bold mb-6">{post.title}</h2>
         
         {/* Post Metadata Cards */}

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React from "react";
+import React, { useRef } from "react";
 
 interface MediaUploadProps {
   uploadType: "video" | "photo";
@@ -27,6 +27,8 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
   setThumbnail,
   errors,
 }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   const removeFile = (index: number) => {
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
   };
@@ -64,57 +66,59 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
           </button>
         </div>
       </div>
-      <div className='mb-4'>
-        <h3 className='text-lg font-semibold mb-2'>
-          Thumbnail <span className='text-red-500'>*</span>
-        </h3>
-        <div
-          className={`border-2 border-dashed ${
-            errors?.thumbnail ? "border-red-500" : "border-gray-300"
-          } p-6 rounded-lg text-center`}
-        >
-          <input
-            type='file'
-            id='thumbnail-upload'
-            className='hidden'
-            onChange={handleThumbnailUpload}
-            accept='image/*'
-          />
-          <label
-            htmlFor='thumbnail-upload'
-            className='cursor-pointer bg-primary hover:bg-primary text-white px-4 py-2 rounded inline-block'
+      {uploadType === "photo" && (
+        <div className='mb-4'>
+          <h3 className='text-lg font-semibold mb-2'>
+            Thumbnail <span className='text-red-500'>*</span>
+          </h3>
+          <div
+            className={`border-2 border-dashed ${
+              errors?.thumbnail ? "border-red-500" : "border-gray-300"
+            } p-6 rounded-lg text-center`}
           >
-            Upload Thumbnail
-          </label>
-          <p className='mt-2 text-gray-500'>
-            This image will be shown as the preview of your post
-          </p>
-          {errors?.thumbnail && (
-            <p className='text-red-500 text-sm mt-1'>{errors.thumbnail}</p>
+            <input
+              type='file'
+              id='thumbnail-upload'
+              className='hidden'
+              onChange={handleThumbnailUpload}
+              accept='image/*'
+            />
+            <label
+              htmlFor='thumbnail-upload'
+              className='cursor-pointer bg-primary hover:bg-primary text-white px-4 py-2 rounded inline-block'
+            >
+              Upload Thumbnail
+            </label>
+            <p className='mt-2 text-gray-500'>
+              This image will be shown as the preview of your post
+            </p>
+            {errors?.thumbnail && (
+              <p className='text-red-500 text-sm mt-1'>{errors.thumbnail}</p>
+            )}
+          </div>
+
+          {thumbnail && (
+            <div className='mt-4'>
+              <h4 className='font-medium mb-2'>Thumbnail:</h4>
+              <div className='relative w-48 h-32'>
+                <Image
+                  src={URL.createObjectURL(thumbnail)}
+                  alt='Thumbnail'
+                  fill
+                  className='object-cover rounded'
+                />
+                <button
+                  type='button'
+                  onClick={removeThumbnail}
+                  className='absolute top-0 right-0 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center'
+                >
+                  ×
+                </button>
+              </div>
+            </div>
           )}
         </div>
-
-        {thumbnail && (
-          <div className='mt-4'>
-            <h4 className='font-medium mb-2'>Thumbnail:</h4>
-            <div className='relative w-48 h-32'>
-              <Image
-                src={URL.createObjectURL(thumbnail)}
-                alt='Thumbnail'
-                fill
-                className='object-cover'
-              />
-              <button
-                type='button'
-                onClick={removeThumbnail}
-                className='absolute top-0 right-0 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center'
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       <div className='mb-4'>
         <h3 className='text-lg font-semibold mb-2'>
@@ -154,30 +158,52 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
             <h4 className='font-medium mb-2'>
               Uploaded {uploadType === "photo" ? "Photos" : "Video"}:
             </h4>
-            <div className='flex flex-wrap gap-2'>
+            <div className='flex flex-wrap gap-4'>
               {uploadedFiles.map((file, index) => (
                 <div key={index} className='relative'>
                   {uploadType === "photo" ? (
-                    <div className='w-24 h-24 bg-gray-100 relative'>
-                      <Image
-                        src={URL.createObjectURL(file)}
-                        alt={`Upload ${index}`}
-                        fill
-                        className='object-cover'
-                      />
+                    <div className='group'>
+                      <div className='w-48 h-48 bg-gray-100 relative rounded overflow-hidden'>
+                        <Image
+                          src={URL.createObjectURL(file)}
+                          alt={`Upload ${index}`}
+                          fill
+                          className='object-cover'
+                        />
+                      </div>
+                      <div className='mt-2 flex justify-between items-center'>
+                        <p className='text-sm text-gray-700 truncate max-w-36'>{file.name}</p>
+                        <button
+                          type='button'
+                          onClick={() => removeFile(index)}
+                          className='bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center'
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <div className='w-48 h-24 bg-gray-100 flex items-center justify-center'>
-                      <p className='text-sm text-gray-700'>{file.name}</p>
+                    <div className='group'>
+                      <div className='w-64 relative rounded overflow-hidden bg-black'>
+                        <video 
+                          ref={videoRef}
+                          src={URL.createObjectURL(file)} 
+                          className='w-full h-auto' 
+                          controls
+                        />
+                      </div>
+                      <div className='mt-2 flex justify-between items-center'>
+                        <p className='text-sm text-gray-700 truncate max-w-48'>{file.name}</p>
+                        <button
+                          type='button'
+                          onClick={() => removeFile(index)}
+                          className='bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center'
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   )}
-                  <button
-                    type='button'
-                    onClick={() => removeFile(index)}
-                    className='absolute top-0 right-0 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center'
-                  >
-                    ×
-                  </button>
                 </div>
               ))}
             </div>
