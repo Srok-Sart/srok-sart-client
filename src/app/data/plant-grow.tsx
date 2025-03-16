@@ -15,72 +15,51 @@ enum MaterialUnit {
   SPOON = "SPOON",
 }
 
-interface MaterialBreakdown {
+interface MaterialBreakdownItem {
   id: number;
   name: string;
-  amount: number;
-  unit: MaterialUnit;
+  originalAmount: number;
+  standardAmount: number;
+  originalUnit: MaterialUnit;
+  displayUnit: string;
   category: string;
   environmentalImpact: number;
+  totalEnvironmentalImpact: number;
   savedCount: number;
 }
 
-interface MaterialSummary {
-  totalWeight: number;
+interface MaterialSavedSummary {
+  totalSavedWeight: number;
+  totalSavedVolume: number;
+  totalSavedItems: number;
   totalMaterialCount: number;
   totalPostsCompleted: number;
-  materialBreakdown: MaterialBreakdown[];
+  totalEnvironmentalImpact: number;
+  materialBreakdown: MaterialBreakdownItem[];
 }
 
 export const PlantGrow = () => {
-  const [materialData, setMaterialData] = useState<MaterialSummary | null>(
+  const [materialData, setMaterialData] = useState<MaterialSavedSummary | null>(
     null
   );
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"weight" | "count" | "impact">(
+  const [activeTab, setActiveTab] = useState<"weight" | "volume" | "impact">(
     "weight"
   );
 
   // Set appropriate targets based on your expectations
-  const maxWeight = 5; // Target amount for weight in kg
-  const maxCount = 100; // Target for item count
-  const maxPosts = 50; // Target for completed posts
+  const maxWeight = 1; // Target amount for weight in kg
+  const maxVolume = 5; // Target amount for volume in L
+  const maxImpact = 500; // Target for environmental impact
 
   useEffect(() => {
     const fetchMaterialData = async () => {
       try {
-        const data = await fetcher<MaterialSummary>("/posts/saved-materials");
-
-        // Convert weights to kg if needed
-        const processedData = {
-          ...data,
-          materialBreakdown: data.materialBreakdown.map((material) => {
-            let adjustedAmount = material.amount;
-            // Convert grams to kg if the unit is G
-            if (material.unit === MaterialUnit.G) {
-              adjustedAmount = material.amount / 1000;
-            }
-            return {
-              ...material,
-              amount: adjustedAmount,
-              // Keep the original unit for display purposes
-              displayUnit: material.unit,
-            };
-          }),
-        };
-
-        // Calculate total weight in kg
-        const totalWeightInKg = processedData.materialBreakdown.reduce(
-          (sum, material) => {
-            return sum + material.amount;
-          },
-          0
+        // Update to use the correct API endpoint
+        const data = await fetcher<MaterialSavedSummary>(
+          "/posts/saved-materials"
         );
-
-        setMaterialData({
-          ...processedData,
-          totalWeight: totalWeightInKg,
-        });
+        setMaterialData(data);
       } catch (error) {
         console.error("Error fetching material data:", error);
       } finally {
@@ -114,27 +93,21 @@ export const PlantGrow = () => {
   // Calculate different growth metrics
   const weightProgress = Math.min(
     100,
-    (materialData.totalWeight / maxWeight) * 100
+    (materialData.totalSavedWeight / maxWeight) * 100
   );
-  const countProgress = Math.min(
+  const volumeProgress = Math.min(
     100,
-    (materialData.totalMaterialCount / maxCount) * 100
+    (materialData.totalSavedVolume / maxVolume) * 100
   );
-  const postsProgress = Math.min(
+  const impactProgress = Math.min(
     100,
-    (materialData.totalPostsCompleted / maxPosts) * 100
-  );
-
-  // Calculate total environmental impact
-  const totalImpact = materialData.materialBreakdown.reduce(
-    (sum, mat) => sum + mat.environmentalImpact * mat.savedCount,
-    0
+    (materialData.totalEnvironmentalImpact / maxImpact) * 100
   );
 
   // Determine which progress to use for the tree based on active tab
   let activeProgress = weightProgress;
-  if (activeTab === "count") activeProgress = countProgress;
-  if (activeTab === "impact") activeProgress = postsProgress;
+  if (activeTab === "volume") activeProgress = volumeProgress;
+  if (activeTab === "impact") activeProgress = impactProgress;
 
   // Tree growth calculations
   const treeHeight = Math.min(160, activeProgress * 1.6);
@@ -143,70 +116,108 @@ export const PlantGrow = () => {
   const fruitScale = Math.max(0, (activeProgress - 50) / 50); // Fruits appear at 50% progress
 
   // Sort materials based on active tab
+  // Sort and filter materials based on active tab
   const sortedMaterials = [...materialData.materialBreakdown]
+    .filter((material) => {
+      if (activeTab === "weight")
+        return material.displayUnit === MaterialUnit.KG;
+      if (activeTab === "volume")
+        return material.displayUnit === MaterialUnit.L;
+      return true; // For items and impact, show all materials
+    })
     .sort((a, b) => {
-      if (activeTab === "weight") return b.amount - a.amount;
-      if (activeTab === "count") return b.savedCount - a.savedCount;
-      return (
-        b.environmentalImpact * b.savedCount -
-        a.environmentalImpact * a.savedCount
-      );
+      if (activeTab === "weight") return b.standardAmount - a.standardAmount;
+      if (activeTab === "volume") return b.standardAmount - a.standardAmount;
+      return b.totalEnvironmentalImpact - a.totalEnvironmentalImpact;
     })
     .slice(0, 5); // Show top 5
-
-  // Format unit display based on MaterialUnit enum
-  const formatUnitDisplay = (unit: string): string => {
-    switch (unit) {
-      case MaterialUnit.KG:
-        return "kg";
-      case MaterialUnit.G:
-        return "g";
-      case MaterialUnit.L:
-        return "L";
-      case MaterialUnit.ML:
-        return "mL";
-      case MaterialUnit.PIECE:
-        return "pc";
-      case MaterialUnit.PACK:
-        return "pack";
-      case MaterialUnit.BOTTLE:
-        return "bottle";
-      case MaterialUnit.SPOON:
-        return "spoon";
-      default:
-        return unit.toLowerCase();
-    }
-  };
 
   // Group materials by category
   const materialsByCategory = materialData.materialBreakdown.reduce(
     (acc, material) => {
       if (!acc[material.category]) {
         acc[material.category] = {
-          totalAmount: 0,
+          totalWeight: 0,
+          totalVolume: 0,
           totalCount: 0,
           totalImpact: 0,
         };
       }
-      acc[material.category].totalAmount += material.amount;
+
+      // Check unit type to determine where to add the amount
+      const isWeight = material.displayUnit === MaterialUnit.KG;
+      const isVolume = material.displayUnit === MaterialUnit.L;
+
+      if (isWeight) {
+        acc[material.category].totalWeight += material.standardAmount;
+      } else if (isVolume) {
+        acc[material.category].totalVolume += material.standardAmount;
+      }
+
       acc[material.category].totalCount += material.savedCount;
-      acc[material.category].totalImpact +=
-        material.environmentalImpact * material.savedCount;
+      acc[material.category].totalImpact += material.totalEnvironmentalImpact;
       return acc;
     },
     {} as Record<
       string,
-      { totalAmount: number; totalCount: number; totalImpact: number }
+      {
+        totalWeight: number;
+        totalVolume: number;
+        totalCount: number;
+        totalImpact: number;
+      }
     >
   );
+
+  // Get the appropriate max value for the active tab
+  const getActiveMax = () => {
+    switch (activeTab) {
+      case "weight":
+        return maxWeight;
+      case "volume":
+        return maxVolume;
+      case "impact":
+        return maxImpact;
+      default:
+        return maxWeight;
+    }
+  };
+
+  // Get the appropriate value for the active tab
+  const getActiveValue = () => {
+    switch (activeTab) {
+      case "weight":
+        return materialData.totalSavedWeight.toFixed(1);
+      case "volume":
+        return materialData.totalSavedVolume.toFixed(1);
+      case "impact":
+        return materialData.totalEnvironmentalImpact.toFixed(1);
+      default:
+        return materialData.totalSavedWeight.toFixed(1);
+    }
+  };
+
+  // Get the appropriate unit for the active tab
+  const getActiveUnit = () => {
+    switch (activeTab) {
+      case "weight":
+        return "kg";
+      case "volume":
+        return "L";
+      case "impact":
+        return "points";
+      default:
+        return "kg";
+    }
+  };
 
   return (
     <div className='w-full min-h-[480px] p-4 flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100'>
       <div className='w-full max-w-4xl flex flex-col md:flex-row items-center justify-center gap-8'>
         <div className='w-full md:w-1/2 flex flex-col items-center'>
-          <div className='tabs flex mb-6 space-x-2'>
+          <div className='tabs flex mb-6 space-x-2 flex-wrap justify-center'>
             <button
-              className={`px-3 py-1 rounded text-sm font-medium ${
+              className={`px-3 py-1 m-1 rounded text-sm font-medium ${
                 activeTab === "weight"
                   ? "bg-green-600 text-white"
                   : "bg-gray-200 text-gray-700"
@@ -216,17 +227,17 @@ export const PlantGrow = () => {
               Weight
             </button>
             <button
-              className={`px-3 py-1 rounded text-sm font-medium ${
-                activeTab === "count"
+              className={`px-3 py-1 m-1 rounded text-sm font-medium ${
+                activeTab === "volume"
                   ? "bg-green-600 text-white"
                   : "bg-gray-200 text-gray-700"
               }`}
-              onClick={() => setActiveTab("count")}
+              onClick={() => setActiveTab("volume")}
             >
-              Items
+              Volume
             </button>
             <button
-              className={`px-3 py-1 rounded text-sm font-medium ${
+              className={`px-3 py-1 m-1 rounded text-sm font-medium ${
                 activeTab === "impact"
                   ? "bg-green-600 text-white"
                   : "bg-gray-200 text-gray-700"
@@ -295,22 +306,14 @@ export const PlantGrow = () => {
           </div>
 
           <div className='flex flex-col items-center gap-2 mb-4'>
-            {activeTab === "weight" && (
-              <p className='text-lg font-semibold text-gray-800'>
-                Total Weight Saved: {materialData.totalWeight.toFixed(1)} /{" "}
-                {maxWeight}
-              </p>
-            )}
-            {activeTab === "count" && (
-              <p className='text-lg font-semibold text-gray-800'>
-                Items Saved: {materialData.totalMaterialCount} / {maxCount}
-              </p>
-            )}
-            {activeTab === "impact" && (
-              <p className='text-lg font-semibold text-gray-800'>
-                DIYs Completed: {materialData.totalPostsCompleted} / {maxPosts}
-              </p>
-            )}
+            <p className='text-lg font-semibold text-gray-800'>
+              {activeTab === "weight" && "Weight Saved:"}
+              {activeTab === "volume" && "Volume Saved:"}
+              {activeTab === "impact" && "Environmental Impact:"}
+              <span className='ml-2'>
+                {getActiveValue()} / {getActiveMax()} {getActiveUnit()}
+              </span>
+            </p>
 
             <div className='w-full max-w-[250px] h-3 bg-gray-200 rounded-full mt-2'>
               <motion.div
@@ -325,18 +328,24 @@ export const PlantGrow = () => {
           </div>
 
           {/* Stats summary */}
-          <div className='grid grid-cols-3 gap-2 w-full max-w-[280px] text-center text-sm'>
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-2 w-full max-w-[280px] text-center text-sm'>
             <div className='bg-green-100 p-2 rounded'>
               <div className='font-bold'>
-                {materialData.totalWeight.toFixed(1)}
+                {materialData.totalSavedWeight.toFixed(1)}
               </div>
-              <div className='text-xs text-gray-600'>Materials</div>
+              <div className='text-xs text-gray-600'>Weight (kg)</div>
             </div>
             <div className='bg-blue-100 p-2 rounded'>
-              <div className='font-bold'>{materialData.totalMaterialCount}</div>
-              <div className='text-xs text-gray-600'>Items</div>
+              <div className='font-bold'>
+                {materialData.totalSavedVolume.toFixed(1)}
+              </div>
+              <div className='text-xs text-gray-600'>Volume (L)</div>
             </div>
             <div className='bg-purple-100 p-2 rounded'>
+              <div className='font-bold'>{materialData.totalSavedItems}</div>
+              <div className='text-xs text-gray-600'>Items</div>
+            </div>
+            <div className='bg-yellow-100 p-2 rounded'>
               <div className='font-bold'>
                 {materialData.totalPostsCompleted}
               </div>
@@ -351,56 +360,63 @@ export const PlantGrow = () => {
           </h2>
 
           <div className='space-y-4'>
-            {sortedMaterials.map((material) => (
-              <div
-                key={material.id}
-                className='flex items-center justify-between'
-              >
-                <span className='text-sm font-medium text-gray-700 w-24 truncate'>
-                  {material.name}
-                </span>
-                <div className='flex-1 mx-4'>
-                  <div className='h-2 bg-gray-200 rounded-full'>
-                    <motion.div
-                      className='h-full bg-[#6437A0] rounded-full'
-                      initial={{ width: 0 }}
-                      animate={{
-                        width:
-                          activeTab === "weight"
-                            ? `${
-                                (material.amount / materialData.totalWeight) *
-                                100
-                              }%`
-                            : activeTab === "count"
-                            ? `${
-                                (material.savedCount /
-                                  materialData.totalMaterialCount) *
-                                100
-                              }%`
-                            : `${
-                                ((material.environmentalImpact *
-                                  material.savedCount) /
-                                  totalImpact) *
-                                100
-                              }%`,
-                      }}
-                      transition={{ duration: 1, ease: "easeInOut" }}
-                    />
+            {sortedMaterials.length > 0 ? (
+              sortedMaterials.map((material) => (
+                <div
+                  key={material.id}
+                  className='flex items-center justify-between'
+                >
+                  <span className='text-sm font-medium text-gray-700 w-24 truncate'>
+                    {material.name}
+                  </span>
+                  <div className='flex-1 mx-4'>
+                    <div className='h-2 bg-gray-200 rounded-full'>
+                      <motion.div
+                        className='h-full bg-[#6437A0] rounded-full'
+                        initial={{ width: 0 }}
+                        animate={{
+                          width:
+                            activeTab === "weight" &&
+                            material.displayUnit === MaterialUnit.KG
+                              ? `${
+                                  (material.standardAmount /
+                                    materialData.totalSavedWeight) *
+                                  100
+                                }%`
+                              : activeTab === "volume" &&
+                                material.displayUnit === MaterialUnit.L
+                              ? `${
+                                  (material.standardAmount /
+                                    materialData.totalSavedVolume) *
+                                  100
+                                }%`
+                              : `${
+                                  (material.totalEnvironmentalImpact /
+                                    materialData.totalEnvironmentalImpact) *
+                                  100
+                                }%`,
+                        }}
+                        transition={{ duration: 1, ease: "easeInOut" }}
+                      />
+                    </div>
                   </div>
+                  <span className='text-sm font-semibold text-gray-700 w-24 text-right'>
+                    {activeTab === "weight" &&
+                      material.displayUnit === MaterialUnit.KG &&
+                      `${material.standardAmount.toFixed(1)} kg`}
+                    {activeTab === "volume" &&
+                      material.displayUnit === MaterialUnit.L &&
+                      `${material.standardAmount.toFixed(1)} L`}
+                    {activeTab === "impact" &&
+                      `${material.totalEnvironmentalImpact} pts`}
+                  </span>
                 </div>
-                <span className='text-sm font-semibold text-gray-700 w-24 text-right'>
-                  {activeTab === "weight" &&
-                    `${material.amount.toFixed(1)} ${formatUnitDisplay(
-                      material.unit
-                    )}`}
-                  {activeTab === "count" && `${material.savedCount} items`}
-                  {activeTab === "impact" &&
-                    `${(
-                      material.environmentalImpact * material.savedCount
-                    ).toFixed(1)} pts`}
-                </span>
+              ))
+            ) : (
+              <div className='text-center py-4 text-gray-500'>
+                No materials available for the selected category
               </div>
-            ))}
+            )}
           </div>
 
           {/* Category breakdown */}
@@ -416,33 +432,12 @@ export const PlantGrow = () => {
                 >
                   <div className='font-medium text-sm'>{category}</div>
                   <div className='text-xs text-gray-600'>
-                    {activeTab === "weight" && `${data.totalAmount.toFixed(1)}`}
-                    {activeTab === "count" && `${data.totalCount} items`}
+                    {activeTab === "weight" &&
+                      `${data.totalWeight.toFixed(1)} kg`}
+                    {activeTab === "volume" &&
+                      `${data.totalVolume.toFixed(1)} L`}
                     {activeTab === "impact" &&
-                      `${data.totalImpact.toFixed(1)} impact`}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Category breakdown */}
-          <div className='mt-6'>
-            <h3 className='text-md font-semibold mb-3 text-gray-700'>
-              By Category
-            </h3>
-            <div className='grid grid-cols-2 gap-2'>
-              {Object.entries(materialsByCategory).map(([category, data]) => (
-                <div
-                  key={category}
-                  className='bg-gray-50 p-2 rounded border border-gray-200'
-                >
-                  <div className='font-medium text-sm'>{category}</div>
-                  <div className='text-xs text-gray-600'>
-                    {activeTab === "weight" && `${data.totalAmount.toFixed(1)}`}
-                    {activeTab === "count" && `${data.totalCount} items`}
-                    {activeTab === "impact" &&
-                      `${data.totalImpact.toFixed(1)} impact`}
+                      `${data.totalImpact.toFixed(1)} points`}
                   </div>
                 </div>
               ))}
@@ -451,10 +446,60 @@ export const PlantGrow = () => {
 
           <div className='mt-6 text-center'>
             <p className='text-sm text-gray-600'>
-              Environmental Impact: {totalImpact.toFixed(1)} points
+              Environmental Impact:{" "}
+              {materialData.totalEnvironmentalImpact.toFixed(1)} points
+            </p>
+            <p className='text-xs text-gray-500 mt-1'>
+              {materialData.totalPostsCompleted} DIY projects completed
             </p>
           </div>
+
+          {/* Environmental impact scale */}
+          <div className='mt-4'>
+            <h3 className='text-md font-semibold mb-2 text-gray-700 text-center'>
+              Environmental Impact Scale
+            </h3>
+            <div className='h-2 w-full bg-gradient-to-r from-green-100 via-green-300 to-green-600 rounded-full mb-1'></div>
+            <div className='flex justify-between text-xs text-gray-500'>
+              <span>Low</span>
+              <span>Medium</span>
+              <span>High</span>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className='mt-6'>
+            <h3 className='text-md font-semibold mb-2 text-gray-700'>
+              What This Means
+            </h3>
+            <div className='text-xs text-gray-600 space-y-1'>
+              <p>
+                • Your tree grows as you save more materials through DIY
+                projects
+              </p>
+              <p>
+                • Weight measures the total weight of physical materials saved
+                from waste
+              </p>
+              <p>
+                • Volume measures liquids and other volumetric materials saved
+              </p>
+              <p>
+                • Items counts distinct objects that cant be measured by weight
+                or volume
+              </p>
+              <p>
+                • Impact points represent the positive environmental effect of
+                your savings
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className='mt-8 mb-4 text-center text-sm text-gray-500 max-w-lg'>
+        Keep completing DIY projects to grow your impact tree and track your
+        contribution to sustainability!
       </div>
     </div>
   );
