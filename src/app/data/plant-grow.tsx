@@ -3,6 +3,7 @@
 import { fetcher } from "@/api/use-fetcher";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { FaWeight, FaBoxes, FaLeaf } from "react-icons/fa";
 
 enum MaterialUnit {
   KG = "KG",
@@ -33,13 +34,9 @@ interface MaterialSummary {
 }
 
 export const PlantGrow = () => {
-  const [materialData, setMaterialData] = useState<MaterialSummary | null>(
-    null
-  );
+  const [materialData, setMaterialData] = useState<MaterialSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"weight" | "count" | "impact">(
-    "weight"
-  );
+  const [activeTab, setActiveTab] = useState<"weight" | "count" | "impact">("weight");
 
   // Set appropriate targets based on your expectations
   const maxWeight = 5; // Target amount for weight in kg
@@ -142,39 +139,41 @@ export const PlantGrow = () => {
   const leafScale = Math.min(1, Math.max(0, (activeProgress - 20) / 60));
   const fruitScale = Math.max(0, (activeProgress - 50) / 50); // Fruits appear at 50% progress
 
-  // Sort materials based on active tab
-  const sortedMaterials = [...materialData.materialBreakdown]
-    .sort((a, b) => {
-      if (activeTab === "weight") return b.amount - a.amount;
-      if (activeTab === "count") return b.savedCount - a.savedCount;
-      return (
-        b.environmentalImpact * b.savedCount -
-        a.environmentalImpact * a.savedCount
+  // Get appropriate materials for current tab view
+  const getFilteredMaterials = () => {
+    let materials = [...materialData.materialBreakdown];
+    
+    // Filter based on the active tab
+    if (activeTab === "weight") {
+      materials = materials.filter(m => 
+        [MaterialUnit.KG, MaterialUnit.G, MaterialUnit.L, MaterialUnit.ML].includes(m.unit)
       );
-    })
-    .slice(0, 5); // Show top 5
+      materials.sort((a, b) => b.amount - a.amount);
+    } else if (activeTab === "count") {
+      materials.sort((a, b) => b.savedCount - a.savedCount);
+    } else { // impact
+      materials.sort((a, b) => 
+        (b.environmentalImpact * b.savedCount) - (a.environmentalImpact * a.savedCount)
+      );
+    }
+    
+    return materials.slice(0, 5); // Return top 5
+  };
+
+  const filteredMaterials = getFilteredMaterials();
 
   // Format unit display based on MaterialUnit enum
   const formatUnitDisplay = (unit: string): string => {
     switch (unit) {
-      case MaterialUnit.KG:
-        return "kg";
-      case MaterialUnit.G:
-        return "g";
-      case MaterialUnit.L:
-        return "L";
-      case MaterialUnit.ML:
-        return "mL";
-      case MaterialUnit.PIECE:
-        return "pc";
-      case MaterialUnit.PACK:
-        return "pack";
-      case MaterialUnit.BOTTLE:
-        return "bottle";
-      case MaterialUnit.SPOON:
-        return "spoon";
-      default:
-        return unit.toLowerCase();
+      case MaterialUnit.KG: return "kg";
+      case MaterialUnit.G: return "g";
+      case MaterialUnit.L: return "L";
+      case MaterialUnit.ML: return "mL";
+      case MaterialUnit.PIECE: return "pc";
+      case MaterialUnit.PACK: return "pack";
+      case MaterialUnit.BOTTLE: return "bottle";
+      case MaterialUnit.SPOON: return "spoon";
+      default: return unit.toLowerCase();
     }
   };
 
@@ -200,40 +199,63 @@ export const PlantGrow = () => {
     >
   );
 
+  // Get color class for unit type
+  const getUnitColorClass = (unit: MaterialUnit) => {
+    if ([MaterialUnit.KG, MaterialUnit.G].includes(unit)) {
+      return "bg-blue-500";
+    } else if ([MaterialUnit.L, MaterialUnit.ML].includes(unit)) {
+      return "bg-purple-500";
+    } else {
+      return "bg-[#6437A0]";
+    }
+  };
+
+  // Get badge color class for unit type
+  const getBadgeColorClass = (unit: MaterialUnit) => {
+    if ([MaterialUnit.KG, MaterialUnit.G].includes(unit)) {
+      return "bg-blue-100 text-blue-800";
+    } else if ([MaterialUnit.L, MaterialUnit.ML].includes(unit)) {
+      return "bg-purple-100 text-purple-800";
+    } else {
+      return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <div className='w-full min-h-[480px] p-4 flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100'>
       <div className='w-full max-w-4xl flex flex-col md:flex-row items-center justify-center gap-8'>
         <div className='w-full md:w-1/2 flex flex-col items-center'>
+          {/* Main metric selector - with icons for clearer understanding */}
           <div className='tabs flex mb-6 space-x-2'>
             <button
-              className={`px-3 py-1 rounded text-sm font-medium ${
+              className={`px-4 py-1.5 rounded text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 activeTab === "weight"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
               onClick={() => setActiveTab("weight")}
             >
-              Weight
+              <FaWeight /> Materials
             </button>
             <button
-              className={`px-3 py-1 rounded text-sm font-medium ${
+              className={`px-4 py-1.5 rounded text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 activeTab === "count"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
               onClick={() => setActiveTab("count")}
             >
-              Items
+              <FaBoxes /> Items
             </button>
             <button
-              className={`px-3 py-1 rounded text-sm font-medium ${
+              className={`px-4 py-1.5 rounded text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 activeTab === "impact"
                   ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
               onClick={() => setActiveTab("impact")}
             >
-              Impact
+              <FaLeaf /> Impact
             </button>
           </div>
 
@@ -295,26 +317,27 @@ export const PlantGrow = () => {
           </div>
 
           <div className='flex flex-col items-center gap-2 mb-4'>
-            {activeTab === "weight" && (
-              <p className='text-lg font-semibold text-gray-800'>
-                Total Weight Saved: {materialData.totalWeight.toFixed(1)} /{" "}
-                {maxWeight}
-              </p>
-            )}
-            {activeTab === "count" && (
-              <p className='text-lg font-semibold text-gray-800'>
-                Items Saved: {materialData.totalMaterialCount} / {maxCount}
-              </p>
-            )}
-            {activeTab === "impact" && (
-              <p className='text-lg font-semibold text-gray-800'>
-                DIYs Completed: {materialData.totalPostsCompleted} / {maxPosts}
-              </p>
-            )}
+            <p className='text-lg font-semibold text-gray-800'>
+              {activeTab === "weight" && (
+                <>Materials Saved: {materialData.totalWeight.toFixed(1)} kg / {maxWeight} kg</>
+              )}
+              {activeTab === "count" && (
+                <>Items Saved: {materialData.totalMaterialCount} / {maxCount}</>
+              )}
+              {activeTab === "impact" && (
+                <>DIYs Completed: {materialData.totalPostsCompleted} / {maxPosts}</>
+              )}
+            </p>
 
             <div className='w-full max-w-[250px] h-3 bg-gray-200 rounded-full mt-2'>
               <motion.div
-                className='h-full bg-green-500 rounded-full'
+                className={`h-full rounded-full ${
+                  activeTab === "weight" 
+                    ? "bg-blue-500" 
+                    : activeTab === "count" 
+                      ? "bg-purple-500" 
+                      : "bg-green-500"
+                }`}
                 animate={{ width: `${activeProgress}%` }}
                 transition={{ duration: 1, ease: "easeInOut" }}
               />
@@ -326,17 +349,17 @@ export const PlantGrow = () => {
 
           {/* Stats summary */}
           <div className='grid grid-cols-3 gap-2 w-full max-w-[280px] text-center text-sm'>
-            <div className='bg-green-100 p-2 rounded'>
+            <div className='bg-blue-100 p-2 rounded'>
               <div className='font-bold'>
-                {materialData.totalWeight.toFixed(1)}
+                {materialData.totalWeight.toFixed(1)} kg
               </div>
               <div className='text-xs text-gray-600'>Materials</div>
             </div>
-            <div className='bg-blue-100 p-2 rounded'>
+            <div className='bg-purple-100 p-2 rounded'>
               <div className='font-bold'>{materialData.totalMaterialCount}</div>
               <div className='text-xs text-gray-600'>Items</div>
             </div>
-            <div className='bg-purple-100 p-2 rounded'>
+            <div className='bg-green-100 p-2 rounded'>
               <div className='font-bold'>
                 {materialData.totalPostsCompleted}
               </div>
@@ -347,102 +370,80 @@ export const PlantGrow = () => {
 
         <div className='w-full md:w-1/2'>
           <h2 className='text-xl font-semibold mb-4 text-center md:text-left text-gray-800'>
-            DIY Materials Saved
+            {activeTab === "weight" && "Top Materials by Weight"}
+            {activeTab === "count" && "Top Materials by Item Count"}
+            {activeTab === "impact" && "Top Materials by Environmental Impact"}
           </h2>
 
           <div className='space-y-4'>
-            {sortedMaterials.map((material) => (
-              <div
-                key={material.id}
-                className='flex items-center justify-between'
-              >
-                <span className='text-sm font-medium text-gray-700 w-24 truncate'>
-                  {material.name}
-                </span>
-                <div className='flex-1 mx-4'>
-                  <div className='h-2 bg-gray-200 rounded-full'>
-                    <motion.div
-                      className='h-full bg-[#6437A0] rounded-full'
-                      initial={{ width: 0 }}
-                      animate={{
-                        width:
-                          activeTab === "weight"
-                            ? `${
-                                (material.amount / materialData.totalWeight) *
-                                100
-                              }%`
+            {filteredMaterials.length > 0 ? (
+              filteredMaterials.map((material) => (
+                <div
+                  key={material.id}
+                  className='flex items-center justify-between'
+                >
+                  <span className='text-sm font-medium text-gray-700 w-24 truncate'>
+                    {material.name}
+                  </span>
+                  <div className='flex-1 mx-4'>
+                    <div className='h-2 bg-gray-200 rounded-full'>
+                      <motion.div
+                        className={`h-full rounded-full ${getUnitColorClass(material.unit)}`}
+                        initial={{ width: 0 }}
+                        animate={{
+                          width: activeTab === "weight"
+                            ? `${(material.amount / materialData.totalWeight) * 100}%`
                             : activeTab === "count"
-                            ? `${
-                                (material.savedCount /
-                                  materialData.totalMaterialCount) *
-                                100
-                              }%`
-                            : `${
-                                ((material.environmentalImpact *
-                                  material.savedCount) /
-                                  totalImpact) *
-                                100
-                              }%`,
-                      }}
-                      transition={{ duration: 1, ease: "easeInOut" }}
-                    />
+                              ? `${(material.savedCount / materialData.totalMaterialCount) * 100}%`
+                              : `${((material.environmentalImpact * material.savedCount) / totalImpact) * 100}%`,
+                        }}
+                        transition={{ duration: 1, ease: "easeInOut" }}
+                      />
+                    </div>
                   </div>
+                  <span className='text-sm font-semibold text-gray-700 w-28 text-right flex items-center justify-end'>
+                    {activeTab === "weight" && (
+                      <>
+                        {material.amount.toFixed(1)} 
+                        <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${getBadgeColorClass(material.unit)}`}>
+                          {formatUnitDisplay(material.unit)}
+                        </span>
+                      </>
+                    )}
+                    {activeTab === "count" && `${material.savedCount} items`}
+                    {activeTab === "impact" && `${(material.environmentalImpact * material.savedCount).toFixed(1)} pts`}
+                  </span>
                 </div>
-                <span className='text-sm font-semibold text-gray-700 w-24 text-right'>
-                  {activeTab === "weight" &&
-                    `${material.amount.toFixed(1)} ${formatUnitDisplay(
-                      material.unit
-                    )}`}
-                  {activeTab === "count" && `${material.savedCount} items`}
-                  {activeTab === "impact" &&
-                    `${(
-                      material.environmentalImpact * material.savedCount
-                    ).toFixed(1)} pts`}
-                </span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center text-sm text-gray-500 py-4">
+                No materials found for the selected view
+              </p>
+            )}
           </div>
 
-          {/* Category breakdown */}
+          {/* Category breakdown - simplified version */}
           <div className='mt-6'>
             <h3 className='text-md font-semibold mb-3 text-gray-700'>
-              By Category
+              Materials by Category
             </h3>
             <div className='grid grid-cols-2 gap-2'>
               {Object.entries(materialsByCategory).map(([category, data]) => (
                 <div
                   key={category}
-                  className='bg-gray-50 p-2 rounded border border-gray-200'
+                  className='bg-gray-50 p-3 rounded border border-gray-200'
                 >
                   <div className='font-medium text-sm'>{category}</div>
-                  <div className='text-xs text-gray-600'>
-                    {activeTab === "weight" && `${data.totalAmount.toFixed(1)}`}
-                    {activeTab === "count" && `${data.totalCount} items`}
-                    {activeTab === "impact" &&
-                      `${data.totalImpact.toFixed(1)} impact`}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Category breakdown */}
-          <div className='mt-6'>
-            <h3 className='text-md font-semibold mb-3 text-gray-700'>
-              By Category
-            </h3>
-            <div className='grid grid-cols-2 gap-2'>
-              {Object.entries(materialsByCategory).map(([category, data]) => (
-                <div
-                  key={category}
-                  className='bg-gray-50 p-2 rounded border border-gray-200'
-                >
-                  <div className='font-medium text-sm'>{category}</div>
-                  <div className='text-xs text-gray-600'>
-                    {activeTab === "weight" && `${data.totalAmount.toFixed(1)}`}
-                    {activeTab === "count" && `${data.totalCount} items`}
-                    {activeTab === "impact" &&
-                      `${data.totalImpact.toFixed(1)} impact`}
+                  <div className='text-sm mt-1 text-gray-600'>
+                    {activeTab === "weight" && (
+                      <span>{data.totalAmount.toFixed(1)} kg</span>
+                    )}
+                    {activeTab === "count" && (
+                      <span>{data.totalCount} items</span>
+                    )}
+                    {activeTab === "impact" && (
+                      <span>{data.totalImpact.toFixed(1)} impact pts</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -451,7 +452,7 @@ export const PlantGrow = () => {
 
           <div className='mt-6 text-center'>
             <p className='text-sm text-gray-600'>
-              Environmental Impact: {totalImpact.toFixed(1)} points
+              Total Environmental Impact: {totalImpact.toFixed(1)} points
             </p>
           </div>
         </div>
