@@ -1,6 +1,8 @@
 "use client";
-
+// TreeVisualization.tsx
 // Renders the animated tree visualization based on the sustainability progress.
+// (Your original tree visualization code is preserved.)
+
 import { motion } from "framer-motion";
 
 interface TreeVisualizationProps {
@@ -20,7 +22,7 @@ export const TreeVisualization = ({
 }: TreeVisualizationProps) => {
   return (
     <div className="relative w-full max-w-[280px] aspect-square flex items-end justify-center mb-4">
-      {/* Ground/soil visualization */}
+      {/* Enhanced ground/soil with gradient and texture */}
       <div className="absolute bottom-0 w-full h-8 flex justify-center">
         <div
           className="w-48 h-4 bg-gradient-to-r from-amber-800/30 via-amber-700/40 to-amber-800/30 rounded-full"
@@ -31,7 +33,7 @@ export const TreeVisualization = ({
         />
       </div>
 
-      {/* Tree trunk and branches */}
+      {/* Tree trunk with texture and gradient */}
       <motion.div
         className="absolute bottom-0 bg-gradient-to-t from-amber-800 to-amber-700 rounded-t-lg origin-bottom"
         style={{
@@ -43,6 +45,7 @@ export const TreeVisualization = ({
         animate={{ height: treeHeight, width: trunkWidth }}
         transition={{ type: "spring", stiffness: 70, damping: 15 }}
       >
+        {/* Tree branches */}
         {activeProgress > 30 && (
           <>
             <motion.div
@@ -73,6 +76,7 @@ export const TreeVisualization = ({
             />
           </>
         )}
+
         {activeProgress > 50 && (
           <>
             <motion.div
@@ -105,7 +109,7 @@ export const TreeVisualization = ({
         )}
       </motion.div>
 
-      {/* Tree leaves, fruits, and additional details */}
+      {/* Enhanced tree leaves with multiple layers and gradients */}
       <motion.div
         className="absolute -left-24 -right-24 bottom-[60%] flex items-center justify-center"
         style={{ scale: leafScale }}
@@ -207,24 +211,14 @@ export const TreeVisualization = ({
         )}
       </motion.div>
 
-      {/* Optional animated butterflies or birds */}
+      {/* Animated butterflies or birds (optional) */}
       {activeProgress > 60 && (
         <>
           <motion.div
             className="absolute w-4 h-4"
-            style={{
-              top: "30%",
-              left: "30%",
-            }}
-            animate={{
-              x: [0, 20, 0, -20, 0],
-              y: [0, -10, -20, -10, 0],
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              repeatType: "reverse",
-            }}
+            style={{ top: "30%", left: "30%" }}
+            animate={{ x: [0, 20, 0, -20, 0], y: [0, -10, -20, -10, 0] }}
+            transition={{ duration: 6, repeat: Infinity, repeatType: "reverse" }}
           >
             <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
               <path d="M12 2L15 6L12 10L9 6L12 2Z" fill="#FB923C" />
@@ -233,20 +227,9 @@ export const TreeVisualization = ({
           </motion.div>
           <motion.div
             className="absolute w-3 h-3"
-            style={{
-              top: "20%",
-              right: "35%",
-            }}
-            animate={{
-              x: [0, -15, 0, 15, 0],
-              y: [0, -5, -15, -5, 0],
-            }}
-            transition={{
-              duration: 5,
-              delay: 1,
-              repeat: Infinity,
-              repeatType: "reverse",
-            }}
+            style={{ top: "20%", right: "35%" }}
+            animate={{ x: [0, -15, 0, 15, 0], y: [0, -5, -15, -5, 0] }}
+            transition={{ duration: 5, delay: 1, repeat: Infinity, repeatType: "reverse" }}
           >
             <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
               <path d="M12 2L15 6L12 10L9 6L12 2Z" fill="#3B82F6" />
