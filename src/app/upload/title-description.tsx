@@ -8,13 +8,13 @@ interface TitleDescriptionProps {
   error?: string;
 }
 
-const TitleDescription: React.FC<TitleDescriptionProps> = ({
+const TitleDescription = ({
   title,
   description,
   setTitle,
   setDescription,
   error,
-}) => {
+}: TitleDescriptionProps) => {
   return (
     <div className='mb-6'>
       <div className='mb-4'>
@@ -23,7 +23,7 @@ const TitleDescription: React.FC<TitleDescriptionProps> = ({
         </label>
         <input
           type='text'
-          className={`w-full p-2 border focus:outline-none focus:ring-2 focus:ring-primary ${
+          className={`w-full p-2 border ${
             error ? "border-red-500" : "border-gray-300"
           } rounded`}
           value={title}
@@ -38,7 +38,7 @@ const TitleDescription: React.FC<TitleDescriptionProps> = ({
           Description
         </label>
         <textarea
-          className='w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary h-32'
+          className='w-full p-2 border border-gray-300 rounded h-32'
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder='Describe your post (optional)'

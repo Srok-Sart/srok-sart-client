@@ -211,12 +211,12 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
     }
   };
 
-  // Custom styles for react-select
+  // Custom styles for react-select (removed focus outlines)
   const customStyles = {
     control: (provided: any, state: any) => ({
       ...provided,
       borderColor: state.isFocused ? 'purple' : provided.borderColor,
-      boxShadow: state.isFocused ? '0 0 0 1px purple' : provided.boxShadow,
+      boxShadow: 'none', // Removed boxShadow
       '&:hover': {
         borderColor: state.isFocused ? 'purple' : provided.borderColor,
       },
@@ -246,15 +246,15 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
             Estimated Time (optional)
           </label>
 
-          {/* Input Group Wrapper - NOT full width */}
+          {/* Input Group Wrapper - Fixed rounded corners to match other inputs */}
           <div
-            className="inline-flex items-center border border-gray-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all"
+            className="inline-flex items-center border border-gray-300 rounded overflow-hidden"
           >
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              className="w-36 px-3 py-2 focus:outline-none h-10"
+              className="w-36 px-3 py-2 h-10"
               value={estimatedTime}
               onChange={handleTimeInputChange}
               placeholder="Enter time value"
@@ -265,7 +265,7 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
               onChange={(e) =>
                 setTimeUnit(e.target.value as "minutes" | "hours")
               }
-              className="px-3 py-2 border-l border-gray-300 bg-white focus:outline-none h-10"
+              className="px-3 py-2 border-l border-gray-300 bg-white h-10"
               aria-label="Time unit"
             >
               <option value="minutes">Minutes</option>
@@ -277,10 +277,6 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
             Enter the estimated time as a number only.
           </p>
         </div>
-
-
-
-
 
         <PostDifficultySelector
           difficulty={difficulty}
@@ -322,7 +318,7 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
                 label: material.material?.name || materials.find(m => m.id === material.materialId)?.name || 'Unknown',
               }))}
               styles={customStyles}
-              className={`w-full ${validationErrors.materials ? 'border-red-500 rounded-md' : ''}`}
+              className={`w-full ${validationErrors.materials ? 'border-red-500 rounded' : ''}`}
               classNamePrefix="react-select"
               placeholder="Select materials needed for this project..."
             />
@@ -353,7 +349,7 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
                             updatedMaterials[index].quantityRequired = Math.max(1, currentQuantity - 1);
                             setSelectedMaterials(updatedMaterials);
                           }}
-                          className="px-2 py-1 bg-primary text-white rounded-l-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="px-2 py-1 bg-primary text-white rounded-l-md hover:bg-primary/80"
                           aria-label="Decrease quantity"
                         >
                           -
@@ -366,7 +362,7 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^\d]/g, '');
                             const updatedMaterials = [...selectedMaterials];
-                            updatedMaterials[index].quantityRequired = parseInt(value) || 1;
+                            updatedMaterials[index].quantityRequired = Math.min(10, parseInt(value) || 1);
                             setSelectedMaterials(updatedMaterials);
                           }}
                           placeholder="1"
@@ -377,10 +373,14 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
                           onClick={() => {
                             const updatedMaterials = [...selectedMaterials];
                             const currentQuantity = updatedMaterials[index].quantityRequired || 1;
-                            updatedMaterials[index].quantityRequired = currentQuantity + 1;
+                            // Limit to max 10
+                            updatedMaterials[index].quantityRequired = Math.min(10, currentQuantity + 1);
                             setSelectedMaterials(updatedMaterials);
                           }}
-                          className="px-2 py-1 bg-primary text-white rounded-r-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                          className={`px-2 py-1 bg-primary text-white rounded-r-md ${
+                            (material.quantityRequired || 1) >= 10 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/80'
+                          }`}
+                          disabled={(material.quantityRequired || 1) >= 10}
                           aria-label="Increase quantity"
                         >
                           +
@@ -389,7 +389,7 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Use the +/- buttons to adjust quantities or enter a value directly.</p>
+                <p className="text-xs text-gray-500 mt-1">Use the +/- buttons to adjust quantities (max: 10) or enter a value directly.</p>
               </div>
             )}
           </div>

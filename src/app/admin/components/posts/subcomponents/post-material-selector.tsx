@@ -38,12 +38,12 @@ export const PostMaterialsSelector = ({
     label: material.material?.name || materials.find(m => m.id === material.materialId)?.name || 'Unknown',
   }));
 
-  // Custom styles for react-select
+  // Custom styles for react-select (removed focus styles)
   const customStyles = {
     control: (provided: any, state: any) => ({
       ...provided,
       borderColor: state.isFocused ? 'purple' : provided.borderColor,
-      boxShadow: state.isFocused ? '0 0 0 1px purple' : provided.boxShadow,
+      boxShadow: 'none', // Removed boxShadow
       '&:hover': {
         borderColor: state.isFocused ? 'purple' : provided.borderColor,
       },
@@ -72,6 +72,7 @@ export const PostMaterialsSelector = ({
           materials={materials}
           selectedMaterials={selectedMaterials}
           onMaterialsChange={onMaterialsChange}
+          maxQuantity={10}
         />
       )}
     </div>
@@ -82,17 +83,22 @@ interface MaterialQuantityEditorProps {
   materials: Material[];
   selectedMaterials: PostMaterial[];
   onMaterialsChange: (selectedMaterials: PostMaterial[]) => void;
+  maxQuantity?: number;
 }
 
 const MaterialQuantityEditor = ({
   materials,
   selectedMaterials,
   onMaterialsChange,
+  maxQuantity = 10,
 }: MaterialQuantityEditorProps) => {
   const handleQuantityChange = (materialId: number, quantity: number) => {
+    // Ensure quantity doesn't exceed maxQuantity
+    const limitedQuantity = Math.min(Math.max(1, quantity), maxQuantity);
+    
     const updatedMaterials = selectedMaterials.map(material => {
       if (material.materialId === materialId) {
-        return { ...material, quantityRequired: quantity };
+        return { ...material, quantityRequired: limitedQuantity };
       }
       return material;
     });
@@ -103,7 +109,11 @@ const MaterialQuantityEditor = ({
     const updatedMaterials = selectedMaterials.map(material => {
       if (material.materialId === materialId) {
         const currentQuantity = material.quantityRequired || 1;
-        return { ...material, quantityRequired: currentQuantity + 1 };
+        // Prevent increasing beyond maxQuantity
+        return { 
+          ...material, 
+          quantityRequired: Math.min(currentQuantity + 1, maxQuantity) 
+        };
       }
       return material;
     });
@@ -136,7 +146,7 @@ const MaterialQuantityEditor = ({
               <button
                 type="button"
                 onClick={() => decreaseQuantity(material.materialId)}
-                className="px-2 py-1 bg-primary text-white rounded-l-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="px-2 py-1 bg-primary text-white rounded-l-md hover:bg-primary/80"
                 aria-label="Decrease quantity"
               >
                 -
@@ -156,8 +166,11 @@ const MaterialQuantityEditor = ({
               <button
                 type="button"
                 onClick={() => increaseQuantity(material.materialId)}
-                className="px-2 py-1 bg-primary text-white rounded-r-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`px-2 py-1 bg-primary text-white rounded-r-md ${
+                  (material.quantityRequired || 1) >= maxQuantity ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/80'
+                }`}
                 aria-label="Increase quantity"
+                disabled={(material.quantityRequired || 1) >= maxQuantity}
               >
                 +
               </button>
@@ -165,7 +178,7 @@ const MaterialQuantityEditor = ({
           </div>
         ))}
       </div>
-      <p className="text-xs text-gray-500 mt-1">Use the +/- buttons to adjust quantities or enter a value directly.</p>
+      <p className="text-xs text-gray-500 mt-1">Use the +/- buttons to adjust quantities (max: {maxQuantity}) or enter a value directly.</p>
     </div>
   );
 };

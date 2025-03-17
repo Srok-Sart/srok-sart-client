@@ -38,7 +38,7 @@ export const MaterialFormFields = ({
         type="text"
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
-        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full p-2 border rounded ${
           errors.name ? 'border-red-500' : 'border-gray-300'
         }`}
         placeholder="Enter material name"
@@ -53,7 +53,7 @@ export const MaterialFormFields = ({
       <select
         value={category}
         onChange={(e) => onCategoryChange(e.target.value as MaterialCategory)}
-        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full p-2 border rounded ${
           errors.category ? 'border-red-500' : 'border-gray-300'
         }`}
       >
@@ -73,7 +73,7 @@ export const MaterialFormFields = ({
         type="text"
         value={weightPerUnit}
         onChange={(e) => onWeightPerUnitChange(e.target.value)}
-        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full p-2 border rounded ${
           errors.weightPerUnit ? 'border-red-500' : 'border-gray-300'
         }`}
         placeholder="Enter weight per unit"
@@ -88,7 +88,7 @@ export const MaterialFormFields = ({
       <select
         value={unit}
         onChange={(e) => onUnitChange(e.target.value as MaterialUnit)}
-        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full p-2 border rounded ${
           errors.unit ? 'border-red-500' : 'border-gray-300'
         }`}
       >
@@ -108,7 +108,7 @@ export const MaterialFormFields = ({
         type="number"
         value={environmentalImpact}
         onChange={(e) => onEnvironmentalImpactChange(Number(e.target.value))}
-        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full p-2 border rounded ${
           errors.environmentalImpact ? 'border-red-500' : 'border-gray-300'
         }`}
         placeholder="Enter impact value (1-10)"
