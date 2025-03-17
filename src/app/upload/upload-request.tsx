@@ -241,16 +241,20 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
           error={validationErrors.title}
         />
 
-        <div className='mb-4'>
-          <label className='block text-gray-700 font-semibold mb-2'>
+        <div className="mb-4">
+          <label className="block text-gray-700 font-semibold mb-2">
             Estimated Time (optional)
           </label>
-          <div className="flex items-center">
+
+          {/* Input Group Wrapper - NOT full width */}
+          <div
+            className="inline-flex items-center border border-gray-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all"
+          >
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              className="w-36 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary h-10"
+              className="w-36 px-3 py-2 focus:outline-none h-10"
               value={estimatedTime}
               onChange={handleTimeInputChange}
               placeholder="Enter time value"
@@ -258,16 +262,25 @@ const UploadRequest = ({ token }: UploadRequestProps) => {
             />
             <select
               value={timeUnit}
-              onChange={(e) => setTimeUnit(e.target.value as 'minutes' | 'hours')}
-              className="px-3 py-2 border-t border-r border-b rounded-r-md border-l-0 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary h-10"
+              onChange={(e) =>
+                setTimeUnit(e.target.value as "minutes" | "hours")
+              }
+              className="px-3 py-2 border-l border-gray-300 bg-white focus:outline-none h-10"
               aria-label="Time unit"
             >
               <option value="minutes">Minutes</option>
               <option value="hours">Hours</option>
             </select>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Enter the estimated time as a number only.</p>
+
+          <p className="text-xs text-gray-500 mt-1">
+            Enter the estimated time as a number only.
+          </p>
         </div>
+
+
+
+
 
         <PostDifficultySelector
           difficulty={difficulty}

@@ -13,12 +13,28 @@ const Navigation = () => {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
 
+  // Reset search by removing the search param from the URL
+  const resetSearch = () => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.delete("search");
+    router.push(`/?${newParams.toString()}`);
+  };
+
   // Search is only triggered when user clicks the button or presses Enter
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set("search", searchQuery);
     router.push(`/?${newParams.toString()}`);
+  };
+
+  // Handle input change and reset if empty
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (value.trim() === "") {
+      resetSearch();
+    }
   };
 
   const navItems = [
@@ -34,10 +50,10 @@ const Navigation = () => {
       <nav className="hidden md:flex justify-between items-center px-12 py-3 shadow-lg bg-white w-full fixed top-0 z-50 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <Image src="/logo.svg" alt="Logo" width={40} height={40} />
-          <h1 className="text-xl font-bold text-gray-900 mr-10 ">Srok Sart</h1>
+          <h1 className="text-xl font-bold text-gray-900 mr-10">Srok Sart</h1>
         </div>
 
-        {/* Navigation Links (Rounded for Active Page) */}
+        {/* Navigation Links */}
         <div className="flex items-center gap-5 text-gray-800 font-medium">
           {navItems.map(({ name, href }) => (
             <Link
@@ -54,25 +70,31 @@ const Navigation = () => {
           ))}
         </div>
 
-        {/* Desktop Search Input (Full width but keeps profile icon) */}
+        {/* Desktop Search Input */}
         <div className="relative flex-1 mx-4 max-w-[700px] lg:max-w-[850px]">
           <div className="relative">
             <input
               type="text"
               placeholder="Search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()} // Search only when Enter is pressed
+              onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  searchQuery.trim() === "" ? resetSearch() : handleSearch();
+                }
+              }}
               className="bg-gray-200 rounded-full pl-10 pr-12 py-2 w-full focus:outline-none"
             />
             <FaSearch
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
-              onClick={handleSearch} // Search only when clicking the search icon
+              onClick={() => {
+                searchQuery.trim() === "" ? resetSearch() : handleSearch();
+              }}
             />
           </div>
         </div>
 
-        {/* Profile Icon - Ensured it fits in layout */}
+        {/* Profile Icon */}
         <div className="flex items-center gap-4">
           <Link href="/profile">
             <button className="bg-gray-300 rounded-full w-10 h-10 flex items-center justify-center text-gray-700 font-bold">
@@ -89,13 +111,19 @@ const Navigation = () => {
             type="text"
             placeholder="Search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            onChange={handleInputChange}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                searchQuery.trim() === "" ? resetSearch() : handleSearch();
+              }
+            }}
             className="bg-white border border-gray-300 rounded-full pl-8 pr-10 py-2 w-full shadow-lg focus:outline-none text-sm"
           />
           <FaSearch
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
-            onClick={handleSearch}
+            onClick={() => {
+              searchQuery.trim() === "" ? resetSearch() : handleSearch();
+            }}
           />
         </div>
       </div>
@@ -144,7 +172,7 @@ const Navigation = () => {
         </Link>
       </nav>
 
-      {/* Spacer to prevent content from being covered (only for desktop) */}
+      {/* Spacer to prevent content from being covered (Desktop) */}
       <div className="hidden md:block w-full h-[35px]" />
     </>
   );

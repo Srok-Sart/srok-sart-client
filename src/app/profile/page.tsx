@@ -12,15 +12,20 @@ export default async function ProfilePage() {
       <div className='max-w-4xl mx-auto px-4 py-8 mt-7'>
         {/* Profile Header */}
         <div className='flex flex-col items-center space-y-4'>
-          <div className='w-24 h-24 rounded-full overflow-hidden border-4 border-[var(--primary-color)]'>
-            <Image
-              src={profile.profileImageUrl ?? "/placeholder-avatar.png"}
-              alt='Profile'
-              width={100}
-              height={100}
-              className='w-full h-full object-cover rounded-full'
-            />
+          <div className='w-24 h-24 rounded-full overflow-hidden border-4 border-[var(--primary-color)] flex items-center justify-center bg-gray-200 text-gray-500 text-4xl font-bold'>
+            {profile.profileImageUrl ? (
+              <Image
+                src={profile.profileImageUrl}
+                alt='Profile'
+                width={100}
+                height={100}
+                className='w-full h-full object-cover rounded-full'
+              />
+            ) : (
+              <span>{profile.username?.charAt(0) || "?"}</span>
+            )}
           </div>
+
           <h1 className='text-3xl font-bold'>@{profile.username}</h1>
           {profile.bio && (
             <p className='text-gray-600 text-center max-w-md'>{profile.bio}</p>

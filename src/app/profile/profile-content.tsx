@@ -21,34 +21,29 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
     { id: "liked", label: "Liked" },
   ];
 
-const handleProfileUpdate = async (updatedProfile: UserProfile) => {
-  try {
-    // Send a PATCH request to your NestJS API endpoint
-    const response = await fetch("http://localhost:4000/api/profile", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedProfile),
-      credentials: "include", // Include cookies if using cookie-based auth
-    });
+  const handleProfileUpdate = async (updatedProfile: UserProfile) => {
+    try {
+      const response = await fetch("http://localhost:4000/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedProfile),
+        credentials: "include",
+      });
 
-    if (!response.ok) {
-      throw new Error(`Failed to update profile: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Failed to update profile: ${response.status}`);
+      }
+
+      const newUser = await response.json();
+      setProfile(newUser);
+      setIsEditProfileOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to update profile:", error);
     }
-
-    // Parse the updated user data returned from the API
-    const newUser = await response.json();
-
-    // Update local state with the new profile data and close the modal
-    setProfile(newUser);
-    setIsEditProfileOpen(false);
-    router.refresh(); // Optional: refresh the page to load any server-side changes
-  } catch (error) {
-    console.error("Failed to update profile:", error);
-  }
-};
-
+  };
 
   return (
     <>
@@ -69,17 +64,46 @@ const handleProfileUpdate = async (updatedProfile: UserProfile) => {
         ))}
       </div>
 
-      {/* Content Section */}
+      {/* Dynamic Content Section */}
       <div className="mt-8 text-center">
-        <p className="text-gray-600 mb-4">
-          Nothing to show...yet! Start creating now.
-        </p>
-        <button
-          onClick={() => router.push("/upload")}
-          className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
-        >
-          Create Post
-        </button>
+        {activeTab === "created" && (
+          <>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Your Created Posts</h2>
+            <p className="text-gray-600 mb-4">No posts yet? Start creating now.</p>
+            <button
+              onClick={() => router.push("/upload")}
+              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
+            >
+              Create Post
+            </button>
+          </>
+        )}
+
+        {activeTab === "saved" && (
+          <>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Saved Posts</h2>
+            <p className="text-gray-600 mb-4">You haven't saved anything yet.</p>
+            <button
+              onClick={() => router.push("/explore")}
+              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
+            >
+              Explore Posts
+            </button>
+          </>
+        )}
+
+        {activeTab === "liked" && (
+          <>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Liked Posts</h2>
+            <p className="text-gray-600 mb-4">No liked posts yet.</p>
+            <button
+              onClick={() => router.push("/explore")}
+              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
+            >
+              Find Posts to Like
+            </button>
+          </>
+        )}
       </div>
 
       {/* Edit Profile Button */}

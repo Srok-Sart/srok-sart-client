@@ -533,7 +533,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                         </div>
 
                         {/* Comment actions dropdown - only show for user's own comments */}
-                        {comment.userId && (
+                        {/* {comment.userId && (
                           <div className='relative'>
                             <button 
                               className='p-1 rounded-full hover:bg-gray-100'
@@ -574,7 +574,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                               </div>
                             )}
                           </div>
-                        )}
+                        )} */}
                       </div>
                       <p className='mt-2 text-gray-700'>{comment.content}</p>
                     </>

@@ -59,7 +59,7 @@ export const PlantGrow = () => {
 
   // Set target values for metrics.
   const maxWeightInGrams = 700; // Now in grams instead of kg
-  const maxImpact = 500;  // environmental impact points
+  const maxImpact = 50;  // environmental impact points
   const maxItems = 50;    // number of items
   
   useEffect(() => {

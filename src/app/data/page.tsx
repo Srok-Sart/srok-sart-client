@@ -2,7 +2,7 @@
 
 import Navigation from "../components/navigation"; 
 import { PlantGrow } from "./components/plant-grow";
-import ProjectCard from "./components/project-card";
+// import ProjectCard from "./components/project-card";
 
 const projects: { difficulty: "easy" | "medium" | "hard"; completedCount: number; totalCount: number }[] = [
   { difficulty: "easy", completedCount: 3, totalCount: 5 },
@@ -19,12 +19,12 @@ const Page = () => {
         <PlantGrow />
 
         <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Project Categories</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Project Categories</h2> */}
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {projects.map((project) => (
               <ProjectCard key={project.difficulty} {...project} />
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
     </>
