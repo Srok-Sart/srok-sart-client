@@ -13,10 +13,9 @@ interface MaterialBreakdownItem {
 
 interface TopMaterialsProps {
   topMaterials: MaterialBreakdownItem[];
-  activeMetric: "weight" | "volume" | "impact" | "items";
+  activeMetric: "weight" | "impact" | "items";
   activeMetricData: { progress: number; color: string };
   totalSavedWeight: number;
-  totalSavedVolume: number;
   totalSavedItems: number;
   totalEnvironmentalImpact: number;
 }
@@ -26,7 +25,6 @@ export const TopMaterials = ({
   activeMetric,
   activeMetricData,
   totalSavedWeight,
-  totalSavedVolume,
   totalSavedItems,
   totalEnvironmentalImpact,
 }: TopMaterialsProps) => {
@@ -50,8 +48,6 @@ export const TopMaterials = ({
                       width:
                         activeMetric === "weight"
                           ? `${(material.standardAmount / totalSavedWeight) * 100}%`
-                          : activeMetric === "volume"
-                          ? `${(material.standardAmount / totalSavedVolume) * 100}%`
                           : activeMetric === "items"
                           ? `${(material.savedCount / totalSavedItems) * 100}%`
                           : `${(material.totalEnvironmentalImpact / totalEnvironmentalImpact) * 100}%`,
@@ -61,8 +57,7 @@ export const TopMaterials = ({
                 </div>
               </div>
               <span className="text-xs font-semibold text-gray-700 w-16 text-right">
-                {activeMetric === "weight" && `${material.standardAmount.toFixed(1)} kg`}
-                {activeMetric === "volume" && `${material.standardAmount.toFixed(1)} L`}
+                {activeMetric === "weight" && `${(material.standardAmount * 1000).toFixed(0)} g`}
                 {activeMetric === "items" && `${material.savedCount} items`}
                 {activeMetric === "impact" && `${material.totalEnvironmentalImpact} pts`}
               </span>

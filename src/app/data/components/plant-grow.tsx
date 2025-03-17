@@ -4,7 +4,7 @@
 // metric display, and detailed dashboard summary (sustainability stats, top materials, categories, and achievements).
 import { useEffect, useState } from "react";
 import { fetcher } from "@/api/use-fetcher";
-import { FaLeaf, FaRecycle, FaSeedling, FaInfoCircle, FaAward, FaBox, FaTint } from "react-icons/fa";
+import { FaLeaf, FaRecycle, FaSeedling, FaInfoCircle, FaAward, FaBox } from "react-icons/fa";
 import { TreeVisualization } from "./tree-visualization";
 import { MetricDisplay } from "./metric-display";
 import { SustainabilitySummary } from "./sustainability-summary";
@@ -46,17 +46,22 @@ interface MaterialSavedSummary {
   materialBreakdown: MaterialBreakdownItem[];
 }
 
+interface MetricGoal {
+  current: number;
+  goal: number;
+  explanation: string;
+}
+
 export const PlantGrow = () => {
   const [materialData, setMaterialData] = useState<MaterialSavedSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeMetric, setActiveMetric] = useState<"weight" | "volume" | "impact" | "items">("impact");
+  const [activeMetric, setActiveMetric] = useState<"weight" | "impact" | "items">("impact");
 
   // Set target values for metrics.
-  const maxWeight = 1; // in kg
-  const maxVolume = 5; // in L
-  const maxImpact = 500; // environmental impact points
-  const maxItems = 50; // number of items
-
+  const maxWeightInGrams = 700; // Now in grams instead of kg
+  const maxImpact = 500;  // environmental impact points
+  const maxItems = 50;    // number of items
+  
   useEffect(() => {
     const fetchMaterialData = async () => {
       try {
@@ -88,14 +93,12 @@ export const PlantGrow = () => {
   }
 
   // Calculate progress for each metric.
-  const weightProgress = Math.min(100, (materialData.totalSavedWeight / maxWeight) * 100);
-  const volumeProgress = Math.min(100, (materialData.totalSavedVolume / maxVolume) * 100);
+  const weightProgress = Math.min(100, ((materialData.totalSavedWeight * 1000) / maxWeightInGrams) * 100);
   const impactProgress = Math.min(100, (materialData.totalEnvironmentalImpact / maxImpact) * 100);
   const itemsProgress = Math.min(100, (materialData.totalSavedItems / maxItems) * 100);
 
   let activeProgress = impactProgress;
   if (activeMetric === "weight") activeProgress = weightProgress;
-  if (activeMetric === "volume") activeProgress = volumeProgress;
   if (activeMetric === "items") activeProgress = itemsProgress;
 
   // Tree visualization calculations.
@@ -109,22 +112,18 @@ export const PlantGrow = () => {
     if (!acc[material.category]) {
       acc[material.category] = {
         totalWeight: 0,
-        totalVolume: 0,
         totalCount: 0,
         totalImpact: 0,
       };
     }
     const isWeight = material.displayUnit === MaterialUnit.KG;
-    const isVolume = material.displayUnit === MaterialUnit.L;
     if (isWeight) {
       acc[material.category].totalWeight += material.standardAmount;
-    } else if (isVolume) {
-      acc[material.category].totalVolume += material.standardAmount;
     }
     acc[material.category].totalCount += material.savedCount;
     acc[material.category].totalImpact += material.totalEnvironmentalImpact;
     return acc;
-  }, {} as Record<string, { totalWeight: number; totalVolume: number; totalCount: number; totalImpact: number }>);
+  }, {} as Record<string, { totalWeight: number; totalCount: number; totalImpact: number }>);
 
   const sortedCategories = Object.entries(materialsByCategory)
     .sort(([, a], [, b]) => b.totalImpact - a.totalImpact)
@@ -135,7 +134,6 @@ export const PlantGrow = () => {
     return [...materialData.materialBreakdown]
       .sort((a, b) => {
         if (activeMetric === "weight") return b.standardAmount - a.standardAmount;
-        if (activeMetric === "volume") return b.standardAmount - a.standardAmount;
         if (activeMetric === "items") return b.savedCount - a.savedCount;
         return b.totalEnvironmentalImpact - a.totalEnvironmentalImpact;
       })
@@ -144,25 +142,17 @@ export const PlantGrow = () => {
   const topMaterials = getTopMaterials();
 
   // Get metric value data.
-  const getMetricValue = (metric: "weight" | "volume" | "impact" | "items") => {
+  const getMetricValue = (metric: "weight" | "impact" | "items") => {
     switch (metric) {
       case "weight":
         return {
-          value: materialData.totalSavedWeight.toFixed(1),
-          max: maxWeight,
-          unit: "kg",
+          value: (materialData.totalSavedWeight * 1000).toFixed(0),
+          max: maxWeightInGrams,
+          unit: "g",
           progress: weightProgress,
           icon: <FaBox className="w-4 h-4" />,
           color: "from-emerald-400 to-emerald-600",
-        };
-      case "volume":
-        return {
-          value: materialData.totalSavedVolume.toFixed(1),
-          max: maxVolume,
-          unit: "L",
-          progress: volumeProgress,
-          icon: <FaTint className="w-4 h-4" />,
-          color: "from-blue-400 to-blue-600",
+          explanation: metricGoals.weight.explanation,
         };
       case "items":
         return {
@@ -172,6 +162,7 @@ export const PlantGrow = () => {
           progress: itemsProgress,
           icon: <FaRecycle className="w-4 h-4" />,
           color: "from-purple-400 to-purple-600",
+          explanation: metricGoals.items.explanation,
         };
       case "impact":
       default:
@@ -182,9 +173,42 @@ export const PlantGrow = () => {
           progress: impactProgress,
           icon: <FaLeaf className="w-4 h-4" />,
           color: "from-green-400 to-green-600",
+          explanation: metricGoals.impact.explanation,
         };
     }
   };
+
+  // Dynamic goal calculation based on user's current progress
+const calculateGoal = (current: number, baseGoal: number): number => {
+  // If user has exceeded 80% of the base goal, set a new goal that's 50% higher
+  if (current >= baseGoal * 0.8) {
+    return Math.ceil(baseGoal * 1.5 / 100) * 100; // Round to nearest hundred
+  }
+  return baseGoal;
+};
+
+// Set target values for metrics with explanations
+const baseWeightGoal = 1000; // 1000 grams 
+const baseImpactGoal = 500;  // 500 points
+const baseItemsGoal = 50;    // 50 items
+
+const metricGoals: Record<"weight" | "impact" | "items", MetricGoal> = {
+  weight: {
+    current: materialData?.totalSavedWeight ? materialData.totalSavedWeight * 1000 : 0,
+    goal: calculateGoal(materialData?.totalSavedWeight ? materialData.totalSavedWeight * 1000 : 0, baseWeightGoal),
+    explanation: `Shows progress toward saving ${baseWeightGoal}g of materials. Goals increase as you progress!`
+  },
+  impact: {
+    current: materialData?.totalEnvironmentalImpact || 0,
+    goal: calculateGoal(materialData?.totalEnvironmentalImpact || 0, baseImpactGoal),
+    explanation: `Represents your environmental impact score with a target of ${baseImpactGoal} points`
+  },
+  items: {
+    current: materialData?.totalSavedItems || 0,
+    goal: calculateGoal(materialData?.totalSavedItems || 0, baseItemsGoal),
+    explanation: `Tracks your progress toward reusing ${baseItemsGoal} items`
+  }
+};
 
   const activeMetricData = getMetricValue(activeMetric);
 
@@ -199,10 +223,6 @@ export const PlantGrow = () => {
         <div className="flex flex-col items-center md:col-span-1 pt-16">
           <TreeVisualization
             activeProgress={activeProgress}
-            treeHeight={treeHeight}
-            trunkWidth={trunkWidth}
-            leafScale={leafScale}
-            fruitScale={fruitScale}
           />
           <MetricDisplay activeMetricData={activeMetricData} activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
         </div>
@@ -210,7 +230,6 @@ export const PlantGrow = () => {
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
           <SustainabilitySummary
             totalSavedWeight={materialData.totalSavedWeight}
-            totalSavedVolume={materialData.totalSavedVolume}
             totalSavedItems={materialData.totalSavedItems}
             totalPostsCompleted={materialData.totalPostsCompleted}
           />
@@ -219,7 +238,6 @@ export const PlantGrow = () => {
             activeMetric={activeMetric}
             activeMetricData={{ progress: activeMetricData.progress, color: activeMetricData.color }}
             totalSavedWeight={materialData.totalSavedWeight}
-            totalSavedVolume={materialData.totalSavedVolume}
             totalSavedItems={materialData.totalSavedItems}
             totalEnvironmentalImpact={materialData.totalEnvironmentalImpact}
           />
@@ -227,7 +245,6 @@ export const PlantGrow = () => {
             sortedCategories={sortedCategories}
             activeMetric={activeMetric}
             totalSavedWeight={materialData.totalSavedWeight}
-            totalSavedVolume={materialData.totalSavedVolume}
             totalSavedItems={materialData.totalSavedItems}
             totalEnvironmentalImpact={materialData.totalEnvironmentalImpact}
           />
@@ -240,3 +257,32 @@ export const PlantGrow = () => {
     </div>
   );
 };
+
+
+// Progress Calculation Explained:
+// 
+// 1. Each metric (weight, impact, items) has a specific goal 
+//    - Weight: 1000g (1kg) by default
+//    - Impact: 500 points by default
+//    - Items: 50 items by default
+// 
+// 2. Progress is calculated as a percentage: (current value / goal) * 100
+//    This represents how close the user is to reaching their goal
+//
+// 3. Progress is capped at 100% to ensure the visualization works properly
+//    Math.min(100, (current / goal) * 100)
+//
+// 4. When a user reaches 80% of their goal, a new higher goal is automatically set
+//    to keep them motivated and provide ongoing challenges
+//
+// 5. For tree visualization, this percentage directly controls:
+//    - Tree height and width
+//    - Leaf density and scale
+//    - Appearance of fruits when progress exceeds 40%
+//    - Achievement badges at 25%, 50%, and 75% milestones
+
+// Clear Goal Communication: Users understand exactly what they're working toward
+// Dynamic Goals: Goals adjust as users improve, keeping the experience challenging
+// Visual Percentage: Displaying the exact percentage clarifies progress
+// Explanations: Tooltips help users understand what each metric means
+// Documentation: Code comments ensure future developers understand the system
