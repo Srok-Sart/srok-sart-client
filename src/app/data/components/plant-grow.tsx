@@ -223,6 +223,9 @@ const metricGoals: Record<"weight" | "impact" | "items", MetricGoal> = {
         <div className="flex flex-col items-center md:col-span-1 pt-16">
           <TreeVisualization
             activeProgress={activeProgress}
+            totalMaterialsSaved={materialData.totalSavedWeight}
+            itemsReused={materialData.totalSavedItems}
+            projectsCompleted={materialData.totalPostsCompleted}
           />
           <MetricDisplay activeMetricData={activeMetricData} activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
         </div>

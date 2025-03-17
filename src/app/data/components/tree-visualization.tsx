@@ -6,12 +6,11 @@ import { FaLeaf, FaRecycle, FaSeedling } from "react-icons/fa"
 
 interface TreeVisualizationProps {
   activeProgress: number
-  totalMaterialsSaved?: number
-  itemsReused?: number
-  projectsCompleted?: number
+  totalMaterialsSaved?: number  // This is totalSavedWeight from MaterialSavedSummary
+  itemsReused?: number          // This is totalSavedItems from MaterialSavedSummary 
+  projectsCompleted?: number    // This is totalPostsCompleted from MaterialSavedSummary
   className?: string
 }
-
 export const TreeVisualization = ({
   activeProgress,
   totalMaterialsSaved = 0,
@@ -351,17 +350,20 @@ export const TreeVisualization = ({
       <div className="mt-4 grid grid-cols-3 gap-2 w-full max-w-xs text-center">
         <div className="flex flex-col items-center">
           <span className="text-xs text-gray-500 dark:text-gray-400">Materials</span>
-          <span className="font-semibold">{totalMaterialsSaved * 1000}g</span>
+          <span className="font-semibold">
+            {totalMaterialsSaved ? Math.round(totalMaterialsSaved * 1000) : 0}g
+          </span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="text-xs text-gray-500 dark:text-gray-400">Reused</span>
-          <span className="font-semibold">{itemsReused}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Items</span>
+          <span className="font-semibold">{itemsReused || 0}</span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="text-xs text-gray-500 dark:text-gray-400">Projects</span>
-          <span className="font-semibold">{projectsCompleted}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">DIYs</span>
+          <span className="font-semibold">{projectsCompleted || 0}</span>
         </div>
       </div>
+
 
       {/* Progress bar */}
       <div className="w-full max-w-xs mt-4 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
