@@ -4,16 +4,14 @@ import { motion } from "framer-motion";
 
 interface CategoryData {
   totalWeight: number;
-  totalVolume: number;
   totalCount: number;
   totalImpact: number;
 }
 
 interface MaterialCategoriesProps {
   sortedCategories: [string, CategoryData][];
-  activeMetric: "weight" | "volume" | "impact" | "items";
+  activeMetric: "weight" | "impact" | "items";
   totalSavedWeight: number;
-  totalSavedVolume: number;
   totalSavedItems: number;
   totalEnvironmentalImpact: number;
 }
@@ -22,7 +20,6 @@ export const MaterialCategories = ({
   sortedCategories,
   activeMetric,
   totalSavedWeight,
-  totalSavedVolume,
   totalSavedItems,
   totalEnvironmentalImpact,
 }: MaterialCategoriesProps) => {
@@ -38,8 +35,7 @@ export const MaterialCategories = ({
             <div className="flex justify-between items-center mb-1">
               <span className="text-sm font-medium text-gray-700">{category}</span>
               <span className="text-xs font-semibold text-gray-700">
-                {activeMetric === "weight" && `${data.totalWeight.toFixed(1)} kg`}
-                {activeMetric === "volume" && `${data.totalVolume.toFixed(1)} L`}
+                {activeMetric === "weight" && `${(data.totalWeight * 1000).toFixed(0)} g`}
                 {activeMetric === "items" && `${data.totalCount} items`}
                 {activeMetric === "impact" && `${data.totalImpact} pts`}
               </span>
@@ -51,8 +47,6 @@ export const MaterialCategories = ({
                     ? "from-green-400 to-green-600"
                     : activeMetric === "weight"
                     ? "from-emerald-400 to-emerald-600"
-                    : activeMetric === "volume"
-                    ? "from-blue-400 to-blue-600"
                     : "from-purple-400 to-purple-600"
                 } rounded-full`}
                 initial={{ width: 0 }}
@@ -60,8 +54,6 @@ export const MaterialCategories = ({
                   width:
                     activeMetric === "weight"
                       ? `${(data.totalWeight / totalSavedWeight) * 100}%`
-                      : activeMetric === "volume"
-                      ? `${(data.totalVolume / totalSavedVolume) * 100}%`
                       : activeMetric === "items"
                       ? `${(data.totalCount / totalSavedItems) * 100}%`
                       : `${(data.totalImpact / totalEnvironmentalImpact) * 100}%`,

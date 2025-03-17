@@ -2,9 +2,9 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { FaInfoCircle, FaLeaf, FaBox, FaTint, FaRecycle } from "react-icons/fa";
+import { FaInfoCircle, FaLeaf, FaBox, FaRecycle } from "react-icons/fa";
 
-// Displays the current metric (Weight, Volume, Impact, or Items) with a progress bar and metric selector buttons.
+// Displays the current metric (Weight, Impact, or Items) with a progress bar and metric selector buttons.
 interface MetricData {
   value: string;
   max: number;
@@ -16,8 +16,8 @@ interface MetricData {
 
 interface MetricDisplayProps {
   activeMetricData: MetricData;
-  activeMetric: "weight" | "volume" | "impact" | "items";
-  setActiveMetric: (metric: "weight" | "volume" | "impact" | "items") => void;
+  activeMetric: "weight" | "impact" | "items";
+  setActiveMetric: (metric: "weight" | "impact" | "items") => void;
 }
 
 export const MetricDisplay = ({
@@ -32,7 +32,6 @@ export const MetricDisplay = ({
           {activeMetricData.icon}
           <span className="ml-2 font-semibold text-gray-800">
             {activeMetric === "weight" && "Weight Saved"}
-            {activeMetric === "volume" && "Volume Saved"}
             {activeMetric === "items" && "Items Saved"}
             {activeMetric === "impact" && "Environmental Impact"}
           </span>
@@ -42,8 +41,6 @@ export const MetricDisplay = ({
           title={
             activeMetric === "weight"
               ? "Total weight of materials saved through your DIY projects"
-              : activeMetric === "volume"
-              ? "Total volume of materials saved through your DIY projects"
               : activeMetric === "items"
               ? "Total number of items saved through your DIY projects"
               : "Environmental impact score based on your material savings"
@@ -71,7 +68,7 @@ export const MetricDisplay = ({
           Goal: {activeMetricData.max} {activeMetricData.unit}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2 w-full max-w-[280px] mt-4">
+      <div className="grid grid-cols-3 gap-2 w-full max-w-[280px] mt-4">
         <button
           onClick={() => setActiveMetric("impact")}
           className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
@@ -93,17 +90,6 @@ export const MetricDisplay = ({
         >
           <FaBox className="w-4 h-4" />
           <span className="text-sm">Weight</span>
-        </button>
-        <button
-          onClick={() => setActiveMetric("volume")}
-          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
-            activeMetric === "volume"
-              ? "bg-blue-600 text-white shadow-md"
-              : "bg-white text-gray-700 hover:bg-blue-100"
-          }`}
-        >
-          <FaTint className="w-4 h-4" />
-          <span className="text-sm">Volume</span>
         </button>
         <button
           onClick={() => setActiveMetric("items")}

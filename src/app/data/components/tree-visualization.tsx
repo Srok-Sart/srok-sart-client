@@ -39,10 +39,13 @@ export const TreeVisualization = ({
   // Generate leaves based on progress
   const leafCount = Math.floor(activeProgress / 5)
 
+  // Calculate dynamic margin for the milestone badge based on progress
+  const milestoneBadgeMargin = Math.max(24, Math.min(40, 24 + activeProgress / 3))
+
   // Calculate milestone achievements
   const milestones = [
-    { threshold: 20, label: "Seedling" },
-    { threshold: 40, label: "Growing" },
+    { threshold: 10, label: "Seedling" },
+    { threshold: 20, label: "Growing" },
     { threshold: 60, label: "Thriving" },
     { threshold: 80, label: "Flourishing" },
     { threshold: 100, label: "Abundant" },
@@ -53,17 +56,23 @@ export const TreeVisualization = ({
   return (
     <div className={`flex flex-col items-center ${className}`}>
       {/* Current milestone badge */}
-      <motion.div
-        className="mb-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-medium"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+      <div
+        className="w-full flex justify-start"
+        style={{ maxWidth: `${baseSize}px`, marginLeft: '-150px' }}
       >
-        {currentMilestone.label}
-      </motion.div>
+        <motion.div
+          className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-medium"
+          style={{ marginBottom: `${milestoneBadgeMargin}px` }}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          {currentMilestone.label}
+        </motion.div>
+      </div>
 
       {/* Tree visualization container */}
-      <div className={`relative w-full max-w-[${baseSize}px] aspect-square flex items-end justify-center`}>
+      <div className="relative w-full" style={{ maxWidth: `${baseSize}px`, aspectRatio: "1/1" }}>
         {/* Enhanced ground/soil with gradient and texture */}
         <div className="absolute bottom-0 w-full h-8 flex justify-center">
           <motion.div
@@ -342,7 +351,7 @@ export const TreeVisualization = ({
       <div className="mt-4 grid grid-cols-3 gap-2 w-full max-w-xs text-center">
         <div className="flex flex-col items-center">
           <span className="text-xs text-gray-500 dark:text-gray-400">Materials</span>
-          <span className="font-semibold">{totalMaterialsSaved}kg</span>
+          <span className="font-semibold">{totalMaterialsSaved * 1000}g</span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-xs text-gray-500 dark:text-gray-400">Reused</span>
