@@ -46,16 +46,22 @@ interface MaterialSavedSummary {
   materialBreakdown: MaterialBreakdownItem[];
 }
 
+interface MetricGoal {
+  current: number;
+  goal: number;
+  explanation: string;
+}
+
 export const PlantGrow = () => {
   const [materialData, setMaterialData] = useState<MaterialSavedSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeMetric, setActiveMetric] = useState<"weight" | "impact" | "items">("impact");
 
   // Set target values for metrics.
-  const maxWeight = 1; // in kg
-  const maxImpact = 500; // environmental impact points
-  const maxItems = 50; // number of items
-
+  const maxWeightInGrams = 700; // Now in grams instead of kg
+  const maxImpact = 500;  // environmental impact points
+  const maxItems = 50;    // number of items
+  
   useEffect(() => {
     const fetchMaterialData = async () => {
       try {
@@ -87,7 +93,7 @@ export const PlantGrow = () => {
   }
 
   // Calculate progress for each metric.
-  const weightProgress = Math.min(100, (materialData.totalSavedWeight / maxWeight) * 100);
+  const weightProgress = Math.min(100, ((materialData.totalSavedWeight * 1000) / maxWeightInGrams) * 100);
   const impactProgress = Math.min(100, (materialData.totalEnvironmentalImpact / maxImpact) * 100);
   const itemsProgress = Math.min(100, (materialData.totalSavedItems / maxItems) * 100);
 
@@ -141,11 +147,12 @@ export const PlantGrow = () => {
       case "weight":
         return {
           value: (materialData.totalSavedWeight * 1000).toFixed(0),
-          max: maxWeight * 1000,
+          max: maxWeightInGrams,
           unit: "g",
           progress: weightProgress,
           icon: <FaBox className="w-4 h-4" />,
           color: "from-emerald-400 to-emerald-600",
+          explanation: metricGoals.weight.explanation,
         };
       case "items":
         return {
@@ -155,6 +162,7 @@ export const PlantGrow = () => {
           progress: itemsProgress,
           icon: <FaRecycle className="w-4 h-4" />,
           color: "from-purple-400 to-purple-600",
+          explanation: metricGoals.items.explanation,
         };
       case "impact":
       default:
@@ -165,9 +173,42 @@ export const PlantGrow = () => {
           progress: impactProgress,
           icon: <FaLeaf className="w-4 h-4" />,
           color: "from-green-400 to-green-600",
+          explanation: metricGoals.impact.explanation,
         };
     }
   };
+
+  // Dynamic goal calculation based on user's current progress
+const calculateGoal = (current: number, baseGoal: number): number => {
+  // If user has exceeded 80% of the base goal, set a new goal that's 50% higher
+  if (current >= baseGoal * 0.8) {
+    return Math.ceil(baseGoal * 1.5 / 100) * 100; // Round to nearest hundred
+  }
+  return baseGoal;
+};
+
+// Set target values for metrics with explanations
+const baseWeightGoal = 1000; // 1000 grams 
+const baseImpactGoal = 500;  // 500 points
+const baseItemsGoal = 50;    // 50 items
+
+const metricGoals: Record<"weight" | "impact" | "items", MetricGoal> = {
+  weight: {
+    current: materialData?.totalSavedWeight ? materialData.totalSavedWeight * 1000 : 0,
+    goal: calculateGoal(materialData?.totalSavedWeight ? materialData.totalSavedWeight * 1000 : 0, baseWeightGoal),
+    explanation: `Shows progress toward saving ${baseWeightGoal}g of materials. Goals increase as you progress!`
+  },
+  impact: {
+    current: materialData?.totalEnvironmentalImpact || 0,
+    goal: calculateGoal(materialData?.totalEnvironmentalImpact || 0, baseImpactGoal),
+    explanation: `Represents your environmental impact score with a target of ${baseImpactGoal} points`
+  },
+  items: {
+    current: materialData?.totalSavedItems || 0,
+    goal: calculateGoal(materialData?.totalSavedItems || 0, baseItemsGoal),
+    explanation: `Tracks your progress toward reusing ${baseItemsGoal} items`
+  }
+};
 
   const activeMetricData = getMetricValue(activeMetric);
 
@@ -216,3 +257,32 @@ export const PlantGrow = () => {
     </div>
   );
 };
+
+
+// Progress Calculation Explained:
+// 
+// 1. Each metric (weight, impact, items) has a specific goal 
+//    - Weight: 1000g (1kg) by default
+//    - Impact: 500 points by default
+//    - Items: 50 items by default
+// 
+// 2. Progress is calculated as a percentage: (current value / goal) * 100
+//    This represents how close the user is to reaching their goal
+//
+// 3. Progress is capped at 100% to ensure the visualization works properly
+//    Math.min(100, (current / goal) * 100)
+//
+// 4. When a user reaches 80% of their goal, a new higher goal is automatically set
+//    to keep them motivated and provide ongoing challenges
+//
+// 5. For tree visualization, this percentage directly controls:
+//    - Tree height and width
+//    - Leaf density and scale
+//    - Appearance of fruits when progress exceeds 40%
+//    - Achievement badges at 25%, 50%, and 75% milestones
+
+// Clear Goal Communication: Users understand exactly what they're working toward
+// Dynamic Goals: Goals adjust as users improve, keeping the experience challenging
+// Visual Percentage: Displaying the exact percentage clarifies progress
+// Explanations: Tooltips help users understand what each metric means
+// Documentation: Code comments ensure future developers understand the system

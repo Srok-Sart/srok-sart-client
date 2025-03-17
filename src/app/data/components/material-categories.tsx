@@ -23,12 +23,23 @@ export const MaterialCategories = ({
   totalSavedItems,
   totalEnvironmentalImpact,
 }: MaterialCategoriesProps) => {
+  // Add descriptions for each metric
+  const metricDescriptions = {
+    weight: "Shows percentage of total weight each material category contributes",
+    items: "Shows percentage of total items each material category contributes",
+    impact: "Shows percentage of total environmental impact each material category contributes"
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 shadow-md">
-      <h2 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+      <h2 className="text-lg font-semibold mb-2 text-gray-800 flex items-center">
         <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
         Material Categories
       </h2>
+      
+      <p className="text-xs text-gray-500 mb-4">
+        {metricDescriptions[activeMetric]}
+      </p>
       <div className="space-y-3">
         {sortedCategories.map(([category, data]) => (
           <div key={category} className="flex flex-col">
