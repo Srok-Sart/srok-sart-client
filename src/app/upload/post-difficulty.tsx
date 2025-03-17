@@ -12,10 +12,10 @@ interface PostDifficultyProps {
   setDifficulty: React.Dispatch<React.SetStateAction<PostDifficulty>>;
 }
 
-const PostDifficultySelector: React.FC<PostDifficultyProps> = ({
+const PostDifficultySelector = ({
   difficulty,
   setDifficulty,
-}) => {
+}: PostDifficultyProps) => {
   // Use ES6 object to map difficulties to display names
   const difficultyLabels = {
     [PostDifficulty.EASY]: "Easy",
@@ -49,7 +49,7 @@ const PostDifficultySelector: React.FC<PostDifficultyProps> = ({
         id='difficulty'
         value={difficulty}
         onChange={handleChange}
-        className='p-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-primary focus:border-primary'
+        className='p-3 block w-full border border-gray-300 rounded-md shadow-sm'
       >
         {difficultyOptions}
       </select>

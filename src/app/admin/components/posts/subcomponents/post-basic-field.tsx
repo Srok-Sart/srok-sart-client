@@ -58,7 +58,7 @@ export const PostBasicFields = ({
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Enter a descriptive title (e.g., 'DIY Garden Planter Box')"
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.title ? 'border-red-500' : ''}`}
+          className={`w-full px-3 py-2 border rounded-md ${errors.title ? 'border-red-500' : ''}`}
         />
         {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
       </div>
@@ -69,7 +69,7 @@ export const PostBasicFields = ({
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Describe your post in detail. Include any instructions, tips, or important information."
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.description ? 'border-red-500' : ''}`}
+          className={`w-full px-3 py-2 border rounded-md ${errors.description ? 'border-red-500' : ''}`}
           rows={4}
         />
         {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
@@ -85,13 +85,13 @@ export const PostBasicFields = ({
             value={estimatedTime}
             onChange={handleTimeInputChange}
             placeholder="Enter time value"
-            className={`w-36 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary h-10 ${errors.estimatedTime ? 'border-red-500' : ''}`}
+            className={`w-36 px-3 py-2 border rounded-l-md h-10 ${errors.estimatedTime ? 'border-red-500' : ''}`}
             aria-label="Estimated time value"
           />
           <select
             value={timeUnit}
             onChange={(e) => onTimeUnitChange(e.target.value as 'minutes' | 'hours')}
-            className={`px-3 py-2 border-t border-r border-b rounded-r-md border-l-0 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary h-10 ${errors.estimatedTime ? 'border-red-500' : ''}`}
+            className={`px-3 py-2 border-t border-r border-b rounded-r-md border-l-0 bg-gray-50 h-10 ${errors.estimatedTime ? 'border-red-500' : ''}`}
             aria-label="Time unit"
           >
             <option value="minutes">Minutes</option>
@@ -116,7 +116,7 @@ export const PostBasicFields = ({
         <select
           value={postDifficulty}
           onChange={(e) => onDifficultyChange(e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md h-10 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary ${errors.difficultyLevel ? 'border-red-500' : ''}`}
+          className={`w-full px-3 py-2 border rounded-md h-10 ${errors.difficultyLevel ? 'border-red-500' : ''}`}
           aria-required="true"
         >
           <option value="">Select the difficulty level of your project</option>
@@ -134,7 +134,7 @@ export const PostBasicFields = ({
         <select
           value={postType}
           onChange={(e) => onTypeChange(e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md h-10 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary ${errors.type ? 'border-red-500' : ''}`}
+          className={`w-full px-3 py-2 border rounded-md h-10 ${errors.type ? 'border-red-500' : ''}`}
           aria-required="true"
         >
           <option value="">Select the type of post</option>

@@ -15,8 +15,8 @@ interface PostFormFieldsProps {
   errors?: Record<string, string>;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
-  onDifficultyChange: (value: PostDifficulty | string) => void;  // Updated to accept string
-  onTypeChange: (value: PostType | string) => void;  // Updated to accept string
+  onDifficultyChange: (value: PostDifficulty | string) => void;
+  onTypeChange: (value: PostType | string) => void; // Missing in props interface
   onEstimatedTimeChange: (value: string) => void;
   onTimeUnitChange?: (value: 'minutes' | 'hours') => void;
   onMaterialsChange: (selectedMaterials: PostMaterial[]) => void;
@@ -35,7 +35,7 @@ export const PostFormFields = ({
   onTitleChange,
   onDescriptionChange,
   onDifficultyChange,
-  onTypeChange,
+  onTypeChange, // This is referenced in the component but missing in the interface
   onEstimatedTimeChange,
   onTimeUnitChange = () => {},
   onMaterialsChange,
