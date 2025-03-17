@@ -1,5 +1,6 @@
-"use client";
-
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { AUTH_COOKIE_NAME } from "@/lib/auth";
 import Navigation from "../components/navigation"; 
 import { PlantGrow } from "./components/plant-grow";
 import ProjectCard from "./components/project-card";
@@ -10,7 +11,14 @@ const projects: { difficulty: "easy" | "medium" | "hard"; completedCount: number
   { difficulty: "hard", completedCount: 1, totalCount: 3 },
 ];
 
-const Page = () => {
+const Page = async () => {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+
+  if (!token) {
+    redirect('/login');
+  }
+
   return (
     <>
       <Navigation /> 
