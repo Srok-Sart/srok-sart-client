@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FaHome, FaPlus, FaUser, FaChartBar, FaBookmark, FaSearch } from "react-icons/fa";
+import ProfileImage from "./profile-image";
 import ProfileImage from "./profile-image";
 import "../globals.css";
 
