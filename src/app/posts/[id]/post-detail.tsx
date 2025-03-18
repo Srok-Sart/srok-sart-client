@@ -4,6 +4,7 @@ import { fetchCollections, savePostToCollection } from "@/api/bookmark";
 import { checkIfLiked, toggleLike } from "@/api/like";
 import Navigation from "@/app/components/navigation";
 import { Post } from "@/app/interfaces/post";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import CollectionSelectModal from "./collection-selection-modal";
@@ -48,8 +49,10 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     message: string;
     type: "success" | "error";
   } | null>(null);
-  const [, setIsLikeLoading] = useState(false);
   const [isSaveLoading, setIsSaveLoading] = useState(false);
+  const [showMaterialsModal, setShowMaterialsModal] = useState(false);
+  const [showFullscreen, setShowFullscreen] = useState(false);
+
   const handleCreateCollection = (newCollection: Collection) => {
     setCollections((prevCollections) => [...prevCollections, newCollection]);
   };
@@ -150,7 +153,6 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     }
 
     setError(null);
-    setIsLikeLoading(true);
 
     try {
       const response = await toggleLike(post.id, liked, token);
@@ -180,8 +182,6 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
       } else {
         setError("Something went wrong. Please try again later.");
       }
-    } finally {
-      setIsLikeLoading(false);
     }
   };
 
@@ -266,13 +266,17 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
       });
   };
 
+  const handleFullscreenToggle = () => {
+    setShowFullscreen(!showFullscreen);
+  };
+
   return (
     <>
       <Navigation />
       {/* Toast Notification */}
       {notification && (
         <div
-          className={`fixed top-20 right-4 p-4 rounded-md shadow-lg z-50 transition-all duration-300 ease-in-out animate-fadeIn ${
+          className={`fixed top-20 right-4 p-4 rounded-md shadow-lg z-50 transition-all duration-300 ease-in-out ${
             notification.type === "success"
               ? "bg-green-50 border-l-4 border-green-500 text-green-700"
               : "bg-red-50 border-l-4 border-red-500 text-red-700"
@@ -321,46 +325,149 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
         </div>
       )}
 
-      <div className='pt-16 pb-16 max-w-5xl mx-auto px-4'>
-        <PostHeader post={post} />
+      <div className='pt-20 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <div className='mb-8'>
+          <PostHeader post={post} />
+        </div>
 
-        <div className='flex flex-col md:flex-row gap-8'>
-          <MediaGallery post={post} />
-
-          {error && (
-            <div className='bg-white p-3 rounded-lg shadow-sm text-red-500 text-sm'>
-              {error}
-              {!isUserAuthenticated && (
-                <button
-                  onClick={handleLoginRedirect}
-                  className='ml-2 text-blue-500 underline'
-                >
-                  Sign in
-                </button>
-              )}
+        <div className='flex flex-col lg:flex-row gap-8'>
+          <div className='w-full lg:w-2/3'>
+            {/* Media gallery with fullscreen toggle */}
+            <div className='relative bg-gray-100 rounded-lg overflow-hidden'>
+              <button
+                onClick={handleFullscreenToggle}
+                className='absolute top-4 right-4 bg-white bg-opacity-90 text-gray-800 p-2 rounded-full z-10 shadow-md hover:bg-opacity-100 transition-all duration-200'
+                aria-label='Toggle fullscreen'
+              >
+                {showFullscreen ? (
+                  <svg
+                    className='w-5 h-5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M6 18L18 6M6 6l12 12'
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className='w-5 h-5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5'
+                    />
+                  </svg>
+                )}
+              </button>
+              <MediaGallery post={post} />
             </div>
-          )}
 
-          <PostInfoCard
-            post={post}
-            saved={saved}
-            liked={liked}
-            likeCount={likeCount}
-            comment={comment}
-            setComment={setComment}
-            handleLikeClick={handleLikeClick}
-            handleSaveClick={handleSaveClick}
-            handleShareClick={handleShareClick}
-            copyToClipboard={copyToClipboard}
-            showShareMenu={showShareMenu}
-            shareUrl={shareUrl}
-            token={token}
-            isUserAuthenticated={isUserAuthenticated}
-            isSaveLoading={isSaveLoading}
-          />
+            <div className='mt-6 block'>
+              <button
+                onClick={() => setShowMaterialsModal(true)}
+                className='w-full bg-white text-gray-800 border border-gray-200 hover:bg-gray-50 px-4 py-3 rounded-lg flex items-center justify-center shadow-sm transition-colors duration-200'
+              >
+                <svg
+                  className='w-5 h-5 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
+                  />
+                </svg>
+                View Materials List
+              </button>
+            </div>
+            {error && (
+              <div className='mt-6 bg-white p-4 rounded-lg shadow-sm border-l-4 border-red-500 text-red-700'>
+                {error}
+                {!isUserAuthenticated && (
+                  <button
+                    onClick={handleLoginRedirect}
+                    className='ml-2 text-blue-600 hover:text-blue-800 font-medium'
+                  >
+                    Sign in
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className='w-full lg:w-1/3 space-y-6'>
+            <div className='bg-white p-6 rounded-lg shadow-sm'>
+              <div className='flex justify-between items-center mb-4'>
+                <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800'>
+                  {post.postDifficulty}
+                </span>
+              </div>
+
+              <div className='mb-6'>
+                <PostInfoCard
+                  post={post}
+                  saved={saved}
+                  liked={liked}
+                  likeCount={likeCount}
+                  comment={comment}
+                  setComment={setComment}
+                  handleLikeClick={handleLikeClick}
+                  handleSaveClick={handleSaveClick}
+                  handleShareClick={handleShareClick}
+                  copyToClipboard={copyToClipboard}
+                  showShareMenu={showShareMenu}
+                  shareUrl={shareUrl}
+                  token={token}
+                  isUserAuthenticated={isUserAuthenticated}
+                  isSaveLoading={isSaveLoading}
+                />
+              </div>
+            </div>
+
+            {/* Stats card */}
+            <div className='bg-white p-6 rounded-lg shadow-sm'>
+              <h2 className='text-lg font-medium text-gray-900 mb-4'>
+                Project Stats
+              </h2>
+              <div className='grid grid-cols-3 gap-4'>
+                <div className='text-center p-3 bg-gray-50 rounded-lg'>
+                  <div className='text-2xl font-bold text-gray-800'>
+                    {post.viewCount}
+                  </div>
+                  <div className='text-sm text-gray-500'>Views</div>
+                </div>
+                <div className='text-center p-3 bg-gray-50 rounded-lg'>
+                  <div className='text-2xl font-bold text-gray-800'>
+                    {post.completionCount}
+                  </div>
+                  <div className='text-sm text-gray-500'>Completions</div>
+                </div>
+                <div className='text-center p-3 bg-gray-50 rounded-lg'>
+                  <div className='text-2xl font-bold text-gray-800'>
+                    {likeCount}
+                  </div>
+                  <div className='text-sm text-gray-500'>Likes</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Collection Modal */}
       <CollectionSelectModal
         showCollections={showCollections}
         setShowCollections={setShowCollections}
@@ -369,6 +476,118 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
         onCreateCollection={handleCreateCollection}
         isLoading={isSaveLoading}
       />
+
+      {/* Materials Modal */}
+      {showMaterialsModal && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-white rounded-lg p-6 max-w-lg w-full'>
+            <div className='flex justify-between items-center mb-6'>
+              <h2 className='text-xl font-semibold text-gray-900'>
+                Materials Needed
+              </h2>
+              <button
+                onClick={() => setShowMaterialsModal(false)}
+                className='text-gray-500 hover:text-gray-700'
+                aria-label='Close'
+              >
+                <svg
+                  className='w-6 h-6'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M6 18L18 6M6 6l12 12'
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className='mb-6'>
+              <div className='space-y-3'>
+                {post.postMaterials &&
+                  post.postMaterials.map((item, index) => (
+                    <div
+                      key={index}
+                      className='flex justify-between items-center p-4 bg-gray-50 rounded-lg'
+                    >
+                      <div>
+                        <span className='font-medium text-gray-800'>
+                          {item.material.name}
+                        </span>
+                        <span className='text-gray-500 text-sm block'>
+                          {item.material.category}
+                        </span>
+                      </div>
+                      <div className='text-right'>
+                        <span className='font-medium text-blue-600'>
+                          {item.quantity}x
+                        </span>
+                        <span className='text-gray-500 text-sm block'>
+                          {item.material.weightPerUnit} {item.material.unit}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className='flex justify-end'>
+              <button
+                onClick={() => setShowMaterialsModal(false)}
+                className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200'
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Modal */}
+      {showFullscreen && (
+        <div className='fixed inset-0 bg-black z-50 flex items-center justify-center'>
+          <button
+            onClick={handleFullscreenToggle}
+            className='absolute top-4 right-4 bg-white p-2 rounded-full shadow-lg z-10 hover:bg-gray-100 transition-colors duration-200'
+            aria-label='Exit fullscreen'
+          >
+            <svg
+              className='w-6 h-6'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M6 18L18 6M6 6l12 12'
+              />
+            </svg>
+          </button>
+          <div className='w-full h-full flex items-center justify-center'>
+            {post.imageUrls?.some((url) => url.endsWith(".webm")) ? (
+              <video
+                controls
+                className='max-h-screen max-w-full'
+                src={post.imageUrls.find((url) => url.endsWith(".webm"))}
+              />
+            ) : (
+              <Image
+                src={post.thumbnailUrl || post.imageUrls?.[0] || ""}
+                alt={post.title}
+                layout='fill'
+                objectFit='contain'
+                className='max-h-screen max-w-full'
+              />
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -9,7 +9,9 @@ interface ProfileContentProps {
   initialProfile: UserProfile;
 }
 
-export default function ProfileContent({ initialProfile }: ProfileContentProps) {
+export default function ProfileContent({
+  initialProfile,
+}: ProfileContentProps) {
   const router = useRouter();
   const [profile, setProfile] = useState(initialProfile);
   const [activeTab, setActiveTab] = useState("created");
@@ -48,7 +50,7 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
   return (
     <>
       {/* Tabs */}
-      <div className="flex justify-center mt-8 border-b">
+      <div className='flex justify-center mt-8 border-b'>
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -65,14 +67,18 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
       </div>
 
       {/* Dynamic Content Section */}
-      <div className="mt-8 text-center">
+      <div className='mt-8 text-center'>
         {activeTab === "created" && (
           <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Your Created Posts</h2>
-            <p className="text-gray-600 mb-4">No posts yet? Start creating now.</p>
+            <h2 className='text-xl font-semibold text-gray-800 mb-2'>
+              Your Created Posts
+            </h2>
+            <p className='text-gray-600 mb-4'>
+              No posts yet? Start creating now.
+            </p>
             <button
               onClick={() => router.push("/upload")}
-              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
+              className='px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90'
             >
               Create Post
             </button>
@@ -81,11 +87,15 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
 
         {activeTab === "saved" && (
           <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Saved Posts</h2>
-            <p className="text-gray-600 mb-4">You haven't saved anything yet.</p>
+            <h2 className='text-xl font-semibold text-gray-800 mb-2'>
+              Saved Posts
+            </h2>
+            <p className='text-gray-600 mb-4'>
+              You havent saved anything yet.
+            </p>
             <button
               onClick={() => router.push("/explore")}
-              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
+              className='px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90'
             >
               Explore Posts
             </button>
@@ -94,11 +104,13 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
 
         {activeTab === "liked" && (
           <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Liked Posts</h2>
-            <p className="text-gray-600 mb-4">No liked posts yet.</p>
+            <h2 className='text-xl font-semibold text-gray-800 mb-2'>
+              Liked Posts
+            </h2>
+            <p className='text-gray-600 mb-4'>No liked posts yet.</p>
             <button
               onClick={() => router.push("/explore")}
-              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
+              className='px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90'
             >
               Find Posts to Like
             </button>
@@ -107,10 +119,10 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
       </div>
 
       {/* Edit Profile Button */}
-      <div className="mt-4 text-center">
+      <div className='mt-4 text-center'>
         <button
           onClick={() => setIsEditProfileOpen(true)}
-          className="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 font-semibold"
+          className='px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 font-semibold'
         >
           Edit Profile
         </button>

@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
 import { FileOrUrl } from "@/app/interfaces/post";
-import { FaVideo, FaPlay, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import React, { useState } from "react";
+import {
+  FaExclamationTriangle,
+  FaPlay,
+  FaTrash,
+  FaVideo,
+} from "react-icons/fa";
 
 interface VideoUploadSectionProps {
   videos: FileOrUrl[];
@@ -19,7 +24,7 @@ export const VideoUploadSection = ({
   onRemoveVideo,
   onVideoView,
   existingVideoUrl,
-  newVideos = []
+  newVideos = [],
 }: VideoUploadSectionProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [sizeWarning, setSizeWarning] = useState<string | null>(null);
@@ -30,39 +35,22 @@ export const VideoUploadSection = ({
   // Helper function to get file name
   const getFileName = (file: FileOrUrl): string => {
     if (file instanceof File) return file.name;
-    if (typeof file === 'string') {
-      const parts = file.split('/');
-      return parts[parts.length - 1] || 'Video';
+    if (typeof file === "string") {
+      const parts = file.split("/");
+      return parts[parts.length - 1] || "Video";
     }
-    return 'Video';
+    return "Video";
   };
 
   // Helper function to get file size
   const getFileSize = (file: FileOrUrl): string => {
     if (file instanceof File) {
       const sizeInMB = file.size / (1024 * 1024);
-      return sizeInMB < 1 
-        ? `${(file.size / 1024).toFixed(1)} KB` 
+      return sizeInMB < 1
+        ? `${(file.size / 1024).toFixed(1)} KB`
         : `${sizeInMB.toFixed(1)} MB`;
     }
-    return '1.9 MB'; // Default size for existing videos
-  };
-
-  // Helper function to get video source for preview
-  const getVideoSource = (video: FileOrUrl): string => {
-    if (video instanceof File) {
-      return URL.createObjectURL(video);
-    }
-    
-    // For existing videos from server
-    if (typeof video === 'string') {
-      if (existingVideoUrl) {
-        return existingVideoUrl;
-      }
-      return `${process.env.NEXT_PUBLIC_API_URL}${video}`;
-    }
-    
-    return '';
+    return "1.9 MB"; // Default size for existing videos
   };
 
   // Check if file is too large
@@ -74,15 +62,19 @@ export const VideoUploadSection = ({
   const handleVideosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setSizeWarning(null);
-      
+
       const file = e.target.files[0];
-      
+
       // Check file size
       if (isFileTooLarge(file)) {
-        setSizeWarning(`File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the maximum allowed size (5 MB)`);
+        setSizeWarning(
+          `File size (${(file.size / (1024 * 1024)).toFixed(
+            2
+          )} MB) exceeds the maximum allowed size (5 MB)`
+        );
         return;
       }
-      
+
       setIsUploading(true);
       // Minor delay to show loading state
       setTimeout(() => {
@@ -97,7 +89,7 @@ export const VideoUploadSection = ({
   // Custom video play function that uses the correct source URL
   const handlePlayVideo = (video: FileOrUrl) => {
     // If we have an existing video URL for URLs, use that
-    if (typeof video === 'string' && existingVideoUrl) {
+    if (typeof video === "string" && existingVideoUrl) {
       onVideoView(existingVideoUrl);
     } else {
       onVideoView(video);
@@ -128,10 +120,12 @@ export const VideoUploadSection = ({
           />
           <label
             htmlFor='videos-upload'
-            className={`cursor-pointer ${isUploading ? 'bg-gray-400' : 'bg-primary hover:bg-primary-dark'} text-white px-4 py-2 rounded inline-flex items-center justify-center transition duration-200`}
+            className={`cursor-pointer ${
+              isUploading ? "bg-gray-400" : "bg-primary hover:bg-primary-dark"
+            } text-white px-4 py-2 rounded inline-flex items-center justify-center transition duration-200`}
           >
-            <FaVideo className="mr-2" /> 
-            {isUploading ? 'Processing...' : 'Upload Video'}
+            <FaVideo className='mr-2' />
+            {isUploading ? "Processing..." : "Upload Video"}
           </label>
           <p className='mt-2 text-gray-500'>
             Upload a video to showcase your project (only one video allowed)
@@ -144,7 +138,7 @@ export const VideoUploadSection = ({
           )}
           {sizeWarning && (
             <div className='mt-2 text-red-500 text-sm flex items-center justify-center'>
-              <FaExclamationTriangle className="mr-2" />
+              <FaExclamationTriangle className='mr-2' />
               {sizeWarning}
             </div>
           )}
@@ -155,13 +149,13 @@ export const VideoUploadSection = ({
             <h4 className='font-medium mb-2'>Uploaded Video:</h4>
             <div className='grid grid-cols-1 gap-3'>
               {displayVideos.map((video, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className='relative group border rounded-md overflow-hidden bg-gray-800 shadow-md'
                 >
                   {/* Video preview card */}
                   <div className='p-3 h-36 flex flex-col items-center justify-center text-center'>
-                    <FaVideo className="text-blue-400 text-3xl mb-2" />
+                    <FaVideo className='text-blue-400 text-3xl mb-2' />
                     <div className='text-white text-sm truncate w-full'>
                       {getFileName(video)}
                     </div>
@@ -169,14 +163,14 @@ export const VideoUploadSection = ({
                       {getFileSize(video)}
                     </div>
                   </div>
-                  
+
                   {/* Overlay actions */}
                   <div className='absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200'>
                     <button
                       type='button'
                       onClick={() => handlePlayVideo(video)}
                       className='bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full mx-1 transition-colors duration-200'
-                      title="Play video"
+                      title='Play video'
                     >
                       <FaPlay />
                     </button>
@@ -184,7 +178,7 @@ export const VideoUploadSection = ({
                       type='button'
                       onClick={() => onRemoveVideo(index)}
                       className='bg-red-500 hover:bg-red-600 text-white p-2 rounded-full mx-1 transition-colors duration-200'
-                      title="Remove video"
+                      title='Remove video'
                     >
                       <FaTrash />
                     </button>

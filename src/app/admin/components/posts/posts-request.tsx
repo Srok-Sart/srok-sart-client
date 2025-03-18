@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Post } from "../../../interfaces/post";
 import ConfirmationModal from "../posts/subcomponents/confirmation-modal";
 import { HeaderSection } from "../posts/subcomponents/header-section";
@@ -11,23 +11,26 @@ type PostsRequestProps = {
   token: string;
 };
 
-const PostsRequest = ({ activeTab, token }: PostsRequestProps) => {
+const PostsRequest = ({ token }: PostsRequestProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("ID Ascending");
   const [showViewPost, setShowViewPost] = useState(false);
   const [viewPostId, setViewPostId] = useState<number | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmationData, setConfirmationData] = useState<{ id: number; status: "PUBLISH" | "REJECTED" } | null>(null);
+  const [confirmationData, setConfirmationData] = useState<{
+    id: number;
+    status: "PUBLISH" | "REJECTED";
+  } | null>(null);
   const [hasPendingPosts, setHasPendingPosts] = useState(false);
 
   const fetchPendingPosts = useCallback(async () => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
       if (!res.ok) throw new Error(`Failed to fetch posts: ${res.statusText}`);
 
@@ -66,7 +69,9 @@ const PostsRequest = ({ activeTab, token }: PostsRequestProps) => {
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const option = e.target.value;
     setSortOption(option);
-    const sortedPosts = [...posts].sort((a, b) => (option === "ID Ascending" ? a.id - b.id : b.id - a.id));
+    const sortedPosts = [...posts].sort((a, b) =>
+      option === "ID Ascending" ? a.id - b.id : b.id - a.id
+    );
     setPosts(sortedPosts);
   };
 
@@ -81,7 +86,10 @@ const PostsRequest = ({ activeTab, token }: PostsRequestProps) => {
   /**
    * Opens the confirmation modal for approval/rejection
    */
-  const handleApproveOrReject = (id: number, status: "PUBLISH" | "REJECTED") => {
+  const handleApproveOrReject = (
+    id: number,
+    status: "PUBLISH" | "REJECTED"
+  ) => {
     setConfirmationData({ id, status });
     setShowConfirmation(true);
   };
@@ -96,16 +104,20 @@ const PostsRequest = ({ activeTab, token }: PostsRequestProps) => {
     setShowConfirmation(false);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
-        method: "PATCH",
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ postStatus: status }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ postStatus: status }),
+        }
+      );
 
-      if (!res.ok) throw new Error(`Failed to update post status: ${res.statusText}`);
+      if (!res.ok)
+        throw new Error(`Failed to update post status: ${res.statusText}`);
 
       setPosts((prevPosts) => {
         const updatedPosts = prevPosts.filter((post) => post.id !== id);
@@ -118,16 +130,24 @@ const PostsRequest = ({ activeTab, token }: PostsRequestProps) => {
   };
 
   // Filter posts based on search term
-  const filteredPosts = posts.filter((post) => post.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredPosts = posts.filter((post) =>
+    post.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (showViewPost && viewPostId !== null) {
-    return <ViewPost setShowViewPost={setShowViewPost} id={viewPostId} token={token} />;
+    return (
+      <ViewPost
+        setShowViewPost={setShowViewPost}
+        id={viewPostId}
+        token={token}
+      />
+    );
   }
 
   return (
-    <div className="p-4">
+    <div className='p-4'>
       {hasPendingPosts && (
-        <div className="mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-md">
+        <div className='mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-md'>
           There are pending posts that need your attention.
         </div>
       )}
@@ -151,7 +171,9 @@ const PostsRequest = ({ activeTab, token }: PostsRequestProps) => {
 
       {showConfirmation && confirmationData && (
         <ConfirmationModal
-          message={`Are you sure you want to ${confirmationData.status === "PUBLISH" ? "approve" : "reject"} this post?`}
+          message={`Are you sure you want to ${
+            confirmationData.status === "PUBLISH" ? "approve" : "reject"
+          } this post?`}
           onConfirm={updatePostStatus}
           onCancel={() => setShowConfirmation(false)}
         />

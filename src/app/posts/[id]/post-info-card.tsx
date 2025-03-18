@@ -10,6 +10,7 @@ import { markPostAsCompleted } from "@/api/post";
 import ProfileImage from "@/app/components/profile-image";
 import { Post } from "@/app/interfaces/post";
 import { useDebounce } from "@/hooks/use-debounce";
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { FaBookmark, FaComment, FaHeart, FaShareAlt } from "react-icons/fa";
 import {
@@ -223,19 +224,31 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
 
   return (
     <div className='flex-1 space-y-6'>
-      {/* Creator Info */}
-      <div className='flex items-center gap-3 bg-white p-4 rounded-lg shadow-sm'>
-        <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200'>
-          <ProfileImage
-            src={post.user?.profileImageUrl}
-            alt={post.user?.username || "User"}
-            size={40}
-            className='rounded-full'
-          />
+      {/* Creator info */}
+      <div className='flex items-center'>
+        <div className='h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600'>
+          {post.user.profileImageUrl ? (
+            <Image
+              src={post.user.profileImageUrl}
+              alt={post.user.username}
+              width={40}
+              height={40}
+              className='rounded-full'
+            />
+          ) : (
+            post.user.username.charAt(0).toUpperCase()
+          )}
         </div>
-        <div>
-          <p className='text-lg font-semibold'>
-            {post.user ? post.user.username : "Anonymous User"}
+        <div className='ml-3'>
+          <p className='text-sm font-medium text-gray-900'>
+            {post.user.username}
+          </p>
+          <p className='text-xs text-gray-500'>
+            {new Date(post.createdAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
           </p>
         </div>
       </div>
