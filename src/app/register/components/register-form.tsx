@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { registerUser } from "@/api/register";
+import { RegisterRequest } from "@/app/interfaces/register";
+import { GoogleButton } from "@/components/auth/google-button";
 import { Divider } from "@/components/common/divider";
 import { ErrorMessage } from "@/components/common/error-message";
-import type { RegisterRequest } from "@/interfaces/register";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { LoginLink, SubmitButton } from "./register-button";
 import { InputField } from "./register-input-field";
-import { GoogleButton } from "@/components/auth/google-button";
 
 interface FormData extends RegisterRequest {
   confirmPassword: string;
@@ -61,7 +62,11 @@ export default function RegisterForm() {
 
   const handleRegistrationError = (error: unknown) => {
     if (error instanceof Error) {
-      setError(error.message);
+      if ((error as any).response && (error as any).response.data?.message) {
+        setError((error as any).response.data.message);
+      } else {
+        setError(error.message);
+      }
     } else {
       setError("An unknown error occurred during registration.");
     }

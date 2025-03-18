@@ -36,7 +36,7 @@ export async function fetcher<T>(
     // For other errors, try to get the error message from the response
     const errorData = await response.json().catch(() => null);
     const errorMessage = errorData?.message || response.statusText;
-    throw new Error(`API error: ${errorMessage}`);
+    throw new Error(errorMessage);
   }
 
   return await response.json();
