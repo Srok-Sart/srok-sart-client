@@ -1,11 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import { fetcher } from "@/api/use-fetcher";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import CardDisplay from "./components/card-display";
-import Navigation from "./components/navigation";
 import FilterBar from "./components/filtering";
+import Navigation from "./components/navigation";
 import { PaginationPost } from "./interfaces/post";
 
 const Home = () => {
@@ -27,25 +27,29 @@ const Home = () => {
   const sortOrder = searchParams.get("sortOrder") || "DESC";
 
   // Construct API query parameters
-  const queryParams = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-  });
-  
-  if (searchQuery) queryParams.set("search", searchQuery);
-  
-  // Build filter string
-  let filterString = "";
-  if (postType) filterString += `postType:${postType}`;
-  if (postStatus) {
-    if (filterString) filterString += ",";
-    filterString += `postStatus:${postStatus}`;
-  }
-  
-  if (filterString) queryParams.set("filter", filterString);
-  
-  // Format sort parameter in the way backend expects
-  queryParams.set("sort", `${sortField}:${sortOrder}`);
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (searchQuery) params.set("search", searchQuery);
+
+    // Build filter string
+    let filterString = "";
+    if (postType) filterString += `postType:${postType}`;
+    if (postStatus) {
+      if (filterString) filterString += ",";
+      filterString += `postStatus:${postStatus}`;
+    }
+
+    if (filterString) params.set("filter", filterString);
+
+    // Format sort parameter in the way backend expects
+    params.set("sort", `${sortField}:${sortOrder}`);
+
+    return params;
+  }, [page, limit, searchQuery, postType, postStatus, sortField, sortOrder]);
 
   // State to hold posts data
   const [posts, setPosts] = useState<PaginationPost["data"]>([]);
@@ -70,7 +74,7 @@ const Home = () => {
       }
     };
     fetchPosts();
-  }, [searchParams]);
+  }, [queryParams, searchParams]);
 
   return (
     <>
@@ -80,16 +84,16 @@ const Home = () => {
 
         {/* Loading indicator */}
         {isLoading && (
-          <div className="flex justify-center my-8">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+          <div className='flex justify-center my-8'>
+            <div className='animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500'></div>
           </div>
         )}
 
         {/* Show "No Results Found" if there are no posts */}
         {!isLoading && posts.length === 0 && (
           <p className='text-gray-500 text-center mt-8 text-lg'>
-            {searchQuery 
-              ? `No results found for "${searchQuery}"` 
+            {searchQuery
+              ? `No results found for "${searchQuery}"`
               : "No posts available"}
           </p>
         )}

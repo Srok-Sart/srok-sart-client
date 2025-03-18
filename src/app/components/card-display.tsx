@@ -1,19 +1,18 @@
 "use client";
 
+import { generateRandomColor } from "@/app/utils/colors";
+import { PostType } from "@/enums/post-type.enum";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
-import { FaBookmark, FaTimes, FaPlay } from "react-icons/fa";
-import { Post } from "../interfaces/post";
+import { useEffect, useRef, useState } from "react";
+import { FaBookmark, FaPlay, FaTimes } from "react-icons/fa";
 import {
+  createCollection,
   fetchCollections,
   savePostToCollection,
   unsavePostFromCollection,
-  createCollection,
 } from "../../api/bookmark";
-import CollectionSelectModal from "../posts/[id]/collection-selection-modal";
-import { generateRandomColor } from "@/app/utils/colors";
-import { PostType } from "@/enums/post-type.enum";
+import { Post } from "../interfaces/post";
 
 interface Collection {
   id: string;
@@ -42,7 +41,7 @@ const CardDisplay = ({
   const [saved, setSaved] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
 
@@ -62,11 +61,11 @@ const CardDisplay = ({
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, [isVideoPost]);
 
   const handleCreateCollection = (newCollection: Collection) => {
@@ -164,10 +163,10 @@ const CardDisplay = ({
   // Video-specific handlers (only used for video posts)
   const handleVideoPlay = (e: React.MouseEvent) => {
     if (!isVideoPost || !videoRef.current) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (videoRef.current.paused) {
       videoRef.current.play().catch(() => {});
       setIsPlaying(true);
@@ -189,12 +188,12 @@ const CardDisplay = ({
     videoRef.current.currentTime = 0;
     setIsPlaying(false);
   };
-  
+
   // Format duration from seconds to MM:SS
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   // Handle video metadata loading to get duration
@@ -205,11 +204,11 @@ const CardDisplay = ({
   };
 
   return (
-    <div className="relative bg-white rounded-lg overflow-hidden shadow-sm break-inside-avoid group">
+    <div className='relative bg-white rounded-lg overflow-hidden shadow-sm break-inside-avoid group'>
       {/* Image/Video Wrapper */}
       <Link href={`/posts/${post.id}`} passHref>
-        <div 
-          className="relative overflow-hidden rounded-lg cursor-pointer"
+        <div
+          className='relative overflow-hidden rounded-lg cursor-pointer'
           onMouseEnter={isVideoPost ? handleVideoMouseEnter : undefined}
           onMouseLeave={isVideoPost ? handleVideoMouseLeave : undefined}
         >
@@ -217,9 +216,12 @@ const CardDisplay = ({
             <>
               <video
                 ref={videoRef}
-                src={post.imageUrls && post.imageUrls.length > 0 ? 
-                  `${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[0]}` : undefined}
-                className="w-full object-cover rounded-lg"
+                src={
+                  post.imageUrls && post.imageUrls.length > 0
+                    ? `${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[0]}`
+                    : undefined
+                }
+                className='w-full object-cover rounded-lg'
                 width={300}
                 height={400}
                 loop
@@ -231,16 +233,16 @@ const CardDisplay = ({
               {(isMobile || !isPlaying) && (
                 <div
                   onClick={handleVideoPlay}
-                  className="absolute inset-0 flex items-center justify-center z-10"
+                  className='absolute inset-0 flex items-center justify-center z-10'
                 >
-                  <div className="bg-black bg-opacity-40 rounded-full p-3">
-                    <FaPlay className="text-white" size={24} />
+                  <div className='bg-black bg-opacity-40 rounded-full p-3'>
+                    <FaPlay className='text-white' size={24} />
                   </div>
                 </div>
               )}
-              
+
               {/* Video Duration Badge */}
-              <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded z-10">
+              <div className='absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded z-10'>
                 {videoDuration}
               </div>
             </>
@@ -250,12 +252,12 @@ const CardDisplay = ({
               alt={post.title}
               width={300}
               height={400}
-              className="w-full object-cover rounded-lg"
+              className='w-full object-cover rounded-lg'
             />
           )}
-          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 rounded-lg">
-            <div className="flex justify-between items-center">
-              <p className="text-white font-medium">{post.title}</p>
+          <div className='absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 rounded-lg'>
+            <div className='flex justify-between items-center'>
+              <p className='text-white font-medium'>{post.title}</p>
               {!isInCollection && ( // Only show the save button if the post is not in a collection
                 <button
                   className={`save-btn transition-transform transform ${
@@ -276,7 +278,7 @@ const CardDisplay = ({
                 </button>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className='flex gap-2'>
               {post.imageUrls?.map((url, index) => {
                 // For video posts, skip the first URL as it's the video itself
                 if (isVideoPost && index === 0) return null;
@@ -287,7 +289,7 @@ const CardDisplay = ({
                     alt={post.title}
                     width={40}
                     height={40}
-                    className="rounded-full"
+                    className='rounded-full'
                   />
                 );
               })}
@@ -295,48 +297,48 @@ const CardDisplay = ({
           </div>
         </div>
       </Link>
-      <div className="p-2">
-        <h3 className="text-sm font-semibold text-gray-900">{post.title}</h3>
+      <div className='p-2'>
+        <h3 className='text-sm font-semibold text-gray-900'>{post.title}</h3>
       </div>
 
       {/* Unsave Button (only shown if the post is in a collection) */}
       {isInCollection && (
         <button
           onClick={handleUnsaveClick}
-          className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
+          className='absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100'
         >
-          <FaTimes className="text-red-500" size={16} />
+          <FaTimes className='text-red-500' size={16} />
         </button>
       )}
 
       {/* Collection Selection Modal */}
       {showCollections && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
           onClick={(e) => {
             e.stopPropagation(); // Stop event propagation
             setShowCollections(false); // Close the modal when clicking outside
           }}
         >
           <div
-            className="bg-white p-6 rounded-lg w-full max-w-md z-60"
+            className='bg-white p-6 rounded-lg w-full max-w-md z-60'
             onClick={(e) => e.stopPropagation()} // Stop propagation inside the modal
           >
-            <h2 className="text-xl font-bold mb-4">Save to Collection</h2>
+            <h2 className='text-xl font-bold mb-4'>Save to Collection</h2>
             {collections.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">
-                You don't have any collections yet. Create one to save this
+              <p className='text-gray-500 text-center py-4'>
+                You dont have any collections yet. Create one to save this
                 post.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-4 max-h-80 overflow-y-auto">
+              <div className='grid grid-cols-2 gap-4 max-h-80 overflow-y-auto'>
                 {collections.map((collection) => (
                   <button
                     key={collection.id}
                     onClick={(e) => handleCollectionSelect(e, collection.id)}
-                    className="p-4 border rounded-lg hover:bg-gray-100 transition flex flex-col items-center text-center"
+                    className='p-4 border rounded-lg hover:bg-gray-100 transition flex flex-col items-center text-center'
                   >
-                    <div className="w-16 h-16 bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
+                    <div className='w-16 h-16 bg-gray-200 rounded-lg mb-2 flex items-center justify-center'>
                       {collection.thumbnails &&
                       collection.thumbnails.length > 0 ? (
                         <Image
@@ -344,25 +346,25 @@ const CardDisplay = ({
                           alt={collection.name}
                           width={64}
                           height={64}
-                          className="w-full h-full object-cover rounded-lg"
+                          className='w-full h-full object-cover rounded-lg'
                         />
                       ) : (
-                        <FaBookmark className="text-gray-400" size={24} />
+                        <FaBookmark className='text-gray-400' size={24} />
                       )}
                     </div>
-                    <span className="font-medium">{collection.name}</span>
+                    <span className='font-medium'>{collection.name}</span>
                   </button>
                 ))}
               </div>
             )}
 
-            <div className="mt-6 flex justify-between">
+            <div className='mt-6 flex justify-between'>
               <button
                 onClick={(e) => {
                   e.stopPropagation(); // Stop event propagation
                   setShowCollections(false); // Close the modal
                 }}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-100 transition"
+                className='px-4 py-2 border rounded-lg hover:bg-gray-100 transition'
               >
                 Cancel
               </button>
@@ -372,7 +374,7 @@ const CardDisplay = ({
                   e.stopPropagation(); // Stop event propagation
                   setIsCreatingCollection(true); // Open the create collection form
                 }}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition'
               >
                 Create New Collection
               </button>
@@ -383,39 +385,39 @@ const CardDisplay = ({
 
       {isCreatingCollection && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" // Higher z-index
+          className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]' // Higher z-index
           onClick={(e) => {
             e.stopPropagation(); // Stop event propagation
             setIsCreatingCollection(false); // Close the form when clicking outside
           }}
         >
           <div
-            className="bg-white p-6 rounded-lg shadow-lg relative z-[110] w-full max-w-md" // Higher z-index
+            className='bg-white p-6 rounded-lg shadow-lg relative z-[110] w-full max-w-md' // Higher z-index
             onClick={(e) => e.stopPropagation()} // Stop propagation inside the form
           >
-            <h2 className="text-xl font-semibold mb-4">
+            <h2 className='text-xl font-semibold mb-4'>
               Create New Collection
             </h2>
             <input
-              type="text"
+              type='text'
               value={newCollectionName}
               onChange={(e) => setNewCollectionName(e.target.value)}
-              className="border p-2 w-full rounded"
-              placeholder="Enter collection name"
+              className='border p-2 w-full rounded'
+              placeholder='Enter collection name'
             />
-            <div className="flex justify-end mt-4 space-x-2">
+            <div className='flex justify-end mt-4 space-x-2'>
               <button
                 onClick={(e) => {
                   e.stopPropagation(); // Stop event propagation
                   setIsCreatingCollection(false); // Close the form
                 }}
-                className="bg-gray-300 px-4 py-2 rounded"
+                className='bg-gray-300 px-4 py-2 rounded'
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateNewCollection}
-                className="bg-[#6437A0] text-white px-4 py-2 rounded"
+                className='bg-[#6437A0] text-white px-4 py-2 rounded'
               >
                 Create
               </button>
