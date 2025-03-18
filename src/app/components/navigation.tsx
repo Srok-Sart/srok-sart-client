@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FaHome, FaPlus, FaUser, FaChartBar, FaBookmark, FaSearch } from "react-icons/fa";
+import ProfileImage from "./profile-image";
 import "../globals.css";
 
 const Navigation = () => {
@@ -12,6 +13,8 @@ const Navigation = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [profile, setProfile] = useState({ username: "", profileImageUrl: null });
+  const [isLoading, setIsLoading] = useState(true);
 
   // Reset search by removing the search param from the URL
   const resetSearch = () => {
@@ -96,10 +99,13 @@ const Navigation = () => {
 
         {/* Profile Icon */}
         <div className="flex items-center gap-4">
-          <Link href="/profile">
-            <button className="bg-gray-300 rounded-full w-10 h-10 flex items-center justify-center text-gray-700 font-bold">
-              R
-            </button>
+          <Link href="/profile" className="rounded-full overflow-hidden w-10 h-10">
+            <ProfileImage
+              src={profile.profileImageUrl}
+              alt={profile.username || "User Profile"}
+              size={40}
+              className="w-10 h-10 rounded-full"
+            />
           </Link>
         </div>
       </nav>
