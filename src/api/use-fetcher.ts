@@ -1,18 +1,18 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { ApiError } from "next/dist/server/api-utils";
 
 export async function fetcher<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  token?: string
 ): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  const token = (await cookies()).get("accessToken")?.value;
 
-  const headers = {
+  const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
   };
 
   const defaultOptions: RequestInit = {
@@ -25,19 +25,12 @@ export async function fetcher<T>(
   const response = await fetch(`${baseUrl}${endpoint}`, defaultOptions);
 
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error("Unauthorized");
-    }
+    let errorMessage = response.statusText;
+    const errorData = await response.json();
+    errorMessage = errorData?.message || errorMessage;
 
-    if (response.status === 403) {
-      throw new Error("Forbidden");
-    }
-
-    // For other errors, try to get the error message from the response
-    const errorData = await response.json().catch(() => null);
-    const errorMessage = errorData?.message || response.statusText;
-    throw new Error(errorMessage);
+    throw new ApiError(response.status, errorMessage);
   }
 
-  return await response.json();
+  return response.json();
 }
