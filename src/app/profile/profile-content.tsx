@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UserProfile } from "@/app/interfaces/user-profile";
 import EditProfileModal from "@/app/profile/edit-profile";
 import { useRouter } from "next/navigation";
@@ -12,10 +12,12 @@ import LikedPostsTab from "./components/liked-posts";
 
 interface ProfileContentProps {
   initialProfile: UserProfile;
+  token: string; // Change to required prop
 }
 
 export default function ProfileContent({
   initialProfile,
+  token,
 }: ProfileContentProps) {
   const router = useRouter();
   const [profile, setProfile] = useState(initialProfile);
@@ -47,6 +49,7 @@ export default function ProfileContent({
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // Use the token passed from server component
         },
         body: JSON.stringify(updatedProfile),
         credentials: "include",
@@ -69,13 +72,13 @@ export default function ProfileContent({
   const renderTabContent = () => {
     switch (activeTab) {
       case "created":
-        return <CreatedPostsTab userId={profile.id} />;
+        return <CreatedPostsTab userId={profile.id} token={token} />;
       case "saved":
-        return <SavedPostsTab userId={profile.id} />;
+        return <SavedPostsTab userId={profile.id} token={token} />;
       case "liked":
-        return <LikedPostsTab userId={profile.id} />;
+        return <LikedPostsTab userId={profile.id} token={token} />;
       default:
-        return <CreatedPostsTab userId={profile.id} />;
+        return <CreatedPostsTab userId={profile.id} token={token} />;
     }
   };
 
