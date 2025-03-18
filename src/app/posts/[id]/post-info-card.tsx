@@ -27,6 +27,7 @@ import {
   TelegramShareButton,
 } from "react-share";
 import { useDebounce } from "@/hooks/use-debounce";
+import ProfileImage from "@/app/components/profile-image";
 
 interface PostInfoCardProps {
   post: Post;
@@ -266,21 +267,12 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
       {/* Creator Info */}
       <div className='flex items-center gap-3 bg-white p-4 rounded-lg shadow-sm'>
         <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200'>
-          {post.user?.profileImageUrl ? (
-            <Image
-              src={getApiBaseUrl() + post.user.profileImageUrl}
-              alt={post.user.username}
-              width={40}
-              height={40}
-              className='w-10 h-10 object-cover'
-            />
-          ) : (
-            <div className='w-10 h-10 bg-gray-200 flex items-center justify-center'>
-              <span className='text-lg font-bold text-gray-500'>
-                {post.user?.username?.charAt(0) || "?"}
-              </span>
-            </div>
-          )}
+          <ProfileImage
+            src={post.user?.profileImageUrl}
+            alt={post.user?.username || "User"}
+            size={40}
+            className="rounded-full"
+          />
         </div>
         <div>
           <p className='text-lg font-semibold'>
@@ -503,22 +495,13 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                     <>
                       <div className='flex justify-between items-start'>
                         <div className='flex items-center gap-2'>
-                          <div className='w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden'>
-                            {comment.user?.profileImageUrl ? (
-                              <Image
-                                src={
-                                  getApiBaseUrl() + comment.user.profileImageUrl
-                                }
-                                alt={comment.user.username}
-                                width={32}
-                                height={32}
-                                className='w-full h-full object-cover'
-                              />
-                            ) : (
-                              <span className='text-xs font-bold text-gray-500'>
-                                {comment.user?.username?.charAt(0) || "?"}
-                              </span>
-                            )}
+                          <div className='w-8 h-8 rounded-full overflow-hidden'>
+                            <ProfileImage
+                              src={comment.user?.profileImageUrl}
+                              alt={comment.user?.username || "User"}
+                              size={32}
+                              className="rounded-full"
+                            />
                           </div>
                           <div>
                             <p className='font-medium text-sm'>
