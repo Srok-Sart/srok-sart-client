@@ -1,6 +1,6 @@
 import { fetcher } from "@/api/use-fetcher";
 
-export const markPostAsCompleted = async (postId) => {
+export const markPostAsCompleted = async (postId: number) => {
   try {
     const response = await fetcher(`/posts/${postId}/complete`, {
       method: "POST",

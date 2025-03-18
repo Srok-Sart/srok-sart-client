@@ -3,31 +3,21 @@
 import {
   Comment,
   createComment,
-  deleteComment,
   getAllComments,
   updateComment,
 } from "@/api/comments";
 import { markPostAsCompleted } from "@/api/post";
+import ProfileImage from "@/app/components/profile-image";
 import { Post } from "@/app/interfaces/post";
-import Image from "next/image";
+import { useDebounce } from "@/hooks/use-debounce";
 import React, { useEffect, useState } from "react";
-import {
-  FaBookmark,
-  FaComment,
-  FaEllipsisV,
-  FaHeart,
-  FaPen,
-  FaShareAlt,
-  FaTrash,
-} from "react-icons/fa";
+import { FaBookmark, FaComment, FaHeart, FaShareAlt } from "react-icons/fa";
 import {
   FacebookIcon,
   FacebookShareButton,
   TelegramIcon,
   TelegramShareButton,
 } from "react-share";
-import { useDebounce } from "@/hooks/use-debounce";
-import ProfileImage from "@/app/components/profile-image";
 
 interface PostInfoCardProps {
   post: Post;
@@ -71,7 +61,6 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
   const debouncedHandleLikeClick = useDebounce(handleLikeClick, 500); // Debounce the like click
 
   // Fetch comments when component mounts
@@ -88,7 +77,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
           setCommentsLoading(false);
           return;
         }
-        
+
         // Filter comments by post ID on the client side
         const allComments = await getAllComments(token);
         const postComments = allComments.filter(
@@ -99,11 +88,12 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
       } catch (error) {
         // Don't log the error to console to avoid cluttering the console
         // console.error("Error fetching comments:", error);
-        
+
         // Check if the error is related to authentication
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         if (
-          errorMessage.includes("Unauthorized") || 
+          errorMessage.includes("Unauthorized") ||
           errorMessage.includes("Authentication required") ||
           errorMessage.includes("Forbidden")
         ) {
@@ -175,15 +165,6 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
     }
   };
 
-  const handleEditComment = (commentId: number, content: string) => {
-    setEditingCommentId(commentId);
-    setEditCommentContent(content);
-  };
-
-  const toggleCommentMenu = (commentId: number) => {
-    setActiveDropdownId(activeDropdownId === commentId ? null : commentId);
-  };
-
   const handleSaveEdit = async (commentId: number) => {
     if (!editCommentContent.trim() || !token) return;
 
@@ -214,24 +195,6 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
     }
   };
 
-  const handleDeleteComment = async (commentId: number) => {
-    if (!token) return;
-
-    if (!window.confirm("Are you sure you want to delete this comment?")) {
-      return;
-    }
-
-    try {
-      await deleteComment(commentId, token);
-      setComments((prevComments) =>
-        prevComments.filter((comment) => comment.id !== commentId)
-      );
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      setCommentError("Failed to delete comment");
-    }
-  };
-
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -258,10 +221,6 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
     return `${diffYears} year${diffYears !== 1 ? "s" : ""} ago`;
   };
 
-  // Get the base API URL
-  const getApiBaseUrl = () =>
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
   return (
     <div className='flex-1 space-y-6'>
       {/* Creator Info */}
@@ -271,14 +230,12 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
             src={post.user?.profileImageUrl}
             alt={post.user?.username || "User"}
             size={40}
-            className="rounded-full"
+            className='rounded-full'
           />
         </div>
         <div>
           <p className='text-lg font-semibold'>
-            {post.user ? 
-              (post.user.username)
-              : "Anonymous User"}
+            {post.user ? post.user.username : "Anonymous User"}
           </p>
         </div>
       </div>
@@ -308,18 +265,18 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
       {/* Action Buttons */}
       <div className='bg-white p-4 rounded-lg shadow-sm'>
         <div className='flex items-center justify-between'>
-        <button
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-            liked
-              ? "text-red-500 bg-red-50"
-              : "text-gray-600 hover:bg-gray-50"
-          }`}
-          onClick={debouncedHandleLikeClick}
-          title={token ? "Like this post" : "Sign in to like this post"}
-        >
-          <FaHeart size={18} />
-          <span>{token ? "Like" : "Sign in to like"}</span>
-        </button>
+          <button
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+              liked
+                ? "text-red-500 bg-red-50"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            onClick={debouncedHandleLikeClick}
+            title={token ? "Like this post" : "Sign in to like this post"}
+          >
+            <FaHeart size={18} />
+            <span>{token ? "Like" : "Sign in to like"}</span>
+          </button>
 
           <button
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
@@ -392,20 +349,40 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
               : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg"
           } ${isMarkingCompleted ? "opacity-70 cursor-not-allowed" : ""}`}
         >
-          <span className="mr-2">
+          <span className='mr-2'>
             {completed ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='20'
+                height='20'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              >
+                <path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path>
+                <polyline points='22 4 12 14.01 9 11.01'></polyline>
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='20'
+                height='20'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              >
+                <circle cx='12' cy='12' r='10'></circle>
+                <polyline points='12 6 12 12 16 14'></polyline>
               </svg>
             )}
           </span>
-          <span className="font-medium">
+          <span className='font-medium'>
             {isMarkingCompleted
               ? "Processing..."
               : completed
@@ -457,11 +434,16 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
               <div className='mx-auto w-12 h-12 flex items-center justify-center bg-blue-100 rounded-full mb-3'>
                 <FaComment size={20} className='text-blue-500' />
               </div>
-              <h4 className='text-lg font-medium text-gray-900 mb-2'>Sign in to view comments</h4>
+              <h4 className='text-lg font-medium text-gray-900 mb-2'>
+                Sign in to view comments
+              </h4>
               <p className='text-gray-600 mb-4 max-w-md mx-auto'>
                 Please log in to view and participate in the discussion.
               </p>
-              <a href="/login" className='inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition'>
+              <a
+                href='/login'
+                className='inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition'
+              >
                 Sign in
               </a>
             </div>
@@ -500,7 +482,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                               src={comment.user?.profileImageUrl}
                               alt={comment.user?.username || "User"}
                               size={32}
-                              className="rounded-full"
+                              className='rounded-full'
                             />
                           </div>
                           <div>
@@ -518,7 +500,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                         {/* Comment actions dropdown - only show for user's own comments */}
                         {/* {comment.userId && (
                           <div className='relative'>
-                            <button 
+                            <button
                               className='p-1 rounded-full hover:bg-gray-100'
                               onClick={(e) => {
                                 e.stopPropagation();
