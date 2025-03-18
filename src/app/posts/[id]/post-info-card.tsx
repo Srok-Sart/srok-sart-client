@@ -525,10 +525,10 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                                 toggleCommentMenu(comment.id);
                               }}
                             >
-                              {/* <FaEllipsisV
+                              <FaEllipsisV
                                 size={14}
                                 className='text-gray-500'
-                              /> */}
+                              />
                             </button>
                             {activeDropdownId === comment.id && (
                               <div className='absolute right-0 mt-1 w-36 bg-white shadow-lg rounded-md py-1 z-10'>
