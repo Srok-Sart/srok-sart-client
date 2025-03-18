@@ -14,7 +14,9 @@ interface ProfileContentProps {
   initialProfile: UserProfile;
 }
 
-export default function ProfileContent({ initialProfile }: ProfileContentProps) {
+export default function ProfileContent({
+  initialProfile,
+}: ProfileContentProps) {
   const router = useRouter();
   const [profile, setProfile] = useState(initialProfile);
   const [activeTab, setActiveTab] = useState("created");
@@ -112,7 +114,6 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
       >
         Edit Profile
       </button>
-
       {/* Edit Profile Modal */}
       {isEditProfileOpen && (
         <EditProfileModal

@@ -1,17 +1,23 @@
 "use client";
 // PlantGrow.tsx
-// Fetches sustainability data and renders the complete dashboard including tree visualization,
-// metric display, and detailed dashboard summary (sustainability stats, top materials, categories, and achievements).
-import { useEffect, useState } from "react";
+// Fetches sustainability data and renders the complete dashboard with ability to toggle between
+// overall sustainability data and individual user contribution data
 import { fetcher } from "@/api/use-fetcher";
-import { FaLeaf, FaRecycle, FaSeedling, FaInfoCircle, FaAward, FaBox } from "react-icons/fa";
-import { TreeVisualization } from "./tree-visualization";
+import { useEffect, useState } from "react";
+import {
+  FaBox,
+  FaGlobeAmericas,
+  FaLeaf,
+  FaRecycle,
+  FaUserAlt,
+} from "react-icons/fa";
+import { AchievementsMilestones } from "./achievements-milestones";
+import { MaterialCategories } from "./material-categories";
 import { MetricDisplay } from "./metric-display";
 import { SustainabilitySummary } from "./sustainability-summary";
 import { TopMaterials } from "./top-materials";
-import { MaterialCategories } from "./material-categories";
-import { AchievementsMilestones } from "./achievements-milestones";
-
+import { TreeVisualization } from "./tree-visualization";
+import { UserContribution } from "./user-contribution";
 enum MaterialUnit {
   KG = "KG",
   G = "G",
@@ -52,78 +58,213 @@ interface MetricGoal {
   explanation: string;
 }
 
+interface UserStats {
+  totalPostsCompleted: number;
+  totalSavedWeight: number;
+  totalSavedVolume: number;
+  totalSavedItems: number;
+  totalEnvironmentalImpact: number;
+}
+
+interface GlobalComparison {
+  postsCompletedPercentage: number;
+  environmentalImpactPercentage: number;
+}
+
+interface CompletionTrend {
+  month: string | null;
+  count: number;
+}
+
+interface UserContributionData {
+  summary: MaterialSavedSummary;
+  progress: {
+    userStats: UserStats;
+    globalComparison: GlobalComparison;
+    completionTrend: CompletionTrend[];
+  };
+  topMaterials: [];
+  completionHistory: [];
+}
+
 export const PlantGrow = () => {
-  const [materialData, setMaterialData] = useState<MaterialSavedSummary | null>(null);
+  const [viewMode, setViewMode] = useState<"overall" | "user">("overall");
+  const [materialData, setMaterialData] = useState<MaterialSavedSummary | null>(
+    null
+  );
+  const [userData, setUserData] = useState<UserContributionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeMetric, setActiveMetric] = useState<"weight" | "impact" | "items">("impact");
+  const [activeMetric, setActiveMetric] = useState<
+    "weight" | "impact" | "items"
+  >("impact");
 
   // Set target values for metrics.
   const maxWeightInGrams = 700; // Now in grams instead of kg
-  const maxImpact = 50;  // environmental impact points
-  const maxItems = 50;    // number of items
-  
+  const maxImpact = 50; // environmental impact points
+  const maxItems = 50; // number of items
+
   useEffect(() => {
-    const fetchMaterialData = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const data = await fetcher<MaterialSavedSummary>("/posts/saved-materials");
-        setMaterialData(data);
+        if (viewMode === "overall") {
+          const data = await fetcher<MaterialSavedSummary>(
+            "/material-tracking/all"
+          );
+          setMaterialData(data);
+        } else {
+          const data = await fetcher<UserContributionData>(
+            "/material-tracking/user"
+          );
+          setUserData(data);
+        }
       } catch (error) {
-        console.error("Error fetching material data:", error);
+        console.error(`Error fetching ${viewMode} data:`, error);
       } finally {
         setLoading(false);
       }
     };
-    fetchMaterialData();
-  }, []);
+    fetchData();
+  }, [viewMode]);
 
   if (loading) {
     return (
-      <div className="w-full min-h-[400px] flex items-center justify-center">
-        <p className="text-lg font-medium text-gray-600">Loading material data...</p>
+      <div className='w-full min-h-[400px] flex items-center justify-center'>
+        <p className='text-lg font-medium text-gray-600'>
+          Loading {viewMode === "overall" ? "overall" : "your"} sustainability
+          data...
+        </p>
       </div>
     );
   }
 
-  if (!materialData) {
+  if (
+    (viewMode === "overall" && !materialData) ||
+    (viewMode === "user" && !userData)
+  ) {
     return (
-      <div className="w-full min-h-[400px] flex items-center justify-center">
-        <p className="text-lg font-medium text-gray-600">No material data available</p>
+      <div className='w-full min-h-[400px] flex items-center justify-center'>
+        <p className='text-lg font-medium text-gray-600'>
+          No {viewMode === "overall" ? "overall" : "user"} data available
+        </p>
       </div>
     );
   }
 
+  // Render the content based on the selected view mode
+  return (
+    <div className='w-full min-h-[550px] p-4 flex flex-col items-center justify-center rounded-xl'>
+      <h1 className='text-2xl font-bold text-green-800 mb-2 text-center'>
+        Environmental Impact Dashboard
+      </h1>
+      <p className='text-sm text-green-700 mb-4 text-center max-w-lg'>
+        Track sustainability progress and see how DIY projects contribute to a
+        greener planet
+      </p>
+
+      {/* Toggle Tabs */}
+      <div className='flex mb-6 bg-gray-100 rounded-lg p-1 shadow-sm'>
+        <button
+          onClick={() => setViewMode("overall")}
+          className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            viewMode === "overall"
+              ? "bg-green-500 text-white shadow-sm"
+              : "text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          <FaGlobeAmericas className='mr-2' />
+          Overall Impact
+        </button>
+        <button
+          onClick={() => setViewMode("user")}
+          className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            viewMode === "user"
+              ? "bg-green-500 text-white shadow-sm"
+              : "text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          <FaUserAlt className='mr-2' />
+          My Contribution
+        </button>
+      </div>
+
+      {/* Content based on selected view */}
+      {viewMode === "overall" && materialData && (
+        <OverallDashboard
+          materialData={materialData}
+          activeMetric={activeMetric}
+          setActiveMetric={setActiveMetric}
+          maxWeightInGrams={maxWeightInGrams}
+          maxImpact={maxImpact}
+          maxItems={maxItems}
+        />
+      )}
+
+      {viewMode === "user" && userData && (
+        <UserContribution userData={userData} />
+      )}
+    </div>
+  );
+};
+
+interface OverallDashboardProps {
+  materialData: MaterialSavedSummary;
+  activeMetric: "weight" | "impact" | "items";
+  setActiveMetric: (metric: "weight" | "impact" | "items") => void;
+  maxWeightInGrams: number;
+  maxImpact: number;
+  maxItems: number;
+}
+
+const OverallDashboard = ({
+  materialData,
+  activeMetric,
+  setActiveMetric,
+  maxWeightInGrams,
+  maxImpact,
+  maxItems,
+}: OverallDashboardProps) => {
   // Calculate progress for each metric.
-  const weightProgress = Math.min(100, ((materialData.totalSavedWeight * 1000) / maxWeightInGrams) * 100);
-  const impactProgress = Math.min(100, (materialData.totalEnvironmentalImpact / maxImpact) * 100);
-  const itemsProgress = Math.min(100, (materialData.totalSavedItems / maxItems) * 100);
+  const weightProgress = Math.min(
+    100,
+    ((materialData.totalSavedWeight * 1000) / maxWeightInGrams) * 100
+  );
+  const impactProgress = Math.min(
+    100,
+    (materialData.totalEnvironmentalImpact / maxImpact) * 100
+  );
+  const itemsProgress = Math.min(
+    100,
+    (materialData.totalSavedItems / maxItems) * 100
+  );
 
   let activeProgress = impactProgress;
   if (activeMetric === "weight") activeProgress = weightProgress;
   if (activeMetric === "items") activeProgress = itemsProgress;
 
-  // Tree visualization calculations.
-  const treeHeight = Math.min(200, activeProgress * 2);
-  const trunkWidth = Math.min(18, Math.max(8, activeProgress / 5));
-  const leafScale = Math.min(1.2, Math.max(0, (activeProgress - 15) / 60));
-  const fruitScale = Math.max(0, (activeProgress - 40) / 50);
-
   // Group materials by category.
-  const materialsByCategory = materialData.materialBreakdown.reduce((acc, material) => {
-    if (!acc[material.category]) {
-      acc[material.category] = {
-        totalWeight: 0,
-        totalCount: 0,
-        totalImpact: 0,
-      };
-    }
-    const isWeight = material.displayUnit === MaterialUnit.KG;
-    if (isWeight) {
-      acc[material.category].totalWeight += material.standardAmount;
-    }
-    acc[material.category].totalCount += material.savedCount;
-    acc[material.category].totalImpact += material.totalEnvironmentalImpact;
-    return acc;
-  }, {} as Record<string, { totalWeight: number; totalCount: number; totalImpact: number }>);
+  const materialsByCategory = materialData.materialBreakdown.reduce(
+    (acc, material) => {
+      if (!acc[material.category]) {
+        acc[material.category] = {
+          totalWeight: 0,
+          totalCount: 0,
+          totalImpact: 0,
+        };
+      }
+      const isWeight = material.displayUnit === MaterialUnit.KG;
+      if (isWeight) {
+        acc[material.category].totalWeight += material.standardAmount;
+      }
+      acc[material.category].totalCount += material.savedCount;
+      acc[material.category].totalImpact += material.totalEnvironmentalImpact;
+      return acc;
+    },
+    {} as Record<
+      string,
+      { totalWeight: number; totalCount: number; totalImpact: number }
+    >
+  );
 
   const sortedCategories = Object.entries(materialsByCategory)
     .sort(([, a], [, b]) => b.totalImpact - a.totalImpact)
@@ -133,13 +274,56 @@ export const PlantGrow = () => {
   const getTopMaterials = () => {
     return [...materialData.materialBreakdown]
       .sort((a, b) => {
-        if (activeMetric === "weight") return b.standardAmount - a.standardAmount;
+        if (activeMetric === "weight")
+          return b.standardAmount - a.standardAmount;
         if (activeMetric === "items") return b.savedCount - a.savedCount;
         return b.totalEnvironmentalImpact - a.totalEnvironmentalImpact;
       })
       .slice(0, 5);
   };
   const topMaterials = getTopMaterials();
+
+  // Dynamic goal calculation based on user's current progress
+  const calculateGoal = (current: number, baseGoal: number): number => {
+    // If user has exceeded 80% of the base goal, set a new goal that's 50% higher
+    if (current >= baseGoal * 0.8) {
+      return Math.ceil((baseGoal * 1.5) / 100) * 100; // Round to nearest hundred
+    }
+    return baseGoal;
+  };
+
+  // Set target values for metrics with explanations
+  const baseWeightGoal = 1000; // 1000 grams
+  const baseImpactGoal = 500; // 500 points
+  const baseItemsGoal = 50; // 50 items
+
+  const metricGoals: Record<"weight" | "impact" | "items", MetricGoal> = {
+    weight: {
+      current: materialData?.totalSavedWeight
+        ? materialData.totalSavedWeight * 1000
+        : 0,
+      goal: calculateGoal(
+        materialData?.totalSavedWeight
+          ? materialData.totalSavedWeight * 1000
+          : 0,
+        baseWeightGoal
+      ),
+      explanation: `Shows progress toward saving ${baseWeightGoal}g of materials. Goals increase as you progress!`,
+    },
+    impact: {
+      current: materialData?.totalEnvironmentalImpact || 0,
+      goal: calculateGoal(
+        materialData?.totalEnvironmentalImpact || 0,
+        baseImpactGoal
+      ),
+      explanation: `Represents your environmental impact score with a target of ${baseImpactGoal} points`,
+    },
+    items: {
+      current: materialData?.totalSavedItems || 0,
+      goal: calculateGoal(materialData?.totalSavedItems || 0, baseItemsGoal),
+      explanation: `Tracks your progress toward reusing ${baseItemsGoal} items`,
+    },
+  };
 
   // Get metric value data.
   const getMetricValue = (metric: "weight" | "impact" | "items") => {
@@ -150,7 +334,7 @@ export const PlantGrow = () => {
           max: maxWeightInGrams,
           unit: "g",
           progress: weightProgress,
-          icon: <FaBox className="w-4 h-4" />,
+          icon: <FaBox className='w-4 h-4' />,
           color: "from-emerald-400 to-emerald-600",
           explanation: metricGoals.weight.explanation,
         };
@@ -160,7 +344,7 @@ export const PlantGrow = () => {
           max: maxItems,
           unit: "items",
           progress: itemsProgress,
-          icon: <FaRecycle className="w-4 h-4" />,
+          icon: <FaRecycle className='w-4 h-4' />,
           color: "from-purple-400 to-purple-600",
           explanation: metricGoals.items.explanation,
         };
@@ -171,121 +355,63 @@ export const PlantGrow = () => {
           max: maxImpact,
           unit: "points",
           progress: impactProgress,
-          icon: <FaLeaf className="w-4 h-4" />,
+          icon: <FaLeaf className='w-4 h-4' />,
           color: "from-green-400 to-green-600",
           explanation: metricGoals.impact.explanation,
         };
     }
   };
 
-  // Dynamic goal calculation based on user's current progress
-const calculateGoal = (current: number, baseGoal: number): number => {
-  // If user has exceeded 80% of the base goal, set a new goal that's 50% higher
-  if (current >= baseGoal * 0.8) {
-    return Math.ceil(baseGoal * 1.5 / 100) * 100; // Round to nearest hundred
-  }
-  return baseGoal;
-};
-
-// Set target values for metrics with explanations
-const baseWeightGoal = 1000; // 1000 grams 
-const baseImpactGoal = 500;  // 500 points
-const baseItemsGoal = 50;    // 50 items
-
-const metricGoals: Record<"weight" | "impact" | "items", MetricGoal> = {
-  weight: {
-    current: materialData?.totalSavedWeight ? materialData.totalSavedWeight * 1000 : 0,
-    goal: calculateGoal(materialData?.totalSavedWeight ? materialData.totalSavedWeight * 1000 : 0, baseWeightGoal),
-    explanation: `Shows progress toward saving ${baseWeightGoal}g of materials. Goals increase as you progress!`
-  },
-  impact: {
-    current: materialData?.totalEnvironmentalImpact || 0,
-    goal: calculateGoal(materialData?.totalEnvironmentalImpact || 0, baseImpactGoal),
-    explanation: `Represents your environmental impact score with a target of ${baseImpactGoal} points`
-  },
-  items: {
-    current: materialData?.totalSavedItems || 0,
-    goal: calculateGoal(materialData?.totalSavedItems || 0, baseItemsGoal),
-    explanation: `Tracks your progress toward reusing ${baseItemsGoal} items`
-  }
-};
-
   const activeMetricData = getMetricValue(activeMetric);
 
   return (
-    <div className="w-full min-h-[550px] p-4 flex flex-col items-center justify-center rounded-xl">
-      <h1 className="text-2xl font-bold text-green-800 mb-2 text-center">Your Environmental Impact</h1>
-      <p className="text-sm text-green-700 mb-6 text-center max-w-lg">
-        Track your sustainability journey and see how your DIY projects contribute to a greener planet
-      </p>
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left column: Tree visualization and metric display */}
-        <div className="flex flex-col items-center md:col-span-1 pt-16">
-          <TreeVisualization
-            activeProgress={activeProgress}
-            totalMaterialsSaved={materialData.totalSavedWeight}
-            itemsReused={materialData.totalSavedItems}
-            projectsCompleted={materialData.totalPostsCompleted}
-          />
-          <MetricDisplay activeMetricData={activeMetricData} activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
-        </div>
-        {/* Right column: Dashboard content */}
-        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <SustainabilitySummary
-            totalSavedWeight={materialData.totalSavedWeight}
-            totalSavedItems={materialData.totalSavedItems}
-            totalPostsCompleted={materialData.totalPostsCompleted}
-          />
-          <TopMaterials
-            topMaterials={topMaterials}
-            activeMetric={activeMetric}
-            activeMetricData={{ progress: activeMetricData.progress, color: activeMetricData.color }}
-            totalSavedWeight={materialData.totalSavedWeight}
-            totalSavedItems={materialData.totalSavedItems}
-            totalEnvironmentalImpact={materialData.totalEnvironmentalImpact}
-          />
-          <MaterialCategories
-            sortedCategories={sortedCategories}
-            activeMetric={activeMetric}
-            totalSavedWeight={materialData.totalSavedWeight}
-            totalSavedItems={materialData.totalSavedItems}
-            totalEnvironmentalImpact={materialData.totalEnvironmentalImpact}
-          />
-          <AchievementsMilestones impactProgress={impactProgress} />
-        </div>
+    <div className='w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6'>
+      {/* Left column: Tree visualization and metric display */}
+      <div className='flex flex-col items-center md:col-span-1 pt-16'>
+        <TreeVisualization
+          activeProgress={activeProgress}
+          totalMaterialsSaved={materialData.totalSavedWeight}
+          itemsReused={materialData.totalSavedItems}
+          projectsCompleted={materialData.totalPostsCompleted}
+        />
+        <MetricDisplay
+          activeMetricData={activeMetricData}
+          activeMetric={activeMetric}
+          setActiveMetric={setActiveMetric}
+        />
       </div>
-      <div className="mt-6 mb-4 text-center text-sm text-gray-600 max-w-lg bg-white/70 backdrop-blur-sm p-3 rounded-lg shadow-sm">
-        <span className="font-semibold">🌱 Keep growing your impact!</span> Complete more DIY projects to grow your tree and track your contribution to sustainability.
+      {/* Right column: Dashboard content */}
+      <div className='md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <SustainabilitySummary
+          totalSavedWeight={materialData.totalSavedWeight}
+          totalSavedItems={materialData.totalSavedItems}
+          totalPostsCompleted={materialData.totalPostsCompleted}
+        />
+        <TopMaterials
+          topMaterials={topMaterials}
+          activeMetric={activeMetric}
+          activeMetricData={{
+            progress: activeMetricData.progress,
+            color: activeMetricData.color,
+          }}
+          totalSavedWeight={materialData.totalSavedWeight}
+          totalSavedItems={materialData.totalSavedItems}
+          totalEnvironmentalImpact={materialData.totalEnvironmentalImpact}
+        />
+        <MaterialCategories
+          sortedCategories={sortedCategories}
+          activeMetric={activeMetric}
+          totalSavedWeight={materialData.totalSavedWeight}
+          totalSavedItems={materialData.totalSavedItems}
+          totalEnvironmentalImpact={materialData.totalEnvironmentalImpact}
+        />
+        <AchievementsMilestones impactProgress={impactProgress} />
+      </div>
+      <div className='md:col-span-3 mt-6 mb-4 text-center text-sm text-gray-600 max-w-lg mx-auto bg-white/70 backdrop-blur-sm p-3 rounded-lg shadow-sm'>
+        <span className='font-semibold'>🌱 Keep growing our impact!</span>{" "}
+        Complete more DIY projects to grow the community tree and track our
+        collective contribution to sustainability.
       </div>
     </div>
   );
 };
-
-
-// Progress Calculation Explained:
-// 
-// 1. Each metric (weight, impact, items) has a specific goal 
-//    - Weight: 1000g (1kg) by default
-//    - Impact: 500 points by default
-//    - Items: 50 items by default
-// 
-// 2. Progress is calculated as a percentage: (current value / goal) * 100
-//    This represents how close the user is to reaching their goal
-//
-// 3. Progress is capped at 100% to ensure the visualization works properly
-//    Math.min(100, (current / goal) * 100)
-//
-// 4. When a user reaches 80% of their goal, a new higher goal is automatically set
-//    to keep them motivated and provide ongoing challenges
-//
-// 5. For tree visualization, this percentage directly controls:
-//    - Tree height and width
-//    - Leaf density and scale
-//    - Appearance of fruits when progress exceeds 40%
-//    - Achievement badges at 25%, 50%, and 75% milestones
-
-// Clear Goal Communication: Users understand exactly what they're working toward
-// Dynamic Goals: Goals adjust as users improve, keeping the experience challenging
-// Visual Percentage: Displaying the exact percentage clarifies progress
-// Explanations: Tooltips help users understand what each metric means
-// Documentation: Code comments ensure future developers understand the system

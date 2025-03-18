@@ -1,11 +1,15 @@
-"use client"; 
+"use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { Post } from "@/app/interfaces/post";
-import { fetchACollections, fetchCollections, fetchPostsInCollection, unsavePostFromCollection } from "@/api/bookmark";
+import {
+  fetchACollections,
+  fetchPostsInCollection,
+  unsavePostFromCollection,
+} from "@/api/bookmark";
 import CardDisplay from "@/app/components/card-display";
 import Navigation from "@/app/components/navigation";
+import { Post } from "@/app/interfaces/post";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const BookmarkPage = () => {
   const params = useParams();
@@ -52,9 +56,11 @@ const BookmarkPage = () => {
     <>
       <Navigation />
 
-      <div className="pt-16 max-w-7xl mx-auto px-4">
-        <h1 className="text-2xl font-semibold mb-6">{collectionName} Collection</h1>
-        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4">
+      <div className='pt-16 max-w-7xl mx-auto px-4'>
+        <h1 className='text-2xl font-semibold mb-6'>
+          {collectionName} Collection
+        </h1>
+        <div className='columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4'>
           {posts.map((post) => (
             <CardDisplay
               key={post.id}

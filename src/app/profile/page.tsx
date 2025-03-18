@@ -1,8 +1,8 @@
 import { getUserProfile } from "@/api/get-user-profile";
 import Navigation from "../components/navigation";
-import ProfileContent from "./profile-content";
 import ProfileImage from "../components/profile-image";
 import ProfileActions from "./profile-actions";
+import ProfileContent from "./profile-content";
 
 export default async function ProfilePage() {
   const profile = await getUserProfile();

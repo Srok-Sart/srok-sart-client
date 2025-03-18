@@ -1,6 +1,5 @@
 import { PostDifficulty } from "../enums/post-difficulty.enum";
 import { PostType } from "../enums/post-type.enum";
-import { Material } from "./material";
 
 export interface PaginationPost {
   data: Post[];
@@ -14,6 +13,7 @@ export interface Post {
   title: string;
   description?: string;
   postDifficulty?: PostDifficulty;
+  completionCount: number;
   postType?: PostType;
   imageUrls: string[];
   thumbnailUrl: string;

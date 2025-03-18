@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
 import { Material } from "@/app/interfaces/material";
+import React, { useEffect, useState } from "react";
 import AddNewMaterial from "./add-new-material";
 import EditMaterial from "./edit-material";
 import { HeaderSection } from "./header-section";
@@ -11,7 +11,7 @@ interface MaterialsProps {
   token: string;
 }
 
-const Materials = ({ activeTab, token }: MaterialsProps) => {
+const Materials = ({ token }: MaterialsProps) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("ID Ascending");
@@ -23,27 +23,31 @@ const Materials = ({ activeTab, token }: MaterialsProps) => {
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/materials`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        });
-        
+        );
+
         if (!res.ok) {
           if (res.status === 401) {
-            throw new Error('Unauthorized: Please log in again');
+            throw new Error("Unauthorized: Please log in again");
           }
           throw new Error(`Failed to fetch materials: ${res.statusText}`);
         }
-        
+
         const data: Material[] = await res.json();
         if (Array.isArray(data)) {
           const sortedMaterials = data.sort((a, b) => a.id - b.id);
           setMaterials(sortedMaterials);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Error fetching materials";
+        const errorMessage =
+          error instanceof Error ? error.message : "Error fetching materials";
         setError(errorMessage);
         console.error("Error fetching materials:", error);
       }
@@ -69,23 +73,24 @@ const Materials = ({ activeTab, token }: MaterialsProps) => {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/materials/${id}`,
-        { 
+        {
           method: "DELETE",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error('Unauthorized: Please log in again');
+          throw new Error("Unauthorized: Please log in again");
         }
         throw new Error(`Failed to delete material: ${res.statusText}`);
       }
       setMaterials(materials.filter((material) => material.id !== id));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Error deleting material";
+      const errorMessage =
+        error instanceof Error ? error.message : "Error deleting material";
       setError(errorMessage);
       console.error("Error deleting material:", error);
     }
@@ -102,7 +107,9 @@ const Materials = ({ activeTab, token }: MaterialsProps) => {
 
   const handleUpdateMaterial = (updatedMaterial: Material) => {
     setMaterials((prevMaterials) =>
-      prevMaterials.map((material) => (material.id === updatedMaterial.id ? updatedMaterial : material))
+      prevMaterials.map((material) =>
+        material.id === updatedMaterial.id ? updatedMaterial : material
+      )
     );
   };
 
@@ -112,8 +119,8 @@ const Materials = ({ activeTab, token }: MaterialsProps) => {
 
   if (showAddNewMaterial) {
     return (
-      <AddNewMaterial 
-        setShowAddNewMaterial={setShowAddNewMaterial} 
+      <AddNewMaterial
+        setShowAddNewMaterial={setShowAddNewMaterial}
         onAddNewMaterial={handleAddNewMaterial}
         token={token}
       />
@@ -122,9 +129,9 @@ const Materials = ({ activeTab, token }: MaterialsProps) => {
 
   if (showEditMaterial && editMaterialId !== null) {
     return (
-      <EditMaterial 
-        setShowEditMaterial={setShowEditMaterial} 
-        onUpdateMaterial={handleUpdateMaterial} 
+      <EditMaterial
+        setShowEditMaterial={setShowEditMaterial}
+        onUpdateMaterial={handleUpdateMaterial}
         id={editMaterialId}
         token={token}
       />
@@ -133,12 +140,12 @@ const Materials = ({ activeTab, token }: MaterialsProps) => {
 
   if (error) {
     return (
-      <div className="p-4 text-red-500">
+      <div className='p-4 text-red-500'>
         <p>{error}</p>
-        {error.includes('Unauthorized') && (
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-primary text-white rounded-md"
+        {error.includes("Unauthorized") && (
+          <button
+            onClick={() => window.location.reload()}
+            className='mt-4 px-4 py-2 bg-primary text-white rounded-md'
           >
             Refresh Page
           </button>

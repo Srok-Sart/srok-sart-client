@@ -1,8 +1,17 @@
-import React, { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FaEllipsisV, FaEdit, FaTrash, FaTag, FaBookmark } from "react-icons/fa";
-import { updateCollection, deleteCollection, fetchPostsInCollection } from "../../api/bookmark";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  FaBookmark,
+  FaEdit,
+  FaEllipsisV,
+  FaTag,
+  FaTrash,
+} from "react-icons/fa";
+import {
+  deleteCollection,
+  fetchPostsInCollection,
+  updateCollection,
+} from "../../api/bookmark";
 import useClickOutside from "../../hooks/use-click-outside";
 import { Post } from "../interfaces/post";
 
@@ -54,7 +63,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
     };
 
     fetchPosts();
-  }, [collection.id]); // Only include collection.id in the dependency array
+  }, [collection.id, setCollections]); // Only include collection.id in the dependency array
 
   const handleNavigateToCollection = () => {
     router.push(`/bookmark/${collection.id}`);
@@ -63,7 +72,9 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
   const handleDeleteCollection = async () => {
     try {
       // Fetch the collection to check if it has posts
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${collection.id}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${collection.id}`
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch collection");
       }
@@ -80,7 +91,9 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
       // Confirm deletion if the collection is empty
       if (window.confirm("Are you sure you want to delete this collection?")) {
         await deleteCollection(collection.id);
-        setCollections((prev) => prev.filter((col) => col.id !== collection.id));
+        setCollections((prev) =>
+          prev.filter((col) => col.id !== collection.id)
+        );
       }
     } catch (error) {
       console.error("Failed to delete collection:", error);
@@ -119,12 +132,14 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
   const firstPostThumbnail = posts.length > 0 ? posts[0].thumbnailUrl : null;
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl relative">
+    <div className='bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl relative'>
       <div
-        className="relative w-full h-48 overflow-hidden rounded-md cursor-pointer flex items-center justify-center"
+        className='relative w-full h-48 overflow-hidden rounded-md cursor-pointer flex items-center justify-center'
         onClick={handleNavigateToCollection}
         style={{
-          backgroundColor: firstPostThumbnail ? "transparent" : collection.color, // Use color if no thumbnail
+          backgroundColor: firstPostThumbnail
+            ? "transparent"
+            : collection.color, // Use color if no thumbnail
           backgroundImage: firstPostThumbnail
             ? `url(${process.env.NEXT_PUBLIC_API_URL + firstPostThumbnail})`
             : "none",
@@ -134,64 +149,74 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
       >
         {/* Overlay to improve text readability */}
         {firstPostThumbnail && (
-          <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+          <div className='absolute inset-0 bg-black bg-opacity-30'></div>
         )}
 
         {/* Display a big bookmark icon if there are no posts */}
         {!firstPostThumbnail && (
-          <FaBookmark className="text-white text-6xl opacity-80" />
+          <FaBookmark className='text-white text-6xl opacity-80' />
         )}
       </div>
 
       {isEditing ? (
-        <div className="mt-2">
+        <div className='mt-2'>
           <input
-            type="text"
+            type='text'
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
-            className="border p-2 w-full rounded text-[#6437A0]"
+            className='border p-2 w-full rounded text-[#6437A0]'
             autoFocus
           />
-          <div className="flex justify-end mt-2 space-x-2">
-            <button onClick={() => setIsEditing(false)} className="bg-gray-300 px-4 py-2 rounded">Cancel</button>
-            <button onClick={handleEditCollection} className="bg-[#6437A0] text-white px-4 py-2 rounded">OK</button>
+          <div className='flex justify-end mt-2 space-x-2'>
+            <button
+              onClick={() => setIsEditing(false)}
+              className='bg-gray-300 px-4 py-2 rounded'
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleEditCollection}
+              className='bg-[#6437A0] text-white px-4 py-2 rounded'
+            >
+              OK
+            </button>
           </div>
         </div>
       ) : (
-        <h3 className="font-semibold text-lg mt-2 flex items-center">
-          {collection.isDefault && <FaTag className="text-[#6437A0] mr-2" />}{" "}
+        <h3 className='font-semibold text-lg mt-2 flex items-center'>
+          {collection.isDefault && <FaTag className='text-[#6437A0] mr-2' />}{" "}
           {collection.name}
         </h3>
       )}
 
-      <p className="text-sm text-black">{collection.saved ?? 0} Saved</p>
-      <p className="text-sm text-gray-500">{collection.description}</p>
-      <p className="text-sm text-gray-500">
+      <p className='text-sm text-black'>{collection.saved ?? 0} Saved</p>
+      <p className='text-sm text-gray-500'>{collection.description}</p>
+      <p className='text-sm text-gray-500'>
         {collection.isPrivate ? "Private" : "Public"}
       </p>
 
       {!collection.isDefault && (
-        <div className="relative" ref={menuRef}>
+        <div className='relative' ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="absolute bottom-2 right-2 p-2"
+            className='absolute bottom-2 right-2 p-2'
           >
-            <FaEllipsisV className="text-gray-500 hover:text-gray-800" />
+            <FaEllipsisV className='text-gray-500 hover:text-gray-800' />
           </button>
           {menuOpen && (
-            <div className="absolute bottom-8 right-2 bg-white shadow-lg p-2 rounded-lg z-10">
+            <div className='absolute bottom-8 right-2 bg-white shadow-lg p-2 rounded-lg z-10'>
               <button
                 onClick={() => {
                   setIsEditing(true);
                   setMenuOpen(false);
                 }}
-                className="flex items-center space-x-2 text-[#6437A0] p-2 w-full"
+                className='flex items-center space-x-2 text-[#6437A0] p-2 w-full'
               >
                 <FaEdit /> <span>Edit</span>
               </button>
               <button
                 onClick={handleDeleteCollection}
-                className="flex items-center space-x-2 text-red-500 p-2 w-full"
+                className='flex items-center space-x-2 text-red-500 p-2 w-full'
               >
                 <FaTrash /> <span>Delete</span>
               </button>

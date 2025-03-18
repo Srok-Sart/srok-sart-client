@@ -1,15 +1,15 @@
-import { Post } from '@/app/interfaces/post';
-import { PostType } from '@/enums/post-type.enum';
-import { PostDifficulty } from '@/enums/post-difficulty.enum';
-import { PostFormFields } from './subcomponents/post-form';
-import { FileUploadSection } from './subcomponents/file-upload-section';
-import { VideoUploadSection } from './subcomponents/video-upload-section';
-import { ImagePreview } from './subcomponents/image-preview';
-import { useFileUpload } from '@/hooks/use-file-upload';
-import { usePostSubmission } from '@/hooks/use-post-submission';
-import { Material, PostMaterial } from '@/app/interfaces/material';
-import React, { useEffect, useState } from 'react';
-import VideoPreview from './subcomponents/video-Preview';
+import { Material, PostMaterial } from "@/app/interfaces/material";
+import { Post } from "@/app/interfaces/post";
+import { PostDifficulty } from "@/enums/post-difficulty.enum";
+import { PostType } from "@/enums/post-type.enum";
+import { useFileUpload } from "@/hooks/use-file-upload";
+import { usePostSubmission } from "@/hooks/use-post-submission";
+import React, { useEffect, useState } from "react";
+import { FileUploadSection } from "./subcomponents/file-upload-section";
+import { ImagePreview } from "./subcomponents/image-preview";
+import { PostFormFields } from "./subcomponents/post-form";
+import VideoPreview from "./subcomponents/video-Preview";
+import { VideoUploadSection } from "./subcomponents/video-upload-section";
 
 type AddNewPostProps = {
   setShowAddNewPost: (show: boolean) => void;
@@ -17,22 +17,32 @@ type AddNewPostProps = {
   token: string;
 };
 
-const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps) => {
+const AddNewPost = ({
+  setShowAddNewPost,
+  onAddNewPost,
+  token,
+}: AddNewPostProps) => {
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<PostMaterial[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/materials`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        });
-        if (!res.ok) throw new Error(`Failed to fetch materials: ${res.statusText}`);
+        );
+        if (!res.ok)
+          throw new Error(`Failed to fetch materials: ${res.statusText}`);
         const data: Material[] = await res.json();
         setMaterials(data);
       } catch (error) {
@@ -63,7 +73,6 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
     setVideos,
     selectedVideo,
     setSelectedVideo,
-    handleVideoChange: originalHandleVideoChange,
     handleRemoveVideo,
     handleVideoView,
   } = useFileUpload();
@@ -85,13 +94,19 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
   };
 
   const {
-    formState: { title, description, difficultyLevel, type, estimatedTime, timeUnit },
+    formState: {
+      title,
+      description,
+      difficultyLevel,
+      type,
+      estimatedTime,
+      timeUnit,
+    },
     updateField,
     handleSubmit,
     isLoading: isSubmitting,
     error,
-    errors,     // These errors come from useFormValidation via usePostSubmission
-    submitted,
+    errors, // These errors come from useFormValidation via usePostSubmission
     isFormValid,
   } = usePostSubmission({
     images,
@@ -107,34 +122,34 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
 
   // Log errors when they change for debugging
   useEffect(() => {
-    console.log('Current validation errors:', errors);
+    console.log("Current validation errors:", errors);
   }, [errors]);
 
   // Extract only the numeric part of estimated time
   const parseEstimatedTime = () => {
     if (!estimatedTime) return "";
     // Extract just the numeric part by removing any non-numeric characters
-    return estimatedTime.replace(/[^0-9]/g, '');
+    return estimatedTime.replace(/[^0-9]/g, "");
   };
 
   // Handle time value change - store only the numeric value
   const handleTimeValueChange = (value: string) => {
     // Keep only numeric characters
-    const numericValue = value.replace(/[^0-9]/g, '');
+    const numericValue = value.replace(/[^0-9]/g, "");
     updateField("estimatedTime", numericValue);
   };
 
   // Handle time unit change
-  const handleTimeUnitChange = (unit: 'minutes' | 'hours') => {
+  const handleTimeUnitChange = (unit: "minutes" | "hours") => {
     updateField("timeUnit", unit);
   };
 
   // Log the current state whenever it changes
   useEffect(() => {
-    console.log('Current form type:', type);
-    console.log('Images count:', images.length);
-    console.log('Videos count:', videos.length);
-    console.log('Has thumbnail:', thumbnail ? 'Yes' : 'No');
+    console.log("Current form type:", type);
+    console.log("Images count:", images.length);
+    console.log("Videos count:", videos.length);
+    console.log("Has thumbnail:", thumbnail ? "Yes" : "No");
   }, [type, images, videos, thumbnail]);
 
   // Handle type change with proper type casting
@@ -142,8 +157,8 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
     // Cast the value to PostType if it's a valid enum value
     if (Object.values(PostType).includes(value as PostType)) {
       updateField("type", value as PostType);
-      console.log('Type changed to:', value);
-      
+      console.log("Type changed to:", value);
+
       // Clear thumbnail if switching to video type
       if (value === PostType.VIDEO && thumbnail) {
         setThumbnail(null);
@@ -172,38 +187,40 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
   // Validate form before submission
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // First validate with useFormValidation (via isFormValid function)
     if (!isFormValid()) {
-      console.log('Form validation failed with errors:', errors);
+      console.log("Form validation failed with errors:", errors);
       return;
     }
-    
-    console.log('Form validated successfully, submitting...');
-    console.log('Submitting form with type:', type);
-    console.log('Form data:', {
+
+    console.log("Form validated successfully, submitting...");
+    console.log("Submitting form with type:", type);
+    console.log("Form data:", {
       title,
       description,
       difficultyLevel,
       type,
-      estimatedTime: estimatedTime ? `${estimatedTime} ${timeUnit}` : '',
+      estimatedTime: estimatedTime ? `${estimatedTime} ${timeUnit}` : "",
       materials: selectedMaterials.length,
       images: images.length,
       videos: videos.length,
-      thumbnail: !!thumbnail
+      thumbnail: !!thumbnail,
     });
-    
+
     handleSubmit(e);
   };
 
   if (isLoading) {
-    return <div className="p-4 text-center">Loading materials...</div>;
+    return <div className='p-4 text-center'>Loading materials...</div>;
   }
 
   return (
     <div className='p-4'>
       <h2 className='text-2xl font-bold mb-4'>Add New Post</h2>
-      {error && <div className='text-red-500 mb-4 p-3 bg-red-50 rounded'>{error}</div>}
+      {error && (
+        <div className='text-red-500 mb-4 p-3 bg-red-50 rounded'>{error}</div>
+      )}
 
       <form onSubmit={handleFormSubmit}>
         <PostFormFields
@@ -220,7 +237,7 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
           onTypeChange={handleTypeChange}
           onMaterialsChange={setSelectedMaterials}
           estimatedTime={parseEstimatedTime()}
-          timeUnit={timeUnit || 'minutes'}
+          timeUnit={timeUnit || "minutes"}
           onEstimatedTimeChange={handleTimeValueChange}
           onTimeUnitChange={handleTimeUnitChange}
         />
@@ -229,7 +246,7 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
           <FileUploadSection
             images={images}
             thumbnail={thumbnail}
-            errors={errors}  // Pass errors to FileUploadSection
+            errors={errors} // Pass errors to FileUploadSection
             onImagesChange={handleImageChange}
             onThumbnailChange={handleThumbnailChange}
             onRemoveImage={handleRemoveImage}
@@ -242,7 +259,7 @@ const AddNewPost = ({ setShowAddNewPost, onAddNewPost, token }: AddNewPostProps)
         {type === PostType.VIDEO && (
           <VideoUploadSection
             videos={videos}
-            errors={errors}  // Pass errors to VideoUploadSection
+            errors={errors} // Pass errors to VideoUploadSection
             onVideosChange={handleVideoChange}
             onRemoveVideo={handleRemoveVideo}
             onVideoView={handleVideoView}

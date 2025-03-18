@@ -1,21 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FaHome, FaPlus, FaUser, FaChartBar, FaBookmark, FaSearch } from "react-icons/fa";
-import ProfileImage from "./profile-image";
+import React, { useState } from "react";
+import {
+  FaBookmark,
+  FaChartBar,
+  FaHome,
+  FaPlus,
+  FaSearch,
+  FaUser,
+} from "react-icons/fa";
 import "../globals.css";
+import ProfileImage from "./profile-image";
 
 const Navigation = () => {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-  const [profile, setProfile] = useState({ username: "", profileImageUrl: null });
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || ""
+  );
+  const [profile] = useState({
+    username: "",
+    profileImageUrl: null,
+  });
   // Reset search by removing the search param from the URL
   const resetSearch = () => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -50,14 +60,14 @@ const Navigation = () => {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex justify-between items-center px-12 py-3 shadow-lg bg-white w-full fixed top-0 z-50 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <Image src="/logo.svg" alt="Logo" width={40} height={40} />
-          <h1 className="text-xl font-bold text-gray-900 mr-10">Srok Sart</h1>
+      <nav className='hidden md:flex justify-between items-center px-12 py-3 shadow-lg bg-white w-full fixed top-0 z-50 border-b border-gray-200'>
+        <div className='flex items-center gap-3'>
+          <Image src='/logo.svg' alt='Logo' width={40} height={40} />
+          <h1 className='text-xl font-bold text-gray-900 mr-10'>Srok Sart</h1>
         </div>
 
         {/* Navigation Links */}
-        <div className="flex items-center gap-5 text-gray-800 font-medium">
+        <div className='flex items-center gap-5 text-gray-800 font-medium'>
           {navItems.map(({ name, href }) => (
             <Link
               key={href}
@@ -74,104 +84,133 @@ const Navigation = () => {
         </div>
 
         {/* Desktop Search Input */}
-        <div className="relative flex-1 mx-4 max-w-[700px] lg:max-w-[850px]">
-          <div className="relative">
+        <div className='relative flex-1 mx-4 max-w-[700px] lg:max-w-[850px]'>
+          <div className='relative'>
             <input
-              type="text"
-              placeholder="Search"
+              type='text'
+              placeholder='Search'
               value={searchQuery}
               onChange={handleInputChange}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  searchQuery.trim() === "" ? resetSearch() : handleSearch();
+                  if (searchQuery.trim() === "") {
+                    resetSearch();
+                  } else {
+                    handleSearch();
+                  }
                 }
               }}
-              className="bg-gray-200 rounded-full pl-10 pr-12 py-2 w-full focus:outline-none"
+              className='bg-gray-200 rounded-full pl-10 pr-12 py-2 w-full focus:outline-none'
             />
             <FaSearch
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
+              className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer'
               onClick={() => {
-                searchQuery.trim() === "" ? resetSearch() : handleSearch();
+                if (searchQuery.trim() === "") {
+                  resetSearch();
+                } else {
+                  handleSearch();
+                }
               }}
             />
           </div>
         </div>
 
         {/* Profile Icon */}
-        <div className="flex items-center gap-4">
-          <Link href="/profile" className="rounded-full overflow-hidden w-10 h-10">
+        <div className='flex items-center gap-4'>
+          <Link
+            href='/profile'
+            className='rounded-full overflow-hidden w-10 h-10'
+          >
             <ProfileImage
               src={profile.profileImageUrl}
               alt={profile.username || "User Profile"}
               size={40}
-              className="w-10 h-10 rounded-full"
+              className='w-10 h-10 rounded-full'
             />
           </Link>
         </div>
       </nav>
 
       {/* Mobile Search Bar */}
-      <div className="md:hidden fixed top-0 w-full bg-white px-3 pt-2 z-50 border-b border-gray-200">
-        <div className="relative">
+      <div className='md:hidden fixed top-0 w-full bg-white px-3 pt-2 z-50 border-b border-gray-200'>
+        <div className='relative'>
           <input
-            type="text"
-            placeholder="Search"
+            type='text'
+            placeholder='Search'
             value={searchQuery}
             onChange={handleInputChange}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                searchQuery.trim() === "" ? resetSearch() : handleSearch();
+                if (searchQuery.trim() === "") {
+                  resetSearch();
+                } else {
+                  handleSearch();
+                }
               }
             }}
-            className="bg-white border border-gray-300 rounded-full pl-8 pr-10 py-2 w-full shadow-lg focus:outline-none text-sm"
+            className='bg-white border border-gray-300 rounded-full pl-8 pr-10 py-2 w-full shadow-lg focus:outline-none text-sm'
           />
           <FaSearch
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
+            className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer'
             onClick={() => {
-              searchQuery.trim() === "" ? resetSearch() : handleSearch();
+              if (searchQuery.trim() === "") {
+                resetSearch();
+              } else {
+                handleSearch();
+              }
             }}
           />
         </div>
       </div>
 
       {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white shadow-xl py-3 flex justify-around items-center border-t border-gray-300 z-[100]">
+      <nav className='md:hidden fixed bottom-0 w-full bg-white shadow-xl py-3 flex justify-around items-center border-t border-gray-300 z-[100]'>
         <Link
-          href="/"
+          href='/'
           className={`flex flex-col items-center ${
-            pathname === "/" ? "text-[var(--primary-color)]" : "text-gray-500 hover:text-black"
+            pathname === "/"
+              ? "text-[var(--primary-color)]"
+              : "text-gray-500 hover:text-black"
           }`}
         >
           <FaHome size={22} />
         </Link>
         <Link
-          href="/data"
+          href='/data'
           className={`flex flex-col items-center ${
-            pathname === "/data" ? "text-[var(--primary-color)]" : "text-gray-500 hover:text-black"
+            pathname === "/data"
+              ? "text-[var(--primary-color)]"
+              : "text-gray-500 hover:text-black"
           }`}
         >
           <FaChartBar size={22} />
         </Link>
         <Link
-          href="/upload"
+          href='/upload'
           className={`flex flex-col items-center ${
-            pathname === "/upload" ? "text-[var(--primary-color)]" : "text-gray-500 hover:text-black"
+            pathname === "/upload"
+              ? "text-[var(--primary-color)]"
+              : "text-gray-500 hover:text-black"
           }`}
         >
           <FaPlus size={22} />
         </Link>
         <Link
-          href="/bookmark"
+          href='/bookmark'
           className={`flex flex-col items-center ${
-            pathname === "/bookmark" ? "text-[var(--primary-color)]" : "text-gray-500 hover:text-black"
+            pathname === "/bookmark"
+              ? "text-[var(--primary-color)]"
+              : "text-gray-500 hover:text-black"
           }`}
         >
           <FaBookmark size={22} />
         </Link>
         <Link
-          href="/profile"
+          href='/profile'
           className={`flex flex-col items-center ${
-            pathname === "/profile" ? "text-[var(--primary-color)]" : "text-gray-500 hover:text-black"
+            pathname === "/profile"
+              ? "text-[var(--primary-color)]"
+              : "text-gray-500 hover:text-black"
           }`}
         >
           <FaUser size={22} />
@@ -179,7 +218,7 @@ const Navigation = () => {
       </nav>
 
       {/* Spacer to prevent content from being covered (Desktop) */}
-      <div className="hidden md:block w-full h-[35px]" />
+      <div className='hidden md:block w-full h-[35px]' />
     </>
   );
 };
