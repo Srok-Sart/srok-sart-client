@@ -1,9 +1,14 @@
 "use client";
 
+import React, { useState } from "react";
 import { UserProfile } from "@/app/interfaces/user-profile";
 import EditProfileModal from "@/app/profile/edit-profile";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+
+// Import tab components
+import CreatedPostsTab from "./components/created-posts";
+import SavedPostsTab from "./components/saved-posts";
+import LikedPostsTab from "./components/liked-posts";
 
 interface ProfileContentProps {
   initialProfile: UserProfile;
@@ -16,9 +21,22 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const tabs = [
-    { id: "created", label: "Created" },
-    { id: "saved", label: "Saved" },
-    { id: "liked", label: "Liked" },
+    { id: "created", label: "Created", icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+    ) },
+    { id: "saved", label: "Saved", icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+      </svg>
+    ) },
+    { id: "liked", label: "Liked", icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+    ) },
   ];
 
   const handleProfileUpdate = async (updatedProfile: UserProfile) => {
@@ -45,76 +63,55 @@ export default function ProfileContent({ initialProfile }: ProfileContentProps) 
     }
   };
 
+  // Render the active tab component
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "created":
+        return <CreatedPostsTab userId={profile.id} />;
+      case "saved":
+        return <SavedPostsTab userId={profile.id} />;
+      case "liked":
+        return <LikedPostsTab userId={profile.id} />;
+      default:
+        return <CreatedPostsTab userId={profile.id} />;
+    }
+  };
+
   return (
     <>
       {/* Tabs */}
-      <div className="flex justify-center mt-8 border-b">
+      <div className="flex justify-center border-b">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-6 py-3 font-medium ${
+            className={`px-6 py-4 font-medium flex items-center gap-2 transition-colors ${
               activeTab === tab.id
                 ? "text-[var(--primary-color)] border-b-2 border-[var(--primary-color)]"
-                : "text-gray-500 hover:text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
+            <span className={activeTab === tab.id ? "text-[var(--primary-color)]" : "text-gray-400"}>
+              {tab.icon}
+            </span>
             {tab.label}
           </button>
         ))}
       </div>
 
       {/* Dynamic Content Section */}
-      <div className="mt-8 text-center">
-        {activeTab === "created" && (
-          <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Your Created Posts</h2>
-            <p className="text-gray-600 mb-4">No posts yet? Start creating now.</p>
-            <button
-              onClick={() => router.push("/upload")}
-              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
-            >
-              Create Post
-            </button>
-          </>
-        )}
-
-        {activeTab === "saved" && (
-          <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Saved Posts</h2>
-            <p className="text-gray-600 mb-4">You haven't saved anything yet.</p>
-            <button
-              onClick={() => router.push("/explore")}
-              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
-            >
-              Explore Posts
-            </button>
-          </>
-        )}
-
-        {activeTab === "liked" && (
-          <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Liked Posts</h2>
-            <p className="text-gray-600 mb-4">No liked posts yet.</p>
-            <button
-              onClick={() => router.push("/explore")}
-              className="px-6 py-3 rounded-full font-semibold text-white bg-[var(--primary-color)] hover:opacity-90"
-            >
-              Find Posts to Like
-            </button>
-          </>
-        )}
+      <div className="p-8">
+        {renderTabContent()}
       </div>
 
-      {/* Edit Profile Button */}
-      <div className="mt-4 text-center">
-        <button
-          onClick={() => setIsEditProfileOpen(true)}
-          className="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 font-semibold"
-        >
-          Edit Profile
-        </button>
-      </div>
+      {/* Hidden button to trigger Edit Profile Modal */}
+      <button
+        id="edit-profile-btn"
+        onClick={() => setIsEditProfileOpen(true)}
+        className="hidden"
+      >
+        Edit Profile
+      </button>
 
       {/* Edit Profile Modal */}
       {isEditProfileOpen && (
