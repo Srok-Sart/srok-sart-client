@@ -1,10 +1,22 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getUserProfile } from "@/api/get-user-profile";
 import Navigation from "../components/navigation";
 import ProfileImage from "../components/profile-image";
 import ProfileActions from "./profile-actions";
 import ProfileContent from "./profile-content";
+import { AUTH_COOKIE_NAME } from "@/lib/auth"; // Import your auth cookie name
 
 export default async function ProfilePage() {
+  // Get auth token from cookie (server component)
+  const cookieStore = cookies();
+  const token = (await cookieStore).get(AUTH_COOKIE_NAME)?.value;
+
+  // Redirect to login if not authenticated
+  if (!token) {
+    redirect('/login');
+  }
+
   const profile = await getUserProfile();
 
   return (
@@ -45,9 +57,9 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Profile Content (with tabs, create post, and edit profile modal) */}
+        {/* Profile Content - Pass token to the client component */}
         <div className='bg-white rounded-xl shadow-md overflow-hidden'>
-          <ProfileContent initialProfile={profile} />
+          <ProfileContent initialProfile={profile} token={token} />
         </div>
       </div>
     </div>
