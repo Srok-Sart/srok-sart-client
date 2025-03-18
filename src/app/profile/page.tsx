@@ -2,6 +2,7 @@ import { getUserProfile } from "@/api/get-user-profile";
 import Image from "next/image";
 import Navigation from "../components/navigation";
 import ProfileContent from "./profile-content";
+import ProfileImage from "../components/profile-image";
 
 export default async function ProfilePage() {
   const profile = await getUserProfile();
@@ -12,13 +13,12 @@ export default async function ProfilePage() {
       <div className='max-w-4xl mx-auto px-4 py-8 mt-7'>
         {/* Profile Header */}
         <div className='flex flex-col items-center space-y-4'>
-          <div className='w-24 h-24 rounded-full overflow-hidden border-4 border-[var(--primary-color)]'>
-            <Image
-              src={profile.profileImageUrl ?? "/placeholder-avatar.png"}
-              alt='Profile'
-              width={100}
-              height={100}
-              className='w-full h-full object-cover rounded-full'
+          <div className='w-24 h-24 rounded-full overflow-hidden border-4 border-[var(--primary-color)] flex items-center justify-center'>
+            <ProfileImage 
+              src={profile.profileImageUrl}
+              alt={profile.username}
+              size={96} 
+              className="w-full h-full object-cover"
             />
           </div>
           <h1 className='text-3xl font-bold'>@{profile.username}</h1>
