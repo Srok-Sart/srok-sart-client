@@ -1,6 +1,7 @@
 "use server";
 
 import { ApiError } from "next/dist/server/api-utils";
+import { cookies } from "next/headers";
 
 export async function fetcher<T>(
   endpoint: string,
@@ -8,6 +9,7 @@ export async function fetcher<T>(
   token?: string
 ): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  token = (await cookies()).get("accessToken")?.value;
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -18,11 +20,12 @@ export async function fetcher<T>(
   const defaultOptions: RequestInit = {
     headers,
     credentials: "include",
-    cache: "no-store",
     ...options,
   };
 
   const response = await fetch(`${baseUrl}${endpoint}`, defaultOptions);
+
+  console.log("vanetah", response);
 
   if (!response.ok) {
     let errorMessage = response.statusText;
