@@ -114,7 +114,6 @@ export default function ProfileContent({
       >
         Edit Profile
       </button>
-
       {/* Edit Profile Modal */}
       {isEditProfileOpen && (
         <EditProfileModal
