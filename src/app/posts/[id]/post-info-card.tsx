@@ -227,21 +227,21 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
       {/* Creator info */}
       <div className='flex items-center'>
         <div className='h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600'>
-          {post.user.profileImageUrl ? (
+          {post.user?.profileImageUrl ? (
             <Image
-              src={post.user.profileImageUrl}
-              alt={post.user.username}
+              src={post.user?.profileImageUrl}
+              alt={post.user?.username}
               width={40}
               height={40}
               className='rounded-full'
             />
           ) : (
-            post.user.username.charAt(0).toUpperCase()
+            post.user?.username.charAt(0).toUpperCase()
           )}
         </div>
         <div className='ml-3'>
           <p className='text-sm font-medium text-gray-900'>
-            {post.user.username}
+            {post.user?.username}
           </p>
           <p className='text-xs text-gray-500'>
             {new Date(post.createdAt).toLocaleDateString("en-US", {

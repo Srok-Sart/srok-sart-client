@@ -1,7 +1,7 @@
 import { fetcher } from "@/api/use-fetcher";
 import { type Post } from "@/app/interfaces/post";
-import PostDetailPage from "@/app/posts/[id]/post-detail";
 import { getAuthToken } from "@/lib/auth";
+import PostDetailPage from "./post-detail";
 
 interface PageProps {
   params: {

@@ -26,7 +26,7 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
     setIsLoading(true);
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/posts`;
-      
+
       const response = await fetch(apiUrl, {
         credentials: "include",
         headers: {
@@ -39,10 +39,10 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
       }
 
       const result = await response.json();
-      
+
       if (result && Array.isArray(result.data)) {
         // Filter posts to include only those created by the current user
-        const userPosts = result.data.filter((post: Post) => 
+        const userPosts = result.data.filter((post: Post) =>
           post.user?.id === userId
         );
         setUserPosts(userPosts);
@@ -70,7 +70,7 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
     if (!isLoading && userPosts.length > 0) {
       // Find all video elements and set up event listeners
       const videoElements = document.querySelectorAll('video');
-      
+
       videoElements.forEach(video => {
         // Update duration display when metadata is loaded
         if (!video.getAttribute('data-listeners-attached')) {
@@ -81,13 +81,13 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
               durationBadge.textContent = duration;
             }
           });
-          
+
           // Handle mouseenter for desktop devices - auto play
           video.parentElement?.addEventListener('mouseenter', function() {
             if (window.innerWidth > 768) { // Only for desktop
               video.play().catch(() => {});
               video.setAttribute('data-is-playing', 'true');
-              
+
               // Hide play button while hovering
               const playButton = video.parentElement?.querySelector('.play-button-container');
               if (playButton) {
@@ -95,20 +95,20 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
               }
             }
           });
-          
+
           // Handle mouseleave - pause and reset
           video.parentElement?.addEventListener('mouseleave', function() {
             video.pause();
             video.currentTime = 0;
             video.setAttribute('data-is-playing', 'false');
-            
+
             // Show play button when not hovering
             const playButton = video.parentElement?.querySelector('.play-button-container');
             if (playButton) {
               playButton.classList.remove('opacity-0');
             }
           });
-          
+
           // Mark this video as having listeners attached
           video.setAttribute('data-listeners-attached', 'true');
         }
@@ -120,11 +120,11 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
   const renderPostThumbnailCard = (post: Post) => {
     // Check if post is a video type
     const isVideoPost = post.postType === PostType.VIDEO;
-    
+
     return (
       <div key={post.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden group flex flex-col h-full max-h-[520px]">
         {/* Post Thumbnail */}
-        <div 
+        <div
           className="relative overflow-hidden cursor-pointer aspect-[4/3]"
           onClick={() => router.push(`/posts/${post.id}`)}
           data-post-id={post.id}
@@ -133,7 +133,7 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
             <>
               <video
                 className="w-full h-full object-contain rounded-lg bg-gray-100"
-                src={post.imageUrls && post.imageUrls.length > 0 ? 
+                src={post.imageUrls && post.imageUrls.length > 0 ?
                   `${process.env.NEXT_PUBLIC_API_URL}${post.imageUrls[0]}` : undefined}
                 loop
                 muted
@@ -153,7 +153,7 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
                   <FaPlay className="text-white" size={24} />
                 </div>
               </div>
-              
+
               {/* Video Duration Badge */}
               <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded z-10">
                 0:00
@@ -162,9 +162,9 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
           ) : (
             <>
               {post.thumbnailUrl ? (
-                <Image 
+                <Image
                   src={process.env.NEXT_PUBLIC_API_URL + post.thumbnailUrl}
-                  alt={post.title} 
+                  alt={post.title}
                   className="w-full h-full object-contain bg-gray-100 transition-transform duration-300 group-hover:scale-105"
                   width={300}
                   height={200}
@@ -181,29 +181,29 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
             </>
           )}
         </div>
-        
+
         <div className="p-4 flex-1 flex flex-col">
           {/* Title and Status Badge */}
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-semibold text-gray-800 line-clamp-1">{post.title}</h3>
             {post.postStatus && (
               <span className={`ml-2 px-2 py-1 text-xs rounded-full font-medium flex-shrink-0 ${
-                post.postStatus === 'PUBLISH' 
-                  ? 'bg-green-100 text-green-700' 
-                  : post.postStatus === 'PENDING' 
-                    ? 'bg-yellow-100 text-yellow-700' 
+                post.postStatus === 'PUBLISH'
+                  ? 'bg-green-100 text-green-700'
+                  : post.postStatus === 'PENDING'
+                    ? 'bg-yellow-100 text-yellow-700'
                     : 'bg-red-100 text-red-700'
               }`}>
                 {post.postStatus}
               </span>
             )}
           </div>
-          
+
           {/* Description */}
           <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
             {post.description || "No description available"}
           </p>
-          
+
           {/* Tags and metadata */}
           <div className="flex flex-wrap gap-2 mb-3">
             {post.postType && (
@@ -217,17 +217,17 @@ export default function CreatedPostsTab({ userId }: CreatedPostsTabProps) {
               </span>
             )}
           </div>
-          
+
           {/* Date and View Button */}
           <div className="flex justify-between items-center pt-2 border-t border-gray-100">
             <span className="text-xs text-gray-500">
               {new Date(post.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric', 
-                month: 'short', 
+                year: 'numeric',
+                month: 'short',
                 day: 'numeric'
               })}
             </span>
-            <button 
+            <button
               onClick={() => router.push(`/posts/${post.id}`)}
               className="px-4 py-2 text-sm rounded-full bg-[var(--primary-color)] text-white hover:opacity-90 transition-opacity"
             >
