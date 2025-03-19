@@ -28,7 +28,7 @@ export default async function ProfilePage() {
           <div className='flex flex-col sm:flex-row sm:items-center'>
             {/* Profile Image Section */}
             <div className='flex justify-center sm:justify-start mb-6 sm:mb-0'>
-              <div className='w-32 h-32 rounded-full overflow-hidden border-4 border-[var(--primary-color)] flex items-center justify-center'>
+              <div className='w-32 h-32 rounded-full overflow-hidden flex items-center justify-center'>
                 <ProfileImage
                   src={profile.profileImageUrl}
                   alt={profile.username}

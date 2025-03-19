@@ -45,22 +45,9 @@ export default function ProfileContent({
 
   const handleProfileUpdate = async (updatedProfile: UserProfile) => {
     try {
-      const response = await fetch("http://localhost:4000/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // Use the token passed from server component
-        },
-        body: JSON.stringify(updatedProfile),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update profile: ${response.status}`);
-      }
-
-      const newUser = await response.json();
-      setProfile(newUser);
+      // We'll let the EditProfileModal component handle the API call
+      // Just update our local state with the result
+      setProfile(updatedProfile);
       setIsEditProfileOpen(false);
       router.refresh();
     } catch (error) {
@@ -123,6 +110,7 @@ export default function ProfileContent({
           profile={profile}
           onClose={() => setIsEditProfileOpen(false)}
           onSave={handleProfileUpdate}
+          token={token}
         />
       )}
     </>
