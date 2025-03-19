@@ -1,191 +1,154 @@
 import { Post } from "@/app/interfaces/post";
+import { BookmarkCollection } from "@/app/interfaces/collection"; // Import the BookmarkCollection interface
+import { fetcher } from "./use-fetcher"; // Adjust the import path
 
-export const createCollection = async (collection: { name: string; isPrivate: boolean }) => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(collection),
-  });
-  return response.json();
-};
-
-export const fetchCollections = async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch collections");
-  }
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
-};
-
-export const fetchACollections = async (id: string) => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch collections");
-  }
-  const data = await response.json();
-  return data;
-};
-
-export const updateCollection = async (id: string, collection: { name: string; isPrivate: boolean }) => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(collection),
-  });
-  return response.json();
-};
-
-// export const deleteCollection = async (id: string) => {
-//   try {
-//     // Fetch the collection to check if it has posts
-//     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`);
-//     if (!response.ok) {
-//       throw new Error("Failed to fetch collection");
-//     }
-
-//     const collection = await response.json();
-//     console.log("Collection:", collection); // Debugging
-
-//     // Check if the collection has posts
-//     if (collection.posts && collection.posts.length > 0) {
-//       throw new Error("Cannot delete collection because it contains posts");
-//     }
-
-//     // Delete the collection
-//     const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`, {
-//       method: "DELETE",
-//     });
-
-//     if (!deleteResponse.ok) {
-//       const errorText = await deleteResponse.text(); // Log the error response
-//       console.error("Delete response error:", errorText); // Debugging
-//       throw new Error(`Failed to delete collection: ${errorText}`);
-//     }
-
-//     return deleteResponse.json();
-//   } catch (error) {
-//     console.error("Error in deleteCollection:", error);
-//     throw error;
-//   }
-// };
-
-export const deleteCollection = async (id: string) => {
+export const createCollection = async (collection: { name: string; isPrivate: boolean }): Promise<BookmarkCollection> => {
   try {
-    console.log("Fetching collection to check for posts..."); // Debugging
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`);
-    if (!response.ok) {
-      const errorText = await response.text(); // Log the error response
-      console.error("Fetch collection error:", errorText); // Debugging
-      throw new Error(`Failed to fetch collection: ${errorText}`);
-    }
+    return await fetcher<BookmarkCollection>("/bookmarks/collections", {
+      method: "POST",
+      body: JSON.stringify(collection),
+    });
+  } catch (error) {
+    console.error("Error creating collection:", error);
+    throw error;
+  }
+};
 
-    const collection = await response.json();
-    console.log("Collection fetched:", collection); // Debugging
+export const fetchCollections = async (): Promise<BookmarkCollection[]> => {
+  try {
+    const data = await fetcher<BookmarkCollection[]>("/bookmarks/collections");
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error fetching collections:", error);
+    throw error;
+  }
+};
 
-    // Check if the collection has posts
-    if (collection.posts && collection.posts.length > 0) {
-      throw new Error("Cannot delete collection because it contains posts");
-    }
+export const fetchACollections = async (id: string): Promise<BookmarkCollection> => {
+  try {
+    return await fetcher<BookmarkCollection>(`/bookmarks/collections/${id}`);
+  } catch (error) {
+    console.error("Error fetching collection:", error);
+    throw error;
+  }
+};
 
-    console.log("Deleting collection..."); // Debugging
-    const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${id}`, {
+export const updateCollection = async (id: string, collection: { name: string; isPrivate: boolean }): Promise<BookmarkCollection> => {
+  try {
+    return await fetcher<BookmarkCollection>(`/bookmarks/collections/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(collection),
+    });
+  } catch (error) {
+    console.error("Error updating collection:", error);
+    throw error;
+  }
+};
+
+export const deleteCollection = async (id: string): Promise<{}> => {
+  try {
+    const response = await fetcher<{ status: number }>(`/bookmarks/collections/${id}`, {
       method: "DELETE",
     });
 
-    if (!deleteResponse.ok) {
-      const errorText = await deleteResponse.text(); // Log the error response
-      console.error("Delete collection error:", errorText); // Debugging
-      throw new Error(`Failed to delete collection: ${errorText}`);
+    if (response.status === 204) {
+      return {}; // Handle empty response
     }
 
-    // Ensure the response is JSON
-    const deleteResponseText = await deleteResponse.text();
-    const deleteResponseData = deleteResponseText ? JSON.parse(deleteResponseText) : {};
-    console.log("Delete response:", deleteResponseData); // Debugging
-
-    return deleteResponseData;
+    return response;
   } catch (error) {
-    console.error("Error in deleteCollection:", error);
+    console.error("Error deleting collection:", error);
     throw error;
   }
 };
 
 export const fetchPostsInCollection = async (collectionId: string): Promise<Post[]> => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${collectionId}/posts`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch posts in collection");
+  try {
+    const data = await fetcher<Post[]>(`/bookmarks/collections/${collectionId}/posts`);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error fetching posts in collection:", error);
+    throw error;
   }
-
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
 };
-
 
 export const unsavePostFromCollection = async (collectionId: string, postId: number): Promise<void> => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/post-bookmarks`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      collectionId,
-      postId,
-    }),
-  });
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/post-bookmarks`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        collectionId,
+        postId,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error("Failed to unsave post from collection");
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to unsave post from collection: ${errorText}`);
+    }
+
+    // Handle empty response (e.g., 204 No Content)
+    if (response.status === 204) {
+      return; // No content to parse
+    }
+
+    // Parse JSON only if the response is not empty
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error unsaving post from collection:", error);
+    throw error;
   }
 };
 
-export const savePostToCollection = async (collectionId: string, postId: number) => {
-  // Fetch the current posts in the collection
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/collections/${collectionId}/posts`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch posts in collection");
+export const savePostToCollection = async (collectionId: string, postId: number): Promise<Post> => {
+  try {
+    const postsInCollection = await fetcher<Post[]>(
+      `/bookmarks/collections/${collectionId}/posts`
+    );
+
+    if (postsInCollection.some((post) => post.id === postId)) {
+      throw new Error("Post already exists in the collection");
+    }
+
+    return await fetcher<Post>("/bookmarks/post-bookmarks", {
+      method: "POST",
+      body: JSON.stringify({ collectionId, postId }),
+    });
+  } catch (error) {
+    console.error("Error saving post to collection:", error);
+    throw error;
   }
-
-  const postsInCollection = await response.json();
-  console.log("Posts in collection:", postsInCollection); // Debugging
-
-  // Check if the post already exists in the collection
-  if (postsInCollection.some((post: Post) => post.id === postId)) {
-    throw new Error("Post already exists in the collection");
-  }
-
-  // Save the post to the collection
-  const saveResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookmarks/post-bookmarks`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      collectionId,
-      postId,
-    }),
-  });
-
-  if (!saveResponse.ok) {
-    throw new Error("Failed to save post to collection");
-  }
-
-  return saveResponse.json();
 };
 
-export const movePostToCollection = async (postId: string, fromCollectionId: string, toCollectionId: string) => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/collections/${fromCollectionId}/posts/${postId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ toCollectionId }),
-  });
-  return response.json();
+export const movePostToCollection = async (postId: string, fromCollectionId: string, toCollectionId: string): Promise<Post> => {
+  try {
+    return await fetcher<Post>(
+      `/collections/${fromCollectionId}/posts/${postId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ toCollectionId }),
+      }
+    );
+  } catch (error) {
+    console.error("Error moving post to collection:", error);
+    throw error;
+  }
 };
 
-export const deletePostFromCollection = async (collectionId: string, postId: string) => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/collections/${collectionId}/posts/${postId}`, {
-    method: "DELETE",
-  });
-  return response.json();
+export const deletePostFromCollection = async (collectionId: string, postId: string): Promise<{}> => {
+  try {
+    return await fetcher<{}>(
+      `/collections/${collectionId}/posts/${postId}`,
+      {
+        method: "DELETE",
+      }
+    );
+  } catch (error) {
+    console.error("Error deleting post from collection:", error);
+    throw error;
+  }
 };
