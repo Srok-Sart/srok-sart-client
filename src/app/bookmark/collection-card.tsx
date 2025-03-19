@@ -6,7 +6,8 @@ import { FaBookmark, FaEdit, FaEllipsisV, FaTag, FaTrash } from "react-icons/fa"
 import { deleteCollection, fetchPostsInCollection, updateCollection } from "../../api/bookmark";
 import useClickOutside from "../../hooks/use-click-outside";
 import { Post } from "../interfaces/post";
-import { BookmarkCollection } from "../interfaces/collection"; // Import BookmarkCollection
+import { BookmarkCollection } from "../interfaces/collection"; 
+import { generateRandomColor } from "@/app/utils/colors";
 
 interface CollectionCardProps {
   collection: BookmarkCollection; // Use BookmarkCollection
@@ -19,6 +20,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollecti
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(collection.name);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [backgroundColor, setBackgroundColor] = useState<string>(generateRandomColor());
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useClickOutside(menuRef, () => setMenuOpen(false));
@@ -105,7 +107,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollecti
         className="relative w-full h-48 overflow-hidden rounded-md cursor-pointer flex items-center justify-center"
         onClick={handleNavigateToCollection}
         style={{
-          backgroundColor: firstPostThumbnail ? "transparent" : collection.color || "#c78cff", // Fallback color
+          backgroundColor: firstPostThumbnail ? "transparent" : backgroundColor, // Fallback color
           backgroundImage: firstPostThumbnail
             ? `url(${process.env.NEXT_PUBLIC_API_URL + firstPostThumbnail})`
             : "none",
@@ -154,9 +156,6 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollecti
 
       <p className="text-sm text-black">{collection.saved ?? 0} Saved</p>
       <p className="text-sm text-gray-500">{collection.description}</p>
-      <p className="text-sm text-gray-500">
-        {collection.isPrivate ? "Private" : "Public"}
-      </p>
 
       {!collection.isDefault && (
         <div className="relative" ref={menuRef}>
