@@ -3,48 +3,57 @@
 import React, { useState } from "react";
 import { FaPlus } from "react-icons/fa";
 import { createCollection } from "../../api/bookmark";
-import { generateRandomColor } from "@/app/utils/colors"; // Import the utility function
-
-interface Collection {
-  id: string;
-  name: string;
-  saved?: number;
-  isDefault?: boolean;
-  thumbnails?: string[];
-  description?: string;
-  isPrivate?: boolean;
-  color: string; // Add this property
-}
+import { generateRandomColor } from "@/app/utils/colors";
+import { useRouter } from "next/navigation";
+import { BookmarkCollection } from "@/app/interfaces/collection"; // Import BookmarkCollection
 
 interface AddCollectionProps {
-  setCollections: React.Dispatch<React.SetStateAction<Collection[]>>;
+  setCollections: React.Dispatch<React.SetStateAction<BookmarkCollection[]>>;
 }
 
 const AddCollection: React.FC<AddCollectionProps> = ({ setCollections }) => {
+  const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
 
   const handleAddCollection = async () => {
-    if (!newCollectionName.trim()) return;
+    if (!newCollectionName.trim()) {
+      alert("Collection name cannot be empty.");
+      return;
+    }
 
-    const newCollection = await createCollection({
-      name: newCollectionName,
-      isPrivate: true, // or false, depending on your logic
-    });
+    try {
+      const newCollection = await createCollection({
+        name: newCollectionName,
+        isPrivate: true,
+      });
 
-    setCollections((prev) => [
-      ...prev,
-      {
-        id: newCollection.id,
-        name: newCollection.name,
-        saved: 0,
-        thumbnails: [], // No thumbnails initially
-        color: generateRandomColor(), // Assign a random color
-      },
-    ]);
+      setCollections((prev) => [
+        ...prev,
+        {
+          ...newCollection,
+          saved: 0,
+          thumbnails: [],
+          color: generateRandomColor(),
+        },
+      ]);
 
-    setNewCollectionName("");
-    setIsAdding(false);
+      setNewCollectionName("");
+      setIsAdding(false);
+    } catch (error) {
+      console.error("Failed to create collection:", error);
+
+      if (error instanceof Error) {
+        if (error.message.includes("401")) {
+          alert("Your session has expired. Please log in again.");
+          router.push("/login");
+        } else {
+          alert("Failed to create collection. Please try again.");
+        }
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
+    }
   };
 
   return (

@@ -6,52 +6,27 @@ import { useEffect, useState } from "react";
 import { fetchCollections } from "../../api/bookmark";
 import AddCollection from "./add-collection";
 import CollectionCard from "./collection-card";
-
-interface Collection {
-  id: string;
-  name: string;
-  saved?: number;
-  isDefault?: boolean;
-  thumbnails?: string[];
-  description?: string;
-  isPrivate?: boolean;
-  color: string;
-}
+import { BookmarkCollection } from "../interfaces/collection"; // Import BookmarkCollection
+import { useRouter } from "next/navigation"; // Import useRouter
 
 export default function BookmarkPage() {
-  const [collections, setCollections] = useState<Collection[]>([]);
+  const router = useRouter();
+  const [collections, setCollections] = useState<BookmarkCollection[]>([]); // Use BookmarkCollection
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadCollections = async () => {
       try {
-        const response = await fetchCollections();
-        console.log("API Response:", response); // Debugging
-
-        // Ensure the response is an array
-        if (!Array.isArray(response)) {
-          throw new Error("API response is not an array");
-        }
-
-        // Transform the API response to match the Collection interface
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const formattedCollections = response.map((collection: any) => ({
-          id: collection.id.toString(), // Ensure ID is a string
-          name: collection.name,
-          saved: 0, // Default value for saved
-          isDefault: false, // Default value for isDefault
-          thumbnails: [], // Only one default image
-          description: collection.description, // Include description from API
-          isPrivate: collection.isPrivate, // Include isPrivate from API
-          color: generateRandomColor(), // Assign a random color
-        }));
-
-        setCollections(formattedCollections);
+        const data = await fetchCollections();
+        setCollections(data);
       } catch (error) {
         console.error("Failed to fetch collections:", error);
-        setCollections([]); // Fallback to an empty array in case of error
+        if (error instanceof Error && error.message.includes("401")) {
+          alert("Your session has expired. Please log in again.");
+          router.push("/login");
+        }
       } finally {
-        setIsLoading(false); // Set loading to false after fetching
+        setIsLoading(false);
       }
     };
 
@@ -63,10 +38,10 @@ export default function BookmarkPage() {
   }
 
   return (
-    <div className='min-h-screen mt-10'>
+    <div className="min-h-screen mt-10">
       <Navigation />
-      <div className='p-6 max-w-7xl mx-auto'>
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-6'>
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <AddCollection setCollections={setCollections} />
           {collections.map((col) => (
             <CollectionCard
