@@ -4,7 +4,7 @@ import { getUserProfile } from "@/api/get-user-profile";
 import ProfileImage from "../components/profile-image";
 import ProfileActions from "./profile-actions";
 import ProfileContent from "./profile-content";
-import { AUTH_COOKIE_NAME } from "@/lib/auth"; // Import your auth cookie name
+import { AUTH_COOKIE_NAME } from "@/lib/auth";
 import NavigationWrapper from "../components/navigation-wrapper";
 
 export default async function ProfilePage() {
