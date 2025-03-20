@@ -281,7 +281,7 @@ export const UserContribution = ({ userData }: UserContributionProps) => {
                       <span className='font-medium text-green-700'>
                         {
                           progress.globalComparison
-                            .environmentalImpactPercentage
+                            .environmentalImpactPercentage.toFixed(2)
                         }
                         % of average
                       </span>
@@ -290,7 +290,7 @@ export const UserContribution = ({ userData }: UserContributionProps) => {
                       <div
                         className='bg-green-600 h-2 rounded-full'
                         style={{
-                          width: `${progress.globalComparison.environmentalImpactPercentage}%`,
+                          width: `${progress.globalComparison.environmentalImpactPercentage.toFixed(2)}%`,
                         }}
                       ></div>
                     </div>
@@ -302,7 +302,7 @@ export const UserContribution = ({ userData }: UserContributionProps) => {
                         Your Completed Projects
                       </span>
                       <span className='font-medium text-blue-700'>
-                        {progress.globalComparison.postsCompletedPercentage}% of
+                        {progress.globalComparison.postsCompletedPercentage.toFixed(2)}% of
                         average
                       </span>
                     </div>
@@ -310,7 +310,7 @@ export const UserContribution = ({ userData }: UserContributionProps) => {
                       <div
                         className='bg-blue-600 h-2 rounded-full'
                         style={{
-                          width: `${progress.globalComparison.postsCompletedPercentage}%`,
+                          width: `${progress.globalComparison.postsCompletedPercentage.toFixed(2)}%`,
                         }}
                       ></div>
                     </div>

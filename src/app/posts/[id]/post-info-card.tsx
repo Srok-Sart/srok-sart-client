@@ -260,9 +260,9 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
       {/* Engagement Stats */}
       <div className='bg-white p-4 rounded-lg shadow-sm'>
         <div className='flex items-center justify-between'>
-          <div className='text-sm text-gray-500'>
+          {/* <div className='text-sm text-gray-500'>
             <span className='font-medium'>{post.viewCount}</span> views
-          </div>
+          </div> */}
           <div className='text-sm text-gray-500'>
             <span className='font-medium'>{likeCount}</span> likes
           </div>

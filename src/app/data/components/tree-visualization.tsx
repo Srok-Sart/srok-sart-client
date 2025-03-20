@@ -60,7 +60,7 @@ export const TreeVisualization = ({
         style={{ maxWidth: `${baseSize}px`, marginLeft: '-150px' }}
       >
         <motion.div
-          className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-medium"
+          className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium"
           style={{ marginBottom: `${milestoneBadgeMargin}px` }}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
