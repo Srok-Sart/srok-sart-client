@@ -48,15 +48,6 @@ const ActionButton = ({
 export default function ProfileActions() {
   return (
     <div className="mt-4 flex flex-wrap justify-center sm:justify-start gap-3">
-      <ActionButton 
-        variant="default"
-        onClick={() => {
-          alert("Share functionality would go here");
-        }}
-        icon={<FaShare size={14} />}
-      >
-        Share
-      </ActionButton>
       
       <ActionButton 
         variant="default"
