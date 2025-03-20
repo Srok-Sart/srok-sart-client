@@ -332,7 +332,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
           <div className='w-full lg:w-2/3'>
             {/* Media gallery with fullscreen toggle */}
             <div className='relative bg-gray-100 rounded-lg overflow-hidden'>
-              <button
+              {/* <button
                 onClick={handleFullscreenToggle}
                 className='absolute top-4 right-4 bg-white bg-opacity-90 text-gray-800 p-2 rounded-full z-10 shadow-md hover:bg-opacity-100 transition-all duration-200'
                 aria-label='Toggle fullscreen'
@@ -366,7 +366,7 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
                     />
                   </svg>
                 )}
-              </button>
+              </button> */}
               <MediaGallery post={post} />
             </div>
 
@@ -408,11 +408,11 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
 
           <div className='w-full lg:w-1/3 space-y-6'>
             <div className='bg-white p-6 rounded-lg shadow-sm'>
-              <div className='flex justify-between items-center mb-4'>
+              {/* <div className='flex justify-between items-center mb-4'>
                 <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800'>
                   {post.postDifficulty}
                 </span>
-              </div>
+              </div> */}
 
               <div className='mb-6'>
                 <PostInfoCard
