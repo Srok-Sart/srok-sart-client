@@ -7,6 +7,9 @@ interface HeaderSectionProps {
   handleSortChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   setShowAddNewPost?: (show: boolean) => void;
   hideAddButton?: boolean;
+  postStatus?: string;
+  handlePostStatusChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  showPostStatusFilter?: boolean;
 }
 
 export const HeaderSection = ({
@@ -15,7 +18,10 @@ export const HeaderSection = ({
   sortOption,
   handleSortChange,
   setShowAddNewPost,
-  hideAddButton = false
+  hideAddButton = false,
+  postStatus = "ALL",
+  handlePostStatusChange,
+  showPostStatusFilter = true
 }: HeaderSectionProps) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-2 sm:space-y-0">
@@ -27,7 +33,25 @@ export const HeaderSection = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-        />
+          />
+          {/* Post Status Filter */}
+          {showPostStatusFilter && handlePostStatusChange && (
+            <select
+              value={postStatus}
+              onChange={handlePostStatusChange}
+              className="
+                min-w-[120px]
+                px-3 py-2
+                border rounded-md
+                focus:outline-none focus:ring-2 focus:ring-purple-500
+              "
+            >
+              <option value="ALL">All Posts</option>
+              <option value="PUBLISH">Published</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          )}
         <select
           value={sortOption}
           onChange={handleSortChange}

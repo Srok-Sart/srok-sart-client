@@ -51,7 +51,7 @@ const FilterBar = () => {
         </select>
 
         {/* Post Status Filter */}
-        <select
+        {/* <select
           value={searchParams.get("postStatus") || "PUBLISH"}
           onChange={(e) => updateParams("postStatus", e.target.value)}
           className="
@@ -71,7 +71,7 @@ const FilterBar = () => {
           <option value="PUBLISH">Published</option>
           <option value="PENDING">Pending</option>
           <option value="REJECTED">Rejected</option>
-        </select>
+        </select> */}
 
         {/* Sorting Filter */}
         <select
