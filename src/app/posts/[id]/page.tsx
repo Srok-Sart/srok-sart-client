@@ -2,6 +2,7 @@ import { fetcher } from "@/api/use-fetcher";
 import { type Post } from "@/app/interfaces/post";
 import { getAuthToken } from "@/lib/auth";
 import PostDetailPage from "./post-detail";
+import NavigationWrapper from "@/app/components/navigation-wrapper";
 
 interface PageProps {
   params: {
@@ -26,11 +27,14 @@ const Page = async ({ params }: PageProps) => {
   );
 
   return (
-    <PostDetailPage
-      post={post}
-      isAuthenticated={!!token}
-      token={token || undefined}
-    />
+    <>
+      <NavigationWrapper />
+      <PostDetailPage
+        post={post}
+        isAuthenticated={!!token}
+        token={token || undefined} 
+      />
+    </>
   );
 };
 

@@ -1,11 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/api/get-user-profile";
-import Navigation from "../components/navigation";
 import ProfileImage from "../components/profile-image";
 import ProfileActions from "./profile-actions";
 import ProfileContent from "./profile-content";
 import { AUTH_COOKIE_NAME } from "@/lib/auth"; // Import your auth cookie name
+import NavigationWrapper from "../components/navigation-wrapper";
 
 export default async function ProfilePage() {
   // Get auth token from cookie (server component)
@@ -21,7 +21,7 @@ export default async function ProfilePage() {
 
   return (
     <div className='min-h-screen bg-gray-50'>
-      <Navigation />
+      <NavigationWrapper />
       <div className='max-w-4xl mx-auto px-4 py-10'>
         {/* Profile Header Card */}
         <div className='bg-white rounded-xl shadow-md p-8 mb-8'>

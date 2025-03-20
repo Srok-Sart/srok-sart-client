@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_COOKIE_NAME } from "@/lib/auth";
 import UploadRequest from "./upload-request";
-import Navigation from "../components/navigation";
+import NavigationWrapper from "../components/navigation-wrapper";
 
 export default async function Page() {
   const cookieStore = cookies();
@@ -14,7 +14,7 @@ export default async function Page() {
 
   return (
     <div>
-      <Navigation />
+      <NavigationWrapper />
       <UploadRequest token={token} />
     </div>
   );

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaBookmark,
   FaChartBar,
@@ -15,17 +15,49 @@ import {
 import "../globals.css";
 import ProfileImage from "./profile-image";
 
-const Navigation = () => {
+// Props interface
+interface NavigationProps {
+  initialProfileImageUrl?: string | null;
+  initialUsername?: string;
+}
+
+const Navigation = ({ 
+  initialProfileImageUrl = null, 
+  initialUsername = "" 
+}: NavigationProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || ""
   );
-  const [profile] = useState({
-    username: "",
-    profileImageUrl: null,
-  });
+  
+  // State to store the profile image URL
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(initialProfileImageUrl);
+  const [username, setUsername] = useState(initialUsername);
+
+  // Listen for profile update events
+  useEffect(() => {
+    const handleProfileUpdate = (e: CustomEvent) => {
+      console.log("Profile update detected");
+      // @ts-ignore - Add type if needed for CustomEvent
+      const updatedProfile = e.detail;
+      if (updatedProfile?.profileImageUrl) {
+        setProfileImageUrl(updatedProfile.profileImageUrl);
+      }
+      if (updatedProfile?.username) {
+        setUsername(updatedProfile.username);
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    };
+  }, []);
+
   // Reset search by removing the search param from the URL
   const resetSearch = () => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -122,8 +154,8 @@ const Navigation = () => {
             className='rounded-full overflow-hidden w-10 h-10'
           >
             <ProfileImage
-              src={profile.profileImageUrl}
-              alt={profile.username || "User Profile"}
+              src={profileImageUrl}
+              alt={username || "User Profile"}
               size={40}
               className='w-10 h-10 rounded-full'
             />
@@ -213,7 +245,18 @@ const Navigation = () => {
               : "text-gray-500 hover:text-black"
           }`}
         >
-          <FaUser size={22} />
+          {profileImageUrl ? (
+            <div className="w-6 h-6 rounded-full overflow-hidden">
+              <ProfileImage
+                src={profileImageUrl}
+                alt={username || "User Profile"}
+                size={24}
+                className="w-6 h-6 rounded-full"
+              />
+            </div>
+          ) : (
+            <FaUser size={22} />
+          )}
         </Link>
       </nav>
 

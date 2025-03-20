@@ -2,7 +2,6 @@
 
 import { fetchCollections, savePostToCollection } from "@/api/bookmark";
 import { checkIfLiked, toggleLike } from "@/api/like";
-import Navigation from "@/app/components/navigation";
 import { Post } from "@/app/interfaces/post";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -272,7 +271,6 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
 
   return (
     <>
-      <Navigation />
       {/* Toast Notification */}
       {notification && (
         <div
