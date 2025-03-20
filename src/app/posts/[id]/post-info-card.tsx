@@ -10,7 +10,6 @@ import { markPostAsCompleted } from "@/api/post";
 import ProfileImage from "@/app/components/profile-image";
 import { Post } from "@/app/interfaces/post";
 import { useDebounce } from "@/hooks/use-debounce";
-import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { FaBookmark, FaComment, FaHeart, FaShareAlt } from "react-icons/fa";
 import {
@@ -226,18 +225,13 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
     <div className='flex-1 space-y-6'>
       {/* Creator info */}
       <div className='flex items-center'>
-        <div className='h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600'>
-          {post.user?.profileImageUrl ? (
-            <Image
-              src={post.user?.profileImageUrl}
-              alt={post.user?.username}
-              width={40}
-              height={40}
-              className='rounded-full'
-            />
-          ) : (
-            post.user?.username.charAt(0).toUpperCase()
-          )}
+        <div className='h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden'>
+          <ProfileImage
+            src={post.user?.profileImageUrl}
+            alt={post.user?.username || "User"}
+            size={40}
+            className='w-full h-full object-cover'
+          />
         </div>
         <div className='ml-3'>
           <p className='text-sm font-medium text-gray-900'>
@@ -490,12 +484,12 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                     <>
                       <div className='flex justify-between items-start'>
                         <div className='flex items-center gap-2'>
-                          <div className='w-8 h-8 rounded-full overflow-hidden'>
+                          <div className='w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden'>
                             <ProfileImage
                               src={comment.user?.profileImageUrl}
                               alt={comment.user?.username || "User"}
                               size={32}
-                              className='rounded-full'
+                              className='w-full h-full object-cover'
                             />
                           </div>
                           <div>
@@ -509,50 +503,6 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
                             </p>
                           </div>
                         </div>
-
-                        {/* Comment actions dropdown - only show for user's own comments */}
-                        {/* {comment.userId && (
-                          <div className='relative'>
-                            <button
-                              className='p-1 rounded-full hover:bg-gray-100'
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleCommentMenu(comment.id);
-                              }}
-                            >
-                              <FaEllipsisV
-                                size={14}
-                                className='text-gray-500'
-                              />
-                            </button>
-                            {activeDropdownId === comment.id && (
-                              <div className='absolute right-0 mt-1 w-36 bg-white shadow-lg rounded-md py-1 z-10'>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditComment(comment.id, comment.content);
-                                    setActiveDropdownId(null);
-                                  }}
-                                  className='w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2'
-                                >
-                                  <FaPen size={12} />
-                                  <span>Edit</span>
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteComment(comment.id);
-                                    setActiveDropdownId(null);
-                                  }}
-                                  className='w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 flex items-center gap-2'
-                                >
-                                  <FaTrash size={12} />
-                                  <span>Delete</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )} */}
                       </div>
                       <p className='mt-2 text-gray-700'>{comment.content}</p>
                     </>
