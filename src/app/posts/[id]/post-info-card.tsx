@@ -237,13 +237,13 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
           <p className='text-sm font-medium text-gray-900'>
             {post.user?.username}
           </p>
-          <p className='text-xs text-gray-500'>
+          {/* <p className='text-xs text-gray-500'>
             {new Date(post.createdAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
               day: "numeric",
             })}
-          </p>
+          </p> */}
         </div>
       </div>
 
