@@ -1,57 +1,35 @@
-"use client";
+import { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME } from "@/lib/auth";
+import { getUserProfile } from "@/api/get-user-profile";
+import NavigationWrapper from '@/app/components/navigation-wrapper';
+import BookmarkContent from "./bookmark-content";
 
-import Navigation from "@/app/components/navigation";
-import { generateRandomColor } from "@/app/utils/colors";
-import { useEffect, useState } from "react";
-import { fetchCollections } from "../../api/bookmark";
-import AddCollection from "./add-collection";
-import CollectionCard from "./collection-card";
-import { BookmarkCollection } from "../interfaces/collection"; // Import BookmarkCollection
-import { useRouter } from "next/navigation"; // Import useRouter
-
-export default function BookmarkPage() {
-  const router = useRouter();
-  const [collections, setCollections] = useState<BookmarkCollection[]>([]); // Use BookmarkCollection
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadCollections = async () => {
-      try {
-        const data = await fetchCollections();
-        setCollections(data);
-      } catch (error) {
-        console.error("Failed to fetch collections:", error);
-        if (error instanceof Error && error.message.includes("401")) {
-          alert("Your session has expired. Please log in again.");
-          router.push("/login");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCollections();
-  }, []);
-
-  if (isLoading) {
-    return <div>Loading collections...</div>;
+export default async function BookmarkPage() {
+  // Get auth token and profile data server-side
+  let profileData = {
+    profileImageUrl: null as string | null,
+    username: ""
+  };
+  
+  try {
+    const cookieStore = cookies();
+    const token = (await cookieStore).get(AUTH_COOKIE_NAME)?.value;
+    
+    if (token) {
+      const profile = await getUserProfile();
+      profileData = {
+        profileImageUrl: profile?.profileImageUrl || null,
+        username: profile?.username || ""
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
   }
-
+  
   return (
-    <div className="min-h-screen mt-10">
-      <Navigation />
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <AddCollection setCollections={setCollections} />
-          {collections.map((col) => (
-            <CollectionCard
-              key={col.id}
-              collection={col}
-              setCollections={setCollections}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
+    <>
+      <NavigationWrapper />
+      <BookmarkContent />
+    </>
   );
 }
