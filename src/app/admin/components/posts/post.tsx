@@ -224,15 +224,16 @@ const Posts = ({ activeTab, token }: PostsProps) => {
               activeTab === "postsRequest" ? handleApproveOrReject : undefined
             }
             isPostsRequestTab={activeTab === "postsRequest"}
+            startIndex={(pagination.page - 1) * pagination.limit} // Add this line to calculate proper starting index
           />
-          
+            
           <Pagination 
             currentPage={pagination.page}
             totalPages={Math.ceil(pagination.total / pagination.limit)}
             onPageChange={handlePageChange}
           />
         </>
-      )}
+    )}
     </div>
   );
 };

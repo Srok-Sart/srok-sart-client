@@ -122,7 +122,7 @@ const PostInfoCard: React.FC<PostInfoCardProps> = ({
             title={token ? "Like this post" : "Sign in to like this post"}
           >
             <FaHeart size={18} />
-            <span>{token ? "Like" : "Sign in to like"}</span>
+            <span>{token ? "Like" : "Sign in"}</span>
           </button>
 
           <button

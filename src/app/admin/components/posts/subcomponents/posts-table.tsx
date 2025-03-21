@@ -10,6 +10,7 @@ interface PostsTableProps {
   onView: (id: number) => void;
   onApproveOrReject?: (id: number, status: "PUBLISH" | "REJECTED") => void;
   isPostsRequestTab?: boolean;
+  startIndex?: number;
 }
 
 export const PostsTable = ({
@@ -19,6 +20,7 @@ export const PostsTable = ({
   onView,
   onApproveOrReject,
   isPostsRequestTab = false,
+  startIndex = 0,
 }: PostsTableProps) => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
@@ -52,7 +54,7 @@ export const PostsTable = ({
       <table className='w-full border-collapse border border-gray-300 text-black text-center bg-white'>
         <thead className='bg-gray-200'>
           <tr>
-            <th className='p-2 border'>ID</th>
+            <th className='p-2 border'>No.</th>
             <th className='p-2 border'>Title</th>
             <th className='p-2 border'>Description</th>
             <th className='p-2 border'>Difficulty Level</th>
@@ -76,11 +78,11 @@ export const PostsTable = ({
               onViewMaterials={handleViewMaterials}
               truncateText={truncateText}
               truncateMaterials={truncateMaterials}
+              displayNumber={startIndex + index + 1}
             />
           ))}
         </tbody>
       </table>
-
       <MaterialsModal post={selectedPost} onClose={() => setSelectedPost(null)} />
     </div>
   );

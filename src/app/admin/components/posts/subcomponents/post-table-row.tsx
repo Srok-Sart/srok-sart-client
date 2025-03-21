@@ -12,6 +12,7 @@ interface PostTableRowProps {
   onViewMaterials: (post: Post) => void;
   truncateText: (text: string, maxLength: number) => string;
   truncateMaterials: (materials: string[], maxLength: number) => string;
+  displayNumber?: number; // Add this new prop
 }
 
 export const PostTableRow = ({
@@ -24,14 +25,15 @@ export const PostTableRow = ({
   onApproveOrReject,
   onViewMaterials,
   truncateText,
-  truncateMaterials
+  truncateMaterials,
+  displayNumber // Add this to parameter list
 }: PostTableRowProps) => {
   const uniqueKey = post.id ?? `post-${index}`;
   const materials = post.postMaterials || [];
 
   return (
     <tr key={uniqueKey} className='hover:bg-gray-50'>
-      <td className='p-2 border'>{post.id}</td>
+      <td className='p-2 border'>{displayNumber !== undefined ? displayNumber : post.id}</td>
       <td className='p-2 border'>{post.title || "Untitled"}</td>
       <td className='p-2 border'>
         {truncateText(post.description ?? "", 50)}
