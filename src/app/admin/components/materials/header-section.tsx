@@ -1,7 +1,7 @@
-import { HiSearch } from "react-icons/hi";
+import React from "react";
 import { FaPlus } from "react-icons/fa";
 
-interface HeaderSectionProps {
+interface MaterialHeaderSectionProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   sortOption: string;
@@ -9,47 +9,42 @@ interface HeaderSectionProps {
   setShowAddNewMaterial: (show: boolean) => void;
 }
 
-export const HeaderSection = ({
+export const MaterialHeaderSection = ({
   searchTerm,
   setSearchTerm,
   sortOption,
   handleSortChange,
   setShowAddNewMaterial
-}: HeaderSectionProps) => {
+}: MaterialHeaderSectionProps) => {
   return (
-    <div className="mb-6 bg-white shadow-sm p-4 rounded-md">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Material Management</h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <HiSearch className="absolute left-3 top-2.5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <select
-              value={sortOption}
-              onChange={handleSortChange}
-              className="border rounded-md px-3 py-2"
-            >
-              <option value="ID Ascending">Sort by: Ascending</option>
-              <option value="ID Descending">Sort by: Descending</option>
-            </select>
-          </div>
-          <button
-            onClick={() => setShowAddNewMaterial(true)}
-            className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary"
-          >
-            <FaPlus className="mr-2" />
-            Add New Material
-          </button>
-        </div>
+    <div className="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-2 sm:space-y-0">
+      <h1 className="text-2xl font-bold">Material Management</h1>
+      <div className="flex items-center space-x-2">
+        <input
+          type="text"
+          placeholder="Search materials..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+        <select
+          value={sortOption}
+          onChange={handleSortChange}
+          className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+          <option value="ID Ascending">ID Ascending</option>
+          <option value="ID Descending">ID Descending</option>
+        </select>
+        <button
+          onClick={() => setShowAddNewMaterial(true)}
+          className="bg-primary text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors flex items-center"
+        >
+          <FaPlus className="mr-2" />
+          Add New Material
+        </button>
       </div>
     </div>
   );
 };
+
+export default MaterialHeaderSection;

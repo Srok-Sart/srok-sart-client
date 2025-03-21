@@ -30,13 +30,14 @@ export const PostTableRow = ({
 }: PostTableRowProps) => {
   const uniqueKey = post.id ?? `post-${index}`;
   const materials = post.postMaterials || [];
+  const rowClass = index % 2 === 0 ? "" : "bg-gray-50";
 
   return (
     <tr key={uniqueKey} className='hover:bg-gray-50'>
       <td className='p-2 border'>{displayNumber !== undefined ? displayNumber : post.id}</td>
       <td className='p-2 border'>{post.title || "Untitled"}</td>
       <td className='p-2 border'>
-        {truncateText(post.description ?? "", 50)}
+        {truncateText(post.description ?? "", 40)}
       </td>
       <td className='p-2 border'>{post.postDifficulty || "N/A"}</td>
       <td className='p-2 border'>{post.postType || "N/A"}</td>
@@ -49,40 +50,40 @@ export const PostTableRow = ({
           >
             {truncateMaterials(
               materials.map((material) => material.material?.name || "Unknown"),
-              3
+              2
             )}
           </span>
         ) : (
-          "No materials"
+          <span>No materials</span>
         )}
       </td>
-      <td className='p-2 border'>
-        <div className='flex justify-center space-x-2'>
+      <td className='px-2 py-1.5 border'>
+        <div className='flex justify-center space-x-1.5'>
           <button
             onClick={() => post.id && onView(post.id)}
             disabled={!post.id}
-            className='bg-blue-100 text-primary hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-2 rounded-full shadow-md'
+            className='bg-blue-100 text-primary hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-2 rounded-full shadow-sm'
             title='View Post'
           >
-            <FaEye className='text-lg' />
+            <FaEye />
           </button>
           {!isPostsRequestTab && (
             <>
               <button
                 onClick={() => post.id && onEdit(post.id)}
                 disabled={!post.id}
-                className='bg-yellow-100 text-yellow-600 hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-2 rounded-full shadow-md'
+                className='bg-yellow-100 text-yellow-600 hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-2 rounded-full shadow-sm'
                 title='Edit Post'
               >
-                <FaEdit className='text-lg' />
+                <FaEdit />
               </button>
               <button
                 onClick={() => post.id && onDelete(post.id)}
                 disabled={!post.id}
-                className='bg-red-100 text-red-600 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-2 rounded-full shadow-md'
+                className='bg-red-100 text-red-600 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-2 rounded-full shadow-sm'
                 title='Delete Post'
               >
-                <FaTrashAlt className='text-lg' />
+                <FaTrashAlt />
               </button>
             </>
           )}
@@ -92,19 +93,19 @@ export const PostTableRow = ({
                 onClick={() =>
                   post.id && onApproveOrReject?.(post.id, "PUBLISH")
                 }
-                className='bg-green-100 text-green-600 hover:bg-green-200 transition-colors p-2 rounded-full shadow-md'
+                className='bg-green-100 text-green-600 hover:bg-green-200 transition-colors p-2 rounded-full shadow-sm'
                 title='Approve Post'
               >
-                <FaCheck className='text-lg' />
+                <FaCheck />
               </button>
               <button
                 onClick={() =>
                   post.id && onApproveOrReject?.(post.id, "REJECTED")
                 }
-                className='bg-red-100 text-red-600 hover:bg-red-200 transition-colors p-2 rounded-full shadow-md'
+                className='bg-red-100 text-red-600 hover:bg-red-200 transition-colors p-2 rounded-full shadow-sm'
                 title='Reject Post'
               >
-                <FaTimes className='text-lg' />
+                <FaTimes />
               </button>
             </>
           )}

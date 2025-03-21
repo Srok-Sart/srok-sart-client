@@ -154,9 +154,9 @@ const PostsRequest = ({ token }: PostsRequestProps) => {
   }
 
   return (
-    <div className='p-4'>
+    <div className='flex flex-col h-full p-1'>
       {hasPendingPosts && (
-        <div className='mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-md'>
+        <div className='mb-2 p-2 bg-yellow-100 text-yellow-800 rounded-md'>
           There are pending posts that need your attention.
         </div>
       )}

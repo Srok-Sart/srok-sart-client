@@ -3,7 +3,7 @@ import { Material } from "@/app/interfaces/material";
 import React, { useEffect, useState } from "react";
 import AddNewMaterial from "./add-new-material";
 import EditMaterial from "./edit-material";
-import { HeaderSection } from "./header-section";
+import { MaterialHeaderSection } from "./header-section";
 import { MaterialsTable } from "./materials-table";
 
 interface MaterialsProps {
@@ -156,7 +156,7 @@ const Materials = ({ token }: MaterialsProps) => {
 
   return (
     <div className='p-4'>
-      <HeaderSection
+      <MaterialHeaderSection
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         sortOption={sortOption}

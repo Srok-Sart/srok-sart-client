@@ -13,8 +13,6 @@ type PostsProps = {
   token: string;
 };
 
-type PostStatus = "PUBLISH" | "REJECTED" | "PENDING" | "ALL";
-
 type SortOption = "ID Ascending" | "ID Descending";
 
 interface PaginationInfo {
@@ -32,7 +30,6 @@ const Posts = ({ activeTab, token }: PostsProps) => {
   const [showViewPost, setShowViewPost] = useState<boolean>(false);
   const [editPostId, setEditPostId] = useState<number | null>(null);
   const [viewPostId, setViewPostId] = useState<number | null>(null);
-  const [postStatus, setPostStatus] = useState<PostStatus>("ALL");
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
     page: 1,
@@ -43,7 +40,8 @@ const Posts = ({ activeTab, token }: PostsProps) => {
   const fetchPosts = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts?page=${page}&limit=${pagination.limit}`, {
+      // Updated endpoint to only fetch posts with PUBLISH status
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts?page=${page}&limit=${pagination.limit}&status=PUBLISH`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -92,10 +90,6 @@ const Posts = ({ activeTab, token }: PostsProps) => {
     setSortOption(option);
   };
 
-  const handlePostStatusChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-    setPostStatus(e.target.value as PostStatus);
-  };
-
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
     fetchPosts(newPage);
@@ -135,7 +129,7 @@ const Posts = ({ activeTab, token }: PostsProps) => {
     fetchPosts(pagination.page);
   };
 
-  const handleApproveOrReject = async (id: number, status: PostStatus): Promise<void> => {
+  const handleApproveOrReject = async (id: number, status: "PUBLISH" | "REJECTED"): Promise<void> => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts/${id}`, {
         method: "PATCH",
@@ -152,16 +146,10 @@ const Posts = ({ activeTab, token }: PostsProps) => {
     }
   };
 
-  const filteredPosts = posts
-    .filter((post) => {
-      if (postStatus === "ALL") {
-        return true;
-      }
-      return post.postStatus === postStatus;
-    })
-    .filter((post) =>
-      post.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  // Filter posts only by search term
+  const filteredPosts = posts.filter((post) =>
+    post.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (showAddNewPost) {
     return (
@@ -202,9 +190,7 @@ const Posts = ({ activeTab, token }: PostsProps) => {
         sortOption={sortOption}
         handleSortChange={handleSortChange}
         setShowAddNewPost={setShowAddNewPost}
-        postStatus={postStatus}
-        handlePostStatusChange={handlePostStatusChange}
-        showPostStatusFilter={true}
+        showPostStatusFilter={false} // Hide the post status filter
       />
       
       {loading ? (
@@ -212,7 +198,7 @@ const Posts = ({ activeTab, token }: PostsProps) => {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
         </div>
       ) : filteredPosts.length === 0 ? (
-        <p>No posts available.</p>
+        <p>No published posts available.</p>
       ) : (
         <>
           <PostsTable
@@ -224,7 +210,7 @@ const Posts = ({ activeTab, token }: PostsProps) => {
               activeTab === "postsRequest" ? handleApproveOrReject : undefined
             }
             isPostsRequestTab={activeTab === "postsRequest"}
-            startIndex={(pagination.page - 1) * pagination.limit} // Add this line to calculate proper starting index
+            startIndex={(pagination.page - 1) * pagination.limit}
           />
             
           <Pagination 
@@ -233,7 +219,7 @@ const Posts = ({ activeTab, token }: PostsProps) => {
             onPageChange={handlePageChange}
           />
         </>
-    )}
+      )}
     </div>
   );
 };

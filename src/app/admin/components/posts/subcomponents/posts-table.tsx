@@ -43,7 +43,7 @@ export const PostsTable = ({
 
   if (!posts || posts.length === 0) {
     return (
-      <div className='w-full p-4 text-center text-gray-500 bg-white border border-gray-300 rounded'>
+      <div className='w-full py-3 text-center text-gray-500 bg-white border border-gray-300 rounded'>
         No posts available
       </div>
     );
@@ -57,9 +57,9 @@ export const PostsTable = ({
             <th className='p-2 border'>No.</th>
             <th className='p-2 border'>Title</th>
             <th className='p-2 border'>Description</th>
-            <th className='p-2 border'>Difficulty Level</th>
+            <th className='p-2 border'>Difficulty</th>
             <th className='p-2 border'>Type</th>
-            <th className='p-2 border'>Estimated Time</th>
+            <th className='p-2 border'>Time</th>
             <th className='p-2 border'>Materials</th>
             <th className='p-2 border'>Actions</th>
           </tr>
