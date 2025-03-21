@@ -2,7 +2,7 @@
 
 import { fetcher } from "@/api/use-fetcher";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CardDisplay from "../components/card-display";
 import FilterBar from "../components/filtering";
 import { PaginationPost } from "../interfaces/post";
@@ -13,10 +13,6 @@ const HomeContent = () => {
   // Extract search query
   const searchQuery = searchParams.get("search") || undefined;
 
-  // Extract pagination parameters
-  const page = Number(searchParams.get("page")) || 1;
-  const limit = Number(searchParams.get("limit")) || 9;
-
   // Extract filters
   const postType = searchParams.get("postType") || undefined;
   const postStatus = searchParams.get("postStatus") || "PUBLISH";
@@ -25,59 +21,133 @@ const HomeContent = () => {
   const sortField = searchParams.get("sortField") || "createdAt";
   const sortOrder = searchParams.get("sortOrder") || "DESC";
 
-  // Construct API query parameters
-  const queryParams = useMemo(() => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-    });
-
-    if (searchQuery) params.set("search", searchQuery);
-
-    // Build filter string
-    let filterString = "";
-    if (postType) filterString += `postType:${postType}`;
-    if (postStatus) {
-      if (filterString) filterString += ",";
-      filterString += `postStatus:${postStatus}`;
-    }
-
-    if (filterString) params.set("filter", filterString);
-
-    // Format sort parameter in the way backend expects
-    params.set("sort", `${sortField}:${sortOrder}`);
-
-    return params;
-  }, [page, limit, searchQuery, postType, postStatus, sortField, sortOrder]);
-
   // State to hold posts data
   const [posts, setPosts] = useState<PaginationPost["data"]>([]);
-  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const totalPages = Math.ceil(total / limit);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const limit = 9; // Fixed limit per page
 
-  // Fetch posts on mount & when query changes
-  useEffect(() => {
-    const fetchPosts = async () => {
+  // Ref for intersection observer
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
+
+  // Construct API query parameters
+  const getQueryParams = useCallback(
+    (currentPage: number) => {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString(),
+      });
+
+      if (searchQuery) params.set("search", searchQuery);
+
+      // Build filter string
+      let filterString = "";
+      if (postType) filterString += `postType:${postType}`;
+      if (postStatus) {
+        if (filterString) filterString += ",";
+        filterString += `postStatus:${postStatus}`;
+      }
+
+      if (filterString) params.set("filter", filterString);
+
+      // Format sort parameter in the way backend expects
+      params.set("sort", `${sortField}:${sortOrder}`);
+
+      return params;
+    },
+    [searchQuery, postType, postStatus, sortField, sortOrder]
+  );
+
+  // Fetch posts function
+  const fetchPosts = useCallback(
+    async (currentPage: number, append = false) => {
       setIsLoading(true);
       try {
+        const queryParams = getQueryParams(currentPage);
         const { data, total } = await fetcher<PaginationPost>(
           `/posts?${queryParams.toString()}`
         );
-        setPosts(data);
-        setTotal(total);
+
+        if (append) {
+          setPosts((prevPosts) => [...prevPosts, ...data]);
+        } else {
+          setPosts(data);
+        }
+
+        // Check if we've reached the end
+        setHasMore(currentPage * limit < total);
       } catch (error) {
         console.error("Error fetching posts:", error);
       } finally {
         setIsLoading(false);
       }
+    },
+    [getQueryParams]
+  );
+
+  // Initial load
+  useEffect(() => {
+    setPage(1);
+    setPosts([]);
+    setHasMore(true);
+    fetchPosts(1, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, postType, postStatus, sortField, sortOrder]);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    // Disconnect previous observer if it exists
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    // Don't set up observer if we're currently loading or there are no more items
+    if (isLoading || !hasMore) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchPosts(nextPage, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    // Observe loading element if it exists
+    if (loadingRef.current) {
+      observerRef.current.observe(loadingRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
     };
-    fetchPosts();
-  }, [queryParams, searchParams]);
+  }, [fetchPosts, hasMore, isLoading, page]);
+
+  // Handle filter changes
+  const handleFilterChange = useCallback(() => {
+    // Reset pagination when filters change
+    setPage(1);
+    setPosts([]);
+    setHasMore(true);
+    fetchPosts(1, false);
+  }, [fetchPosts]);
 
   return (
     <div className='pt-16 max-w-7xl mx-auto px-4'>
-      <FilterBar />
+      <FilterBar onFilterChange={handleFilterChange} />
+
+      {/* Display posts */}
+      <div className='columns-2 sm:columns-3 md:columns-4 gap-4 space-y-4 mt-4'>
+        {posts?.map((post, index) => (
+          <CardDisplay key={post.id || index} post={post} />
+        ))}
+      </div>
 
       {/* Loading indicator */}
       {isLoading && (
@@ -86,45 +156,23 @@ const HomeContent = () => {
         </div>
       )}
 
+      {/* Intersection observer target */}
+      {hasMore && !isLoading && (
+        <div ref={loadingRef} className='h-10 w-full'></div>
+      )}
+
+      {/* Show message when there are no more posts */}
+      {!hasMore && posts.length > 0 && (
+        <p className='text-gray-500 text-center my-8'>No more posts to load</p>
+      )}
+
       {/* Show "No Results Found" if there are no posts */}
-      {!isLoading && posts.length === 0 && (
+      {!isLoading && posts.length === 0 && !hasMore && (
         <p className='text-gray-500 text-center mt-8 text-lg'>
           {searchQuery
             ? `No results found for "${searchQuery}"`
             : "No posts available"}
         </p>
-      )}
-
-      {/* Display posts */}
-      <div className='columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4'>
-        {posts?.map((post, index) => (
-          <CardDisplay key={post.id || index} post={post} />
-        ))}
-      </div>
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && posts.length > 0 && (
-        <div className='flex justify-center gap-2 my-8'>
-          {Array.from({ length: totalPages }, (_, i) => {
-            const pageNumber = i + 1;
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set("page", pageNumber.toString());
-
-            return (
-              <a
-                key={pageNumber}
-                href={`/?${newParams.toString()}`}
-                className={`px-4 py-2 rounded ${
-                  page === pageNumber
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                {pageNumber}
-              </a>
-            );
-          })}
-        </div>
       )}
     </div>
   );

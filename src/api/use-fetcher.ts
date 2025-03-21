@@ -3,43 +3,58 @@
 import { ApiError } from "next/dist/server/api-utils";
 import { cookies } from "next/headers";
 
+/**
+ * Server-side fetch utility that handles authentication and error handling
+ * @param endpoint API endpoint path
+ * @param options Request options
+ * @param token Optional auth token (will use cookie token if not provided)
+ * @returns Parsed response data
+ */
 export async function fetcher<T>(
   endpoint: string,
   options: RequestInit = {},
   token?: string
 ): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  token = (await cookies()).get("accessToken")?.value;
 
+  // Get token from cookies if not provided
+  if (!token) {
+    token = (await cookies()).get("accessToken")?.value;
+  }
+
+  // Prepare headers with auth token if available
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token && { Authorization: `Bearer ${token}` }),
     ...(options.headers || {}),
   };
 
-  const defaultOptions: RequestInit = {
+  // Merge default options with provided options
+  const requestOptions: RequestInit = {
     headers,
     credentials: "include",
     ...options,
   };
 
-  const response = await fetch(`${baseUrl}${endpoint}`, defaultOptions);
-  console.log("Response status:", response.status);
-  console.log("Response headers:", response.headers);
+  const response = await fetch(`${baseUrl}${endpoint}`, requestOptions);
 
-  console.log("vanetah", response);
-
+  // Handle error responses
   if (!response.ok) {
     let errorMessage = response.statusText;
 
     try {
       const errorData = await response.json();
       errorMessage = errorData?.message || errorMessage;
-    } catch (error) {
-      // If the response is not JSON, read it as text
-      const text = await response.text();
-      errorMessage = text || errorMessage;
+    } catch {
+      // If the response is not JSON, try to read it as text
+      try {
+        const text = await response.text();
+        errorMessage = text || errorMessage;
+      } catch {
+        // If we can't read as text either, use the status text
+      }
     }
+
     throw new ApiError(response.status, errorMessage);
   }
 
@@ -48,14 +63,12 @@ export async function fetcher<T>(
     return {} as T;
   }
 
+  // Parse and return the response data
   try {
     const data = await response.json();
     return data as T;
   } catch (error) {
-    // If the response is not JSON, return an empty object or handle accordingly
     console.error("Failed to parse JSON response:", error);
     return {} as T;
   }
-
-  // return response.json() as Promise<T>;;
 }

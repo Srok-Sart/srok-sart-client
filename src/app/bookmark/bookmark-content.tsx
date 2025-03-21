@@ -1,11 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchCollections } from "../../api/bookmark";
+import { BookmarkCollection } from "../interfaces/collection";
 import AddCollection from "./add-collection";
 import CollectionCard from "./collection-card";
-import { BookmarkCollection } from "../interfaces/collection";
-import { useRouter } from "next/navigation";
 
 export default function BookmarkContent() {
   const router = useRouter();
@@ -33,20 +33,22 @@ export default function BookmarkContent() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen pt-16">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+      <div className='flex justify-center items-center min-h-screen pt-16'>
+        <div className='animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900'></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="p-6 pt-16 max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+    <div className='min-h-screen'>
+      <div className='p-6 pt-16 max-w-7xl mx-auto'>
+        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6'>
           <AddCollection setCollections={setCollections} />
           {collections.length === 0 ? (
-            <div className="col-span-2 md:col-span-4 text-center py-10">
-              <p className="text-gray-500">No collections found. Create your first collection!</p>
+            <div className='col-span-full text-center py-10'>
+              <p className='text-gray-500'>
+                No collections found. Create your first collection!
+              </p>
             </div>
           ) : (
             collections.map((col) => (

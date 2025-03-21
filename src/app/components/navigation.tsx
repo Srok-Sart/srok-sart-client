@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaBookmark,
   FaChartBar,
@@ -21,9 +21,9 @@ interface NavigationProps {
   initialUsername?: string;
 }
 
-const Navigation = ({ 
-  initialProfileImageUrl = null, 
-  initialUsername = "" 
+const Navigation = ({
+  initialProfileImageUrl = null,
+  initialUsername = "",
 }: NavigationProps) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -31,16 +31,17 @@ const Navigation = ({
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || ""
   );
-  
+
   // State to store the profile image URL
-  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(initialProfileImageUrl);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(
+    initialProfileImageUrl
+  );
   const [username, setUsername] = useState(initialUsername);
 
   // Listen for profile update events
   useEffect(() => {
     const handleProfileUpdate = (e: CustomEvent) => {
       console.log("Profile update detected");
-      // @ts-ignore - Add type if needed for CustomEvent
       const updatedProfile = e.detail;
       if (updatedProfile?.profileImageUrl) {
         setProfileImageUrl(updatedProfile.profileImageUrl);
@@ -51,10 +52,16 @@ const Navigation = ({
     };
 
     // Add event listener
-    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    window.addEventListener(
+      "profileUpdated",
+      handleProfileUpdate as EventListener
+    );
 
     return () => {
-      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+      window.removeEventListener(
+        "profileUpdated",
+        handleProfileUpdate as EventListener
+      );
     };
   }, []);
 
@@ -246,12 +253,12 @@ const Navigation = ({
           }`}
         >
           {profileImageUrl ? (
-            <div className="w-6 h-6 rounded-full overflow-hidden">
+            <div className='w-6 h-6 rounded-full overflow-hidden'>
               <ProfileImage
                 src={profileImageUrl}
                 alt={username || "User Profile"}
                 size={24}
-                className="w-6 h-6 rounded-full"
+                className='w-6 h-6 rounded-full'
               />
             </div>
           ) : (
