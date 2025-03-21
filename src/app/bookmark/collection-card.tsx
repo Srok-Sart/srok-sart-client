@@ -1,26 +1,41 @@
 "use client";
 
+import { generateRandomColor } from "@/app/utils/colors";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
-import { FaBookmark, FaEdit, FaEllipsisV, FaTag, FaTrash } from "react-icons/fa";
-import { deleteCollection, fetchPostsInCollection, updateCollection } from "../../api/bookmark";
+import {
+  FaBookmark,
+  FaEdit,
+  FaEllipsisV,
+  FaTag,
+  FaTrash,
+} from "react-icons/fa";
+import {
+  deleteCollection,
+  fetchPostsInCollection,
+  updateCollection,
+} from "../../api/bookmark";
 import useClickOutside from "../../hooks/use-click-outside";
+import { BookmarkCollection } from "../interfaces/collection";
 import { Post } from "../interfaces/post";
-import { BookmarkCollection } from "../interfaces/collection"; 
-import { generateRandomColor } from "@/app/utils/colors";
 
 interface CollectionCardProps {
   collection: BookmarkCollection; // Use BookmarkCollection
   setCollections: React.Dispatch<React.SetStateAction<BookmarkCollection[]>>;
 }
 
-const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollections }) => {
+const CollectionCard: React.FC<CollectionCardProps> = ({
+  collection,
+  setCollections,
+}) => {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(collection.name);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [backgroundColor, setBackgroundColor] = useState<string>(generateRandomColor());
+  const [backgroundColor, setBackgroundColor] = useState<string>(
+    generateRandomColor()
+  );
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useClickOutside(menuRef, () => setMenuOpen(false));
@@ -48,7 +63,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollecti
     };
 
     fetchPosts();
-  }, [collection.id, setCollections]);
+  }, [collection.id, router, setCollections]);
 
   const handleNavigateToCollection = () => {
     router.push(`/bookmark/${collection.id}`);
@@ -82,7 +97,9 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollecti
 
       setCollections((prev) =>
         prev.map((col) =>
-          col.id === collection.id ? { ...col, name: updatedCollection.name } : col
+          col.id === collection.id
+            ? { ...col, name: updatedCollection.name }
+            : col
         )
       );
     } catch (error) {
@@ -102,9 +119,9 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollecti
   const firstPostThumbnail = posts.length > 0 ? posts[0].thumbnailUrl : null;
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl relative">
+    <div className='bg-white p-4 md:p-6 rounded-xl shadow-lg hover:shadow-2xl relative flex flex-col min-h-[12rem]'>
       <div
-        className="relative w-full h-48 overflow-hidden rounded-md cursor-pointer flex items-center justify-center"
+        className='relative w-full h-24 md:h-32 overflow-hidden rounded-md cursor-pointer flex items-center justify-center flex-grow'
         onClick={handleNavigateToCollection}
         style={{
           backgroundColor: firstPostThumbnail ? "transparent" : backgroundColor, // Fallback color
@@ -116,69 +133,71 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, setCollecti
         }}
       >
         {firstPostThumbnail && (
-          <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+          <div className='absolute inset-0 bg-black bg-opacity-30'></div>
         )}
         {!firstPostThumbnail && (
-          <FaBookmark className="text-white text-6xl opacity-80" />
+          <FaBookmark className='text-white text-6xl opacity-80' />
         )}
       </div>
 
-      {isEditing ? (
-        <div className="mt-2">
-          <input
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="border p-2 w-full rounded text-[#6437A0]"
-            autoFocus
-          />
-          <div className="flex justify-end mt-2 space-x-2">
-            <button
-              onClick={() => setIsEditing(false)}
-              className="bg-gray-300 px-4 py-2 rounded"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleEditCollection}
-              className="bg-[#6437A0] text-white px-4 py-2 rounded"
-            >
-              OK
-            </button>
+      <div className='mt-2 flex-grow-0'>
+        {isEditing ? (
+          <div className='mt-2'>
+            <input
+              type='text'
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className='border p-2 w-full rounded text-[#6437A0]'
+              autoFocus
+            />
+            <div className='flex justify-end mt-2 space-x-2'>
+              <button
+                onClick={() => setIsEditing(false)}
+                className='bg-gray-300 px-4 py-2 rounded'
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditCollection}
+                className='bg-[#6437A0] text-white px-4 py-2 rounded'
+              >
+                OK
+              </button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <h3 className="font-semibold text-lg mt-2 flex items-center">
-          {collection.isDefault && <FaTag className="text-[#6437A0] mr-2" />}
-          {collection.name}
-        </h3>
-      )}
+        ) : (
+          <h3 className='font-semibold text-lg mt-2 flex items-center'>
+            {collection.isDefault && <FaTag className='text-[#6437A0] mr-2' />}
+            {collection.name}
+          </h3>
+        )}
+      </div>
 
-      <p className="text-sm text-black">{collection.saved ?? 0} Saved</p>
-      <p className="text-sm text-gray-500">{collection.description}</p>
+      <p className='text-sm text-black'>{collection.saved ?? 0} Saved</p>
+      <p className='text-sm text-gray-500'>{collection.description}</p>
 
       {!collection.isDefault && (
-        <div className="relative" ref={menuRef}>
+        <div className='absolute top-2 right-2' ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="absolute bottom-2 right-2 p-2"
+            className='absolute bottom-2 right-2 p-2'
           >
-            <FaEllipsisV className="text-gray-500 hover:text-gray-800" />
+            <FaEllipsisV className='text-gray-500 hover:text-gray-800' />
           </button>
           {menuOpen && (
-            <div className="absolute bottom-8 right-2 bg-white shadow-lg p-2 rounded-lg z-10">
+            <div className='absolute bottom-8 right-2 bg-white shadow-lg p-2 rounded-lg z-10'>
               <button
                 onClick={() => {
                   setIsEditing(true);
                   setMenuOpen(false);
                 }}
-                className="flex items-center space-x-2 text-[#6437A0] p-2 w-full"
+                className='flex items-center space-x-2 text-[#6437A0] p-2 w-full'
               >
                 <FaEdit /> <span>Edit</span>
               </button>
               <button
                 onClick={handleDeleteCollection}
-                className="flex items-center space-x-2 text-red-500 p-2 w-full"
+                className='flex items-center space-x-2 text-red-500 p-2 w-full'
               >
                 <FaTrash /> <span>Delete</span>
               </button>
