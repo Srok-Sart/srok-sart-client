@@ -6,7 +6,7 @@ export const markPostAsCompleted = async (postId: number) => {
       method: "POST",
     });
 
-    const { message } = response;
+    const { message } = response as { message: string };
 
     return message;
   } catch (error) {
