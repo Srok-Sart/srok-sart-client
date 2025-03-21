@@ -32,6 +32,8 @@ export const TreeVisualization = ({
   const baseSize = windowWidth < 640 ? 220 : windowWidth < 1024 ? 260 : 300
   const treeHeight = baseSize * 0.7
   const trunkWidth = baseSize * 0.07
+  const seedlingScale = Math.min(1, (20 - activeProgress) / 10) * (windowWidth < 640 ? 0.8 : 1)
+  const trunkScale = Math.min(1, activeProgress / 30) 
   const leafScale = Math.min(1, activeProgress / 50) * (windowWidth < 640 ? 0.8 : 1)
   const fruitScale = activeProgress > 40 ? Math.min(0.8, (activeProgress - 40) / 50) : 0
 
@@ -81,8 +83,11 @@ export const TreeVisualization = ({
             }}
             initial={{ scale: 0.8, opacity: 0.5 }}
             animate={{
-              scale: Math.min(1.2, activeProgress / 15),
-              opacity: Math.min(1, activeProgress / 20),
+              scale: Math.min(1.2, 0.8 + (activeProgress / 100) * 0.4),
+              opacity: Math.min(1, 0.5 + (activeProgress / 100) * 0.5),
+              background: activeProgress > 50 
+                ? "linear-gradient(to right, rgba(146, 64, 14, 0.4), rgba(180, 83, 9, 0.5), rgba(146, 64, 14, 0.4))" 
+                : "linear-gradient(to right, rgba(146, 64, 14, 0.3), rgba(180, 83, 9, 0.4), rgba(146, 64, 14, 0.3))"
             }}
             transition={{ type: "spring", stiffness: 50, damping: 15 }}
           />
@@ -90,11 +95,11 @@ export const TreeVisualization = ({
 
         {/* Seedling (shown when progress is low) */}
         <AnimatePresence>
-          {activeProgress < 20 && (
+          {activeProgress <= 10 && (
             <motion.div
               className="absolute bottom-4 left-1/2 -translate-x-1/2 text-green-600 dark:text-green-500"
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={{ scale: seedlingScale, opacity: seedlingScale * 2 }}
               exit={{ scale: 0, opacity: 0 }}
               style={{ fontSize: baseSize * 0.15 }}
             >
@@ -103,16 +108,18 @@ export const TreeVisualization = ({
           )}
         </AnimatePresence>
 
+
         {/* Tree trunk with texture and gradient */}
         <motion.div
           className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-gradient-to-t from-amber-800 to-amber-700 rounded-t-lg origin-bottom"
           style={{
             width: trunkWidth,
-            height: activeProgress > 10 ? treeHeight : 0,
+            height: activeProgress >= 10 ? treeHeight * trunkScale : 0,
             boxShadow: "2px 0 3px rgba(0,0,0,0.1)",
+            opacity: Math.min(1, activeProgress / 20),
           }}
           animate={{
-            height: activeProgress > 10 ? treeHeight : 0,
+            height: activeProgress >= 10 ? treeHeight * trunkScale : 0,
             width: trunkWidth,
           }}
           transition={{ type: "spring", stiffness: 60, damping: 15 }}
@@ -190,19 +197,23 @@ export const TreeVisualization = ({
           className="absolute left-1/2 -translate-x-1/2 z-20"
           style={{
             scale: leafScale,
-            bottom: `${treeHeight * 0.6}px`,
+            bottom: `${treeHeight * 0.6 * trunkScale}px`,
           }}
-          animate={{ scale: leafScale }}
+          animate={{ 
+            scale: leafScale,
+            bottom: `${treeHeight * 0.6 * trunkScale}px`,
+          }}
           transition={{ type: "spring", stiffness: 70, damping: 15 }}
         >
-          {activeProgress > 20 && (
+          {activeProgress > 15 && (
             <>
               <div
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-b from-green-700 to-green-600 opacity-90"
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-b from-green-700 to-green-600"
                 style={{
                   width: baseSize * 0.48,
                   height: baseSize * 0.4,
                   filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.1))",
+                  opacity: Math.min(0.9, 0.4 + (activeProgress - 20) / 80 * 0.5)
                 }}
               />
               <div
@@ -363,6 +374,40 @@ export const TreeVisualization = ({
           <span className="font-semibold">{projectsCompleted || 0}</span>
         </div>
       </div>
+
+      {/* Roots visualization (for early growth stages) */}
+      {activeProgress >= 10 && activeProgress < 40 && (
+        <>
+          <motion.div
+            className="absolute bg-gradient-to-r from-amber-700 to-amber-800 rounded-full"
+            style={{
+              height: 2,
+              width: baseSize * 0.15 * (Math.min(1, (activeProgress - 10) / 20)),
+              bottom: 4,
+              left: "50%",
+              transformOrigin: "left center",
+              transform: "rotate(15deg)",
+            }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.1 }}
+          />
+          <motion.div
+            className="absolute bg-gradient-to-l from-amber-700 to-amber-800 rounded-full"
+            style={{
+              height: 2,
+              width: baseSize * 0.12 * (Math.min(1, (activeProgress - 10) / 20)),
+              bottom: 3,
+              right: "50%",
+              transformOrigin: "right center",
+              transform: "rotate(-20deg)",
+            }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.2 }}
+          />
+        </>
+      )}
 
 
       {/* Progress bar */}

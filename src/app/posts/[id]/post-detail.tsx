@@ -1,11 +1,18 @@
 "use client";
 
 import { fetchCollections, savePostToCollection } from "@/api/bookmark";
+import {
+  Comment,
+  createComment,
+  getAllComments,
+  updateComment,
+} from "@/api/comments";
 import { checkIfLiked, toggleLike } from "@/api/like";
+import ProfileImage from "@/app/components/profile-image";
 import { Post } from "@/app/interfaces/post";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { FaComment } from "react-icons/fa";
 import CollectionSelectModal from "./collection-selection-modal";
 import MediaGallery from "./media-gallery";
 import PostHeader from "./post-header";
@@ -51,6 +58,14 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
   const [isSaveLoading, setIsSaveLoading] = useState(false);
   const [showMaterialsModal, setShowMaterialsModal] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  
+  // Comments related states
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const handleCreateCollection = (newCollection: Collection) => {
     setCollections((prevCollections) => [...prevCollections, newCollection]);
@@ -79,6 +94,49 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
       checkLikeStatus();
     }
   }, [post.id, post.likeCount, token]);
+
+  // Fetch comments when component mounts
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!post.id) return;
+
+      setCommentsLoading(true);
+      try {
+        // Only attempt to fetch comments if the user has a token
+        if (!token) {
+          // Instead of throwing an error, just set a specific state
+          setCommentError("authentication_required");
+          setCommentsLoading(false);
+          return;
+        }
+
+        // Filter comments by post ID on the client side
+        const allComments = await getAllComments(token);
+        const postComments = allComments.filter(
+          (comment) => comment.postId === post.id
+        );
+        setComments(postComments);
+        setCommentError(null);
+      } catch (error) {
+        // Check if the error is related to authentication
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        if (
+          errorMessage.includes("Unauthorized") ||
+          errorMessage.includes("Authentication required") ||
+          errorMessage.includes("Forbidden")
+        ) {
+          setCommentError("authentication_required");
+        } else {
+          setCommentError("Failed to load comments");
+        }
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    fetchComments();
+  }, [post.id, token]);
 
   // Auto-dismiss notifications after 5 seconds
   useEffect(() => {
@@ -269,6 +327,94 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
     setShowFullscreen(!showFullscreen);
   };
 
+  const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!token) {
+      setCommentError("Please sign in to comment");
+      return;
+    }
+
+    if (!comment.trim()) return;
+
+    setIsSubmittingComment(true);
+
+    try {
+      const newComment = await createComment(
+        {
+          content: comment,
+          postId: post.id,
+        },
+        token
+      );
+
+      setComments((prevComments) => [...prevComments, newComment]);
+      setComment("");
+      setCommentError(null);
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      setCommentError("Failed to post comment. Please try again.");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleSaveEdit = async (commentId: number) => {
+    if (!editCommentContent.trim() || !token) return;
+
+    try {
+      const updatedComment = await updateComment(
+        commentId,
+        { content: editCommentContent },
+        token
+      );
+
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === commentId
+            ? {
+                ...comment,
+                content: updatedComment.content,
+                updatedAt: updatedComment.updatedAt,
+              }
+            : comment
+        )
+      );
+
+      setEditingCommentId(null);
+      setEditCommentContent("");
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      setCommentError("Failed to update comment");
+    }
+  };
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
+
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60)
+      return `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12)
+      return `${diffMonths} month${diffMonths !== 1 ? "s" : ""} ago`;
+
+    const diffYears = Math.floor(diffMonths / 12);
+    return `${diffYears} year${diffYears !== 1 ? "s" : ""} ago`;
+  };
+
   return (
     <>
       {/* Toast Notification */}
@@ -329,44 +475,10 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
         </div>
 
         <div className='flex flex-col lg:flex-row gap-8'>
+          {/* Left column (2/3 width on desktop) */}
           <div className='w-full lg:w-2/3'>
             {/* Media gallery with fullscreen toggle */}
             <div className='relative bg-gray-100 rounded-lg overflow-hidden'>
-              {/* <button
-                onClick={handleFullscreenToggle}
-                className='absolute top-4 right-4 bg-white bg-opacity-90 text-gray-800 p-2 rounded-full z-10 shadow-md hover:bg-opacity-100 transition-all duration-200'
-                aria-label='Toggle fullscreen'
-              >
-                {showFullscreen ? (
-                  <svg
-                    className='w-5 h-5'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M6 18L18 6M6 6l12 12'
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className='w-5 h-5'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5'
-                    />
-                  </svg>
-                )}
-              </button> */}
               <MediaGallery post={post} />
             </div>
 
@@ -391,6 +503,126 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
                 View Materials List
               </button>
             </div>
+
+            {/* Comments Section - Only visible on desktop */}
+            <div className='mt-6 bg-white p-6 rounded-lg shadow-sm hidden lg:block'>
+              <div className='flex items-center gap-2 mb-4'>
+                <FaComment size={18} className='text-gray-600' />
+                <h3 className='text-lg font-semibold'>Comments</h3>
+              </div>
+
+              <form onSubmit={handleCommentSubmit} className='mb-4'>
+                <div className='flex gap-2'>
+                  <input
+                    type='text'
+                    placeholder='Add a comment...'
+                    className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                  />
+                  <button
+                    type='submit'
+                    className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50'
+                    disabled={!comment.trim() || !token || isSubmittingComment}
+                  >
+                    {isSubmittingComment ? "Posting..." : "Post"}
+                  </button>
+                </div>
+              </form>
+
+              {commentError && commentError !== "authentication_required" && (
+                <div className='mb-4 p-3 bg-red-50 text-red-500 rounded-lg text-sm'>
+                  {commentError}
+                </div>
+              )}
+
+              {/* Comments List */}
+              {commentsLoading ? (
+                <div className='py-4 text-center'>
+                  <div className='inline-block h-6 w-6 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500'></div>
+                  <p className='mt-2 text-sm text-gray-500'>Loading comments...</p>
+                </div>
+              ) : commentError === "authentication_required" ? (
+                <div className='py-8 text-center bg-blue-50 rounded-lg'>
+                  <div className='mx-auto w-12 h-12 flex items-center justify-center bg-blue-100 rounded-full mb-3'>
+                    <FaComment size={20} className='text-blue-500' />
+                  </div>
+                  <h4 className='text-lg font-medium text-gray-900 mb-2'>
+                    Sign in to view comments
+                  </h4>
+                  <p className='text-gray-600 mb-4 max-w-md mx-auto'>
+                    Please log in to view and participate in the discussion.
+                  </p>
+                  <a
+                    href='/login'
+                    className='inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition'
+                  >
+                    Sign in
+                  </a>
+                </div>
+              ) : comments.length > 0 ? (
+                <div className='space-y-4'>
+                  {comments.map((comment) => (
+                    <div key={comment.id} className='border rounded-lg p-3'>
+                      {editingCommentId === comment.id ? (
+                        <div className='space-y-2'>
+                          <textarea
+                            className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            value={editCommentContent}
+                            onChange={(e) => setEditCommentContent(e.target.value)}
+                          />
+                          <div className='flex justify-end gap-2'>
+                            <button
+                              onClick={() => setEditingCommentId(null)}
+                              className='px-3 py-1 text-sm text-gray-500 hover:text-gray-700'
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleSaveEdit(comment.id)}
+                              className='px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600'
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className='flex justify-between items-start'>
+                            <div className='flex items-center gap-2'>
+                              <div className='w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden'>
+                                <ProfileImage
+                                  src={comment.user?.profileImageUrl}
+                                  alt={comment.user?.username || "User"}
+                                  size={32}
+                                  className='w-full h-full object-cover'
+                                />
+                              </div>
+                              <div>
+                                <p className='font-medium text-sm'>
+                                  {comment.user?.username || "Anonymous User"}
+                                </p>
+                                <p className='text-xs text-gray-500'>
+                                  {formatRelativeTime(comment.createdAt)}
+                                  {comment.updatedAt !== comment.createdAt &&
+                                    " (edited)"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <p className='mt-2 text-gray-700'>{comment.content}</p>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className='text-gray-500 text-center py-4'>
+                  No comments yet. Be the first to comment!
+                </div>
+              )}
+            </div>
+
             {error && (
               <div className='mt-6 bg-white p-4 rounded-lg shadow-sm border-l-4 border-red-500 text-red-700'>
                 {error}
@@ -406,22 +638,15 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
             )}
           </div>
 
+          {/* Right column (1/3 width on desktop) */}
           <div className='w-full lg:w-1/3 space-y-6'>
             <div className='bg-white p-6 rounded-lg shadow-sm'>
-              {/* <div className='flex justify-between items-center mb-4'>
-                <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800'>
-                  {post.postDifficulty}
-                </span>
-              </div> */}
-
               <div className='mb-6'>
                 <PostInfoCard
                   post={post}
                   saved={saved}
                   liked={liked}
                   likeCount={likeCount}
-                  comment={comment}
-                  setComment={setComment}
                   handleLikeClick={handleLikeClick}
                   handleSaveClick={handleSaveClick}
                   handleShareClick={handleShareClick}
@@ -460,6 +685,125 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
                   <div className='text-sm text-gray-500'>Likes</div>
                 </div>
               </div>
+            </div>
+            
+            {/* Comments Section - Only visible on mobile */}
+            <div className='mt-6 bg-white p-6 rounded-lg shadow-sm lg:hidden'>
+              <div className='flex items-center gap-2 mb-4'>
+                <FaComment size={18} className='text-gray-600' />
+                <h3 className='text-lg font-semibold'>Comments</h3>
+              </div>
+
+              <form onSubmit={handleCommentSubmit} className='mb-4'>
+                <div className='flex gap-2'>
+                  <input
+                    type='text'
+                    placeholder='Add a comment...'
+                    className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                  />
+                  <button
+                    type='submit'
+                    className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50'
+                    disabled={!comment.trim() || !token || isSubmittingComment}
+                  >
+                    {isSubmittingComment ? "Posting..." : "Post"}
+                  </button>
+                </div>
+              </form>
+
+              {commentError && commentError !== "authentication_required" && (
+                <div className='mb-4 p-3 bg-red-50 text-red-500 rounded-lg text-sm'>
+                  {commentError}
+                </div>
+              )}
+
+              {/* Comments List */}
+              {commentsLoading ? (
+                <div className='py-4 text-center'>
+                  <div className='inline-block h-6 w-6 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500'></div>
+                  <p className='mt-2 text-sm text-gray-500'>Loading comments...</p>
+                </div>
+              ) : commentError === "authentication_required" ? (
+                <div className='py-8 text-center bg-blue-50 rounded-lg'>
+                  <div className='mx-auto w-12 h-12 flex items-center justify-center bg-blue-100 rounded-full mb-3'>
+                    <FaComment size={20} className='text-blue-500' />
+                  </div>
+                  <h4 className='text-lg font-medium text-gray-900 mb-2'>
+                    Sign in to view comments
+                  </h4>
+                  <p className='text-gray-600 mb-4 max-w-md mx-auto'>
+                    Please log in to view and participate in the discussion.
+                  </p>
+                  <a
+                    href='/login'
+                    className='inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition'
+                  >
+                    Sign in
+                  </a>
+                </div>
+              ) : comments.length > 0 ? (
+                <div className='space-y-4'>
+                  {comments.map((comment) => (
+                    <div key={comment.id} className='border rounded-lg p-3'>
+                      {editingCommentId === comment.id ? (
+                        <div className='space-y-2'>
+                          <textarea
+                            className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            value={editCommentContent}
+                            onChange={(e) => setEditCommentContent(e.target.value)}
+                          />
+                          <div className='flex justify-end gap-2'>
+                            <button
+                              onClick={() => setEditingCommentId(null)}
+                              className='px-3 py-1 text-sm text-gray-500 hover:text-gray-700'
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleSaveEdit(comment.id)}
+                              className='px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600'
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className='flex justify-between items-start'>
+                            <div className='flex items-center gap-2'>
+                              <div className='w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden'>
+                                <ProfileImage
+                                  src={comment.user?.profileImageUrl}
+                                  alt={comment.user?.username || "User"}
+                                  size={32}
+                                  className='w-full h-full object-cover'
+                                />
+                              </div>
+                              <div>
+                                <p className='font-medium text-sm'>
+                                  {comment.user?.username || "Anonymous User"}
+                                </p>
+                                <p className='text-xs text-gray-500'>
+                                  {formatRelativeTime(comment.createdAt)}
+                                  {comment.updatedAt !== comment.createdAt &&
+                                    " (edited)"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <p className='mt-2 text-gray-700'>{comment.content}</p>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className='text-gray-500 text-center py-4'>
+                  No comments yet. Be the first to comment!
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -575,11 +919,9 @@ const PostDetailPage: React.FC<PostDetailPageProps> = ({
                 src={post.imageUrls.find((url) => url.endsWith(".webm"))}
               />
             ) : (
-              <Image
+              <img
                 src={post.thumbnailUrl || post.imageUrls?.[0] || ""}
                 alt={post.title}
-                layout='fill'
-                objectFit='contain'
                 className='max-h-screen max-w-full'
               />
             )}
