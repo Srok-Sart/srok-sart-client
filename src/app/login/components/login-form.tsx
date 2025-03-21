@@ -1,6 +1,7 @@
 "use client";
 
 import { loginUser } from "@/api/login";
+import { getUserProfileClient } from "@/api/use-profile-client";
 import { GoogleButton } from "@/components/auth/google-button";
 import { Divider } from "@/components/common/divider";
 import { ErrorMessage } from "@/components/common/error-message";
@@ -34,10 +35,25 @@ export default function LoginForm() {
     setError(null);
 
     try {
+      // login the user to get the tokens
       await loginUser(formData);
-      router.push("/");
-      router.refresh(); // Important to refresh the router cache
+      
+      // Fetch the user profile to get the role
+      const userProfile = await getUserProfileClient();
+      console.log("User profile:", userProfile);
+      
+      // Redirect based on role
+      if (userProfile.role === "ADMIN") {
+        console.log("Admin user detected, redirecting to /admin");
+        router.push("/admin");
+      } else {
+        console.log("Regular user, redirecting to /");
+        router.push("/");
+      }
+      
+      router.refresh(); // Refresh the router cache
     } catch (error) {
+      console.error("Login error:", error);
       if (error instanceof Error) {
         setError(error.message);
       } else {
