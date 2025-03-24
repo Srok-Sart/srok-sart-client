@@ -11,21 +11,23 @@ interface FilePreviewProps {
 
 export const FilePreview = ({ file, onRemove, onView }: FilePreviewProps) => {
   const [fileSize, setFileSize] = useState<string>("Loading size...");
-  const [imageUrl, setImageUrl] = useState<string | null>(null); // Initialize as null instead of empty string
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const fileName =
     file instanceof File ? file.name : file.split("/").pop() || "Unknown";
 
   useEffect(() => {
     // Get the image URL
+    let url: string | null = null;
+    
     if (file instanceof File) {
-      setImageUrl(URL.createObjectURL(file));
+      url = URL.createObjectURL(file);
+      setImageUrl(url);
     } else if (typeof file === "string" && file) {
       // Check if file is a non-empty string
-      setImageUrl(
-        file.startsWith("http")
-          ? file
-          : `${process.env.NEXT_PUBLIC_API_URL || ""}${file}`
-      );
+      url = file.startsWith("http")
+        ? file
+        : `${process.env.NEXT_PUBLIC_API_URL || ""}${file}`;
+      setImageUrl(url);
     } else {
       // If file is invalid, set to placeholder or null
       setImageUrl("/placeholder-image.jpg");
@@ -44,10 +46,10 @@ export const FilePreview = ({ file, onRemove, onView }: FilePreviewProps) => {
       }
 
       try {
-        const url = file.startsWith("http")
+        const sizeUrl = file.startsWith("http")
           ? file
           : `${process.env.NEXT_PUBLIC_API_URL || ""}${file}`;
-        const response = await fetch(url, { method: "HEAD" });
+        const response = await fetch(sizeUrl, { method: "HEAD" });
         const size = response.headers.get("content-length");
         if (size) {
           const sizeInKB = (parseInt(size) / 1024).toFixed(2);
@@ -65,11 +67,11 @@ export const FilePreview = ({ file, onRemove, onView }: FilePreviewProps) => {
 
     // Clean up URL objects to avoid memory leaks
     return () => {
-      if (file instanceof File && imageUrl) {
-        URL.revokeObjectURL(imageUrl);
+      if (file instanceof File && url) {
+        URL.revokeObjectURL(url);
       }
     };
-  }, [file, imageUrl]);
+  }, [file]); // Only depend on the file prop
 
   // Don't render the Image component if imageUrl is null
   return (
