@@ -8,79 +8,93 @@ interface VideoPreviewProps {
 export const VideoPreview: React.FC<VideoPreviewProps> = ({ src, onClose }) => {
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [error, setError] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isVertical, setIsVertical] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
+
+    // Clean up previous blob URL if it exists
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
     // Handle different types of sources
     if (src.startsWith("blob:")) {
-      // For blob URLs, verify they are valid
-      try {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", src, true);
-        xhr.responseType = "blob";
-        xhr.onload = () => {
-          if (xhr.status === 200) {
-            // Create a new blob URL that we control in this component
-            const validBlob = new Blob([xhr.response], { type: "video/mp4" });
-            const newBlobUrl = URL.createObjectURL(validBlob);
-            setVideoUrl(newBlobUrl);
-          } else {
-            console.error("Failed to fetch blob:", xhr.statusText);
-            setError(true);
-          }
-        };
-        xhr.onerror = () => {
-          console.error("Blob URL is invalid or inaccessible");
-          setError(true);
-        };
-        xhr.send();
-      } catch (e) {
-        console.error("Error accessing blob URL:", e);
-        setError(true);
-      }
+      // For blob URLs, use directly without re-fetching
+      setVideoUrl(src);
+      setLoading(false);
     } else if (src.startsWith("http") || src.startsWith("/")) {
       // For regular URLs or server paths
-      setVideoUrl(src);
+      const fullUrl = src.startsWith("http") 
+        ? src 
+        : `${process.env.NEXT_PUBLIC_API_URL || ""}${src}`;
+      setVideoUrl(fullUrl);
+      setLoading(false);
     } else {
       console.error("Unsupported video source format");
       setError(true);
+      setLoading(false);
     }
+
+    // Handle ESC key for closing
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
 
     // Clean up when component unmounts
     return () => {
-      if (videoUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(videoUrl);
+      window.removeEventListener("keydown", handleKeyDown);
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
       }
     };
-  }, [src, videoUrl]);
+  }, [src, onClose]);
 
   // Detect video orientation when metadata is loaded
   const handleMetadataLoaded = () => {
     if (videoRef.current) {
       const { videoWidth, videoHeight } = videoRef.current;
       setIsVertical(videoHeight > videoWidth);
+      setLoading(false);
+    }
+  };
+
+  // Handle backdrop clicks
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
     }
   };
 
   return (
-    <div className='fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4'>
-      <div className='relative max-w-4xl max-h-[90vh] w-full h-full bg-white rounded-lg overflow-hidden flex items-center justify-center'>
+    <div 
+      className='fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4'
+      onClick={handleBackdropClick}
+    >
+      <div className='relative max-w-4xl max-h-[90vh] w-full bg-black rounded-lg overflow-hidden'>
         <button
           onClick={onClose}
           className='absolute top-2 right-2 z-10 w-8 h-8 flex items-center justify-center bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-opacity'
         >
           ×
         </button>
-        <div className='p-2 flex items-center justify-center w-full h-full'>
+        <div className='flex items-center justify-center w-full h-full'>
           {error ? (
-            <div className='flex items-center justify-center h-64 bg-gray-100 text-red-500'>
+            <div className='flex items-center justify-center p-8 text-red-500 bg-black bg-opacity-50'>
               Error loading video. The file may be unavailable or in an
               unsupported format.
             </div>
-          ) : !videoUrl ? (
-            <div className='flex items-center justify-center h-64 bg-gray-100'>
-              Loading video...
+          ) : loading ? (
+            <div className='flex items-center justify-center p-8 bg-black bg-opacity-50'>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
             </div>
           ) : (
             <div
@@ -99,8 +113,12 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ src, onClose }) => {
                 controls
                 autoPlay
                 controlsList='nodownload'
-                onError={() => setError(true)}
                 onLoadedMetadata={handleMetadataLoaded}
+                onError={() => {
+                  console.error("Error loading video:", videoUrl);
+                  setError(true);
+                  setLoading(false);
+                }}
               >
                 Your browser does not support the video tag.
               </video>
